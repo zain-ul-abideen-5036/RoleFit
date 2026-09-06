@@ -48,7 +48,14 @@ interface RouteOptions {
 type Handler<TParams, TResult> = (context: RouteContext<TParams>) => Promise<TResult>
 type PublicHandler<TParams, TResult> = (context: PublicRouteContext<TParams>) => Promise<TResult>
 
-/** Next.js passes route params as a promise in App Router route handlers. */
+/**
+ * The context object Next.js passes as the second argument to a route handler.
+ *
+ * It is declared as required rather than optional because Next's generated
+ * route type-check rejects a handler whose second parameter accepts
+ * `undefined`. It is still read defensively at runtime, since a non-dynamic
+ * route has no params to resolve.
+ */
 type NextRouteArgs<TParams> = { params: Promise<TParams> }
 
 function errorResponse(error: AppError): NextResponse<PublicErrorBody> {
@@ -88,7 +95,7 @@ export function route<
   TParams extends Record<string, string> = Record<string, string>,
   TResult = unknown,
 >(handler: Handler<TParams, TResult>, options: RouteOptions = {}) {
-  return async (request: Request, args?: NextRouteArgs<TParams>): Promise<NextResponse> => {
+  return async (request: Request, args: NextRouteArgs<TParams>): Promise<NextResponse> => {
     const routeName = `${request.method} ${new URL(request.url).pathname}`
 
     try {
@@ -117,7 +124,7 @@ export function publicRoute<
   TParams extends Record<string, string> = Record<string, string>,
   TResult = unknown,
 >(handler: PublicHandler<TParams, TResult>, options: RouteOptions = {}) {
-  return async (request: Request, args?: NextRouteArgs<TParams>): Promise<NextResponse> => {
+  return async (request: Request, args: NextRouteArgs<TParams>): Promise<NextResponse> => {
     const routeName = `${request.method} ${new URL(request.url).pathname}`
 
     try {

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { activeCapabilities } from '@/lib/ai'
 import { parseJsonBody, route } from '@/server/api/handler'
 import { listOptimizationRuns } from '@/server/repositories'
+import { toChangeDto } from '@/server/api/dto'
 import { runOptimization } from '@/server/services/optimization-service'
 
 export const runtime = 'nodejs'
@@ -71,29 +72,3 @@ export const GET = route(
   },
   { rateLimit: 'api:read' },
 )
-
-export function toChangeDto(change: {
-  id: string
-  targetPath: string
-  section: string
-  action: string
-  beforeText: string | null
-  afterText: string | null
-  rationale: string
-  evidence: string[]
-  decision: string
-  editedText: string | null
-}) {
-  return {
-    id: change.id,
-    targetPath: change.targetPath,
-    section: change.section,
-    action: change.action,
-    before: change.beforeText,
-    after: change.afterText,
-    rationale: change.rationale,
-    evidence: change.evidence,
-    decision: change.decision,
-    editedText: change.editedText,
-  }
-}

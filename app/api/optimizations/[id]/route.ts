@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireUuidParam, route } from '@/server/api/handler'
 import { listChangeRecords, requireAnalysis, requireOptimizationRun } from '@/server/repositories'
 import { buildDecidedProfile } from '@/server/services/optimization-service'
-import { toChangeDto } from '@/app/api/optimizations/route'
+import { toChangeDto } from '@/server/api/dto'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
