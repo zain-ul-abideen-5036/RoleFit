@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rolefit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rolefit
+      POSTGRES_PASSWORD: rolefit
+      POSTGRES_DB: rolefit
+    ports:
+      - '5432:5432'
+    volumes:
+      - rolefit-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U rolefit -d rolefit']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rolefit-pgdata:

@@ -1,0 +1,8 @@
+.next
+node_modules
+coverage
+playwright-report
+test-results
+db/migrations
+package-lock.json
+*.min.*

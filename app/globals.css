@@ -1,0 +1,429 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   RoleFit Design System
+   Layer 1: primitives  ->  Layer 2: semantic tokens  ->  Layer 3: components
+   Never hard-code a colour, radius or shadow in a component. Use a token.
+   ========================================================================== */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ---------------------------------------------------------------- fonts */
+  --font-sans:
+    var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
+  /* --------------------------------------------------- primitive: signal  */
+  /* Brand blue. Precision, trust, alignment. */
+  --color-signal-50: #eff4ff;
+  --color-signal-100: #dbe6ff;
+  --color-signal-200: #bed3ff;
+  --color-signal-300: #91b6ff;
+  --color-signal-400: #5d8dfd;
+  --color-signal-500: #3865f8;
+  --color-signal-600: #2457e6;
+  --color-signal-700: #1a3fc4;
+  --color-signal-800: #1c379f;
+  --color-signal-900: #1d347e;
+  --color-signal-950: #16224d;
+
+  /* ----------------------------------------------------- primitive: ink   */
+  /* Cool neutral. Body text, surfaces, borders. */
+  --color-ink-50: #f7f8fa;
+  --color-ink-100: #eef0f4;
+  --color-ink-200: #dee1e9;
+  --color-ink-300: #c4cad7;
+  --color-ink-400: #949db1;
+  --color-ink-500: #6e7891;
+  --color-ink-600: #576079;
+  --color-ink-700: #474e62;
+  --color-ink-800: #3d4253;
+  --color-ink-900: #2a2e3b;
+  --color-ink-950: #14161e;
+
+  /* ---------------------------------------------------- primitive: ember  */
+  /* Accent. Reserved for marketing CTAs and high-emphasis moments only. */
+  --color-ember-50: #fff5ed;
+  --color-ember-100: #ffe8d4;
+  --color-ember-200: #ffcda8;
+  --color-ember-300: #ffaa70;
+  --color-ember-400: #fe7b37;
+  --color-ember-500: #fc5a11;
+  --color-ember-600: #e2560f;
+  --color-ember-700: #b53107;
+  --color-ember-800: #90280e;
+  --color-ember-900: #74240f;
+
+  /* ------------------------------------------------- primitive: semantic  */
+  --color-verdant-50: #ecfdf3;
+  --color-verdant-100: #d1fadf;
+  --color-verdant-200: #a6f4c5;
+  --color-verdant-500: #12b76a;
+  --color-verdant-600: #039855;
+  --color-verdant-700: #027a48;
+  --color-verdant-900: #054f31;
+
+  --color-caution-50: #fffaeb;
+  --color-caution-100: #fef0c7;
+  --color-caution-200: #fedf89;
+  --color-caution-500: #f79009;
+  --color-caution-600: #dc6803;
+  --color-caution-700: #b54708;
+  --color-caution-900: #7a2e0e;
+
+  --color-crimson-50: #fef3f2;
+  --color-crimson-100: #fee4e2;
+  --color-crimson-200: #fecdca;
+  --color-crimson-500: #f04438;
+  --color-crimson-600: #d92d20;
+  --color-crimson-700: #b42318;
+  --color-crimson-900: #7a271a;
+
+  --color-orchid-50: #f5f3ff;
+  --color-orchid-100: #ede9fe;
+  --color-orchid-200: #ddd6fe;
+  --color-orchid-500: #8b5cf6;
+  --color-orchid-600: #7c3aed;
+  --color-orchid-700: #6d28d9;
+  --color-orchid-900: #4c1d95;
+
+  /* ------------------------------------------------------ radius / shape  */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+
+  /* ------------------------------------------------------------ spacing   */
+  /* Density 6/10 - standard product density on a 4px base. */
+  --spacing: 0.25rem;
+
+  /* ------------------------------------------------------------ shadows   */
+  /* Sharp, low-spread. Swiss style: shadows delineate, they do not decorate. */
+  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(16 24 40 / 0.07), 0 1px 2px -1px rgb(16 24 40 / 0.05);
+  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.04);
+  --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.07), 0 4px 6px -2px rgb(16 24 40 / 0.03);
+  --shadow-xl: 0 20px 24px -4px rgb(16 24 40 / 0.08), 0 8px 8px -4px rgb(16 24 40 / 0.03);
+
+  /* ------------------------------------------------------------- motion   */
+  /* Motion dial 3/10 - subtle. Motion clarifies state, never entertains. */
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* ---------------------------------------------------------- typography  */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-2xs--letter-spacing: 0.02em;
+
+  /* --------------------------------------------------------- animations   */
+  --animate-fade-in: fade-in 0.24s var(--ease-out-quad) both;
+  --animate-rise: rise 0.34s var(--ease-out-expo) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ==========================================================================
+   Layer 2 - semantic surface tokens (light)
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --surface-canvas: var(--color-ink-50);
+  --surface-base: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: var(--color-ink-100);
+  --surface-overlay: #ffffff;
+  --surface-inverse: var(--color-ink-950);
+
+  --content-primary: var(--color-ink-950);
+  --content-secondary: var(--color-ink-700);
+  --content-tertiary: var(--color-ink-500);
+  --content-disabled: var(--color-ink-400);
+  --content-inverse: #ffffff;
+  --content-accent: var(--color-signal-700);
+
+  --border-subtle: var(--color-ink-200);
+  --border-default: var(--color-ink-300);
+  --border-strong: var(--color-ink-400);
+  --border-accent: var(--color-signal-600);
+
+  --surface-accent: var(--color-signal-600);
+  --surface-accent-hover: var(--color-signal-700);
+  --surface-accent-subtle: var(--color-signal-50);
+  --content-on-accent: #ffffff;
+
+  --surface-cta: var(--color-ember-600);
+  --surface-cta-hover: var(--color-ember-700);
+  --content-on-cta: #ffffff;
+
+  --surface-success: var(--color-verdant-50);
+  --border-success: var(--color-verdant-200);
+  --content-success: var(--color-verdant-700);
+  --surface-success-solid: var(--color-verdant-600);
+
+  --surface-warning: var(--color-caution-50);
+  --border-warning: var(--color-caution-200);
+  --content-warning: var(--color-caution-700);
+  --surface-warning-solid: var(--color-caution-600);
+
+  --surface-danger: var(--color-crimson-50);
+  --border-danger: var(--color-crimson-200);
+  --content-danger: var(--color-crimson-700);
+  --surface-danger-solid: var(--color-crimson-600);
+
+  --surface-info: var(--color-orchid-50);
+  --border-info: var(--color-orchid-200);
+  --content-info: var(--color-orchid-700);
+
+  --focus-ring: var(--color-signal-600);
+
+  /* Diff semantics - always paired with an icon or label, never colour alone */
+  --diff-added-bg: var(--color-verdant-50);
+  --diff-added-border: var(--color-verdant-200);
+  --diff-added-content: var(--color-verdant-900);
+  --diff-removed-bg: var(--color-crimson-50);
+  --diff-removed-border: var(--color-crimson-200);
+  --diff-removed-content: var(--color-crimson-900);
+  --diff-modified-bg: var(--color-signal-50);
+  --diff-modified-border: var(--color-signal-200);
+  --diff-modified-content: var(--color-signal-900);
+  --diff-reordered-bg: var(--color-orchid-50);
+  --diff-reordered-border: var(--color-orchid-200);
+  --diff-reordered-content: var(--color-orchid-900);
+}
+
+/* ==========================================================================
+   Layer 2 - semantic surface tokens (dark)
+   Dark is opt-in, never the default (anti-pattern per design review).
+   ========================================================================== */
+
+.dark {
+  color-scheme: dark;
+
+  --surface-canvas: #0b0d13;
+  --surface-base: #12151d;
+  --surface-raised: #191d27;
+  --surface-sunken: #0b0d13;
+  --surface-overlay: #191d27;
+  --surface-inverse: var(--color-ink-50);
+
+  --content-primary: #f4f6fa;
+  --content-secondary: #b9c0d0;
+  --content-tertiary: #8b93a7;
+  --content-disabled: #5b6274;
+  --content-inverse: var(--color-ink-950);
+  --content-accent: var(--color-signal-300);
+
+  --border-subtle: #262b38;
+  --border-default: #333949;
+  --border-strong: #454c60;
+  --border-accent: var(--color-signal-500);
+
+  --surface-accent: var(--color-signal-500);
+  --surface-accent-hover: var(--color-signal-400);
+  --surface-accent-subtle: color-mix(in oklab, var(--color-signal-500) 14%, #12151d);
+  --content-on-accent: #ffffff;
+
+  --surface-cta: var(--color-ember-500);
+  --surface-cta-hover: var(--color-ember-400);
+  --content-on-cta: #1a0d04;
+
+  --surface-success: color-mix(in oklab, var(--color-verdant-500) 14%, #12151d);
+  --border-success: color-mix(in oklab, var(--color-verdant-500) 32%, #12151d);
+  --content-success: var(--color-verdant-200);
+  --surface-success-solid: var(--color-verdant-500);
+
+  --surface-warning: color-mix(in oklab, var(--color-caution-500) 14%, #12151d);
+  --border-warning: color-mix(in oklab, var(--color-caution-500) 32%, #12151d);
+  --content-warning: var(--color-caution-200);
+  --surface-warning-solid: var(--color-caution-500);
+
+  --surface-danger: color-mix(in oklab, var(--color-crimson-500) 14%, #12151d);
+  --border-danger: color-mix(in oklab, var(--color-crimson-500) 32%, #12151d);
+  --content-danger: var(--color-crimson-200);
+  --surface-danger-solid: var(--color-crimson-500);
+
+  --surface-info: color-mix(in oklab, var(--color-orchid-500) 14%, #12151d);
+  --border-info: color-mix(in oklab, var(--color-orchid-500) 32%, #12151d);
+  --content-info: var(--color-orchid-200);
+
+  --focus-ring: var(--color-signal-400);
+
+  --diff-added-bg: color-mix(in oklab, var(--color-verdant-500) 12%, #12151d);
+  --diff-added-border: color-mix(in oklab, var(--color-verdant-500) 30%, #12151d);
+  --diff-added-content: var(--color-verdant-200);
+  --diff-removed-bg: color-mix(in oklab, var(--color-crimson-500) 12%, #12151d);
+  --diff-removed-border: color-mix(in oklab, var(--color-crimson-500) 30%, #12151d);
+  --diff-removed-content: var(--color-crimson-200);
+  --diff-modified-bg: color-mix(in oklab, var(--color-signal-500) 12%, #12151d);
+  --diff-modified-border: color-mix(in oklab, var(--color-signal-500) 30%, #12151d);
+  --diff-modified-content: var(--color-signal-200);
+  --diff-reordered-bg: color-mix(in oklab, var(--color-orchid-500) 12%, #12151d);
+  --diff-reordered-border: color-mix(in oklab, var(--color-orchid-500) 30%, #12151d);
+  --diff-reordered-content: var(--color-orchid-200);
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 16px -4px rgb(0 0 0 / 0.55), 0 4px 6px -2px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 24px -4px rgb(0 0 0 / 0.6), 0 8px 8px -4px rgb(0 0 0 / 0.4);
+}
+
+/* ==========================================================================
+   Base layer
+   ========================================================================== */
+
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--surface-canvas);
+    color: var(--content-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible, consistent focus for keyboard users only. Never removed. */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--surface-accent) 24%, transparent);
+    color: var(--content-primary);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+    font-weight: 650;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Inputs inherit type so mobile Safari does not auto-zoom below 16px. */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+@utility container-page {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  max-width: 80rem;
+}
+
+@utility skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-sunken) 0%,
+    color-mix(in oklab, var(--surface-sunken) 55%, var(--surface-base)) 50%,
+    var(--surface-sunken) 100%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+  border-radius: var(--radius-sm);
+}
+
+/* Print: the resume preview must print as a clean document. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    border: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* Respect the user's motion preference across the whole product. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
