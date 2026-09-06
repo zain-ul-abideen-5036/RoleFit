@@ -28,7 +28,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test"
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test",
+    "db:setup": "docker compose up -d postgres && tsx scripts/wait-for-db.ts && tsx scripts/migrate.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",

@@ -26,7 +26,7 @@ const baseEnv = {
   AI_PROVIDER: 'deterministic',
   // Satisfies the env contract so code paths that read configuration can be
   // unit tested. Integration suites override DATABASE_URL with a real one.
-  DATABASE_URL: 'postgresql://rolefit:rolefit@localhost:5432/rolefit_test',
+  DATABASE_URL: 'postgresql://rolefit:rolefit@localhost:5433/rolefit_test',
   AUTH_SECRET: 'unit-test-secret-value-long-enough-to-satisfy-validation-0123456789',
   STORAGE_DRIVER: 'local',
 } as const satisfies Partial<NodeJS.ProcessEnv>
@@ -68,7 +68,17 @@ export default defineConfig({
           name: 'integration',
           include: ['tests/integration/**/*.test.ts'],
           environment: 'node',
-          env: { ...baseEnv, STORAGE_DRIVER: 'local' },
+          env: {
+            ...baseEnv,
+            STORAGE_DRIVER: 'local',
+            // An explicit DATABASE_URL from the shell or CI wins; otherwise fall
+            // back to the local test database. Values in `env` override the
+            // real environment, so this has to be resolved here rather than
+            // left to `process.env`.
+            DATABASE_URL:
+              process.env.DATABASE_URL ??
+              'postgresql://rolefit:rolefit@localhost:5433/rolefit_test',
+          },
           setupFiles: ['tests/setup/integration.ts'],
           // Database-backed suites share one schema, so they must not run in
           // parallel processes against the same tables.
