@@ -185,7 +185,10 @@ function describeCoverage(matches: readonly RequirementMatch[], noun: string): s
   }.`
 }
 
-function summarizeChecks(ats: AtsReport, group: 'structure' | 'formatting' | 'completeness'): string {
+function summarizeChecks(
+  ats: AtsReport,
+  group: 'structure' | 'formatting' | 'completeness',
+): string {
   const relevant = ats.checks.filter((check) => check.group === group)
   const failed = relevant.filter((check) => check.status === 'fail').length
   const warned = relevant.filter((check) => check.status === 'warn').length
@@ -210,7 +213,10 @@ export function computeOverallScore(dimensions: readonly ScoreDimension[]): numb
  * for a missing requirement the advice is to gain or evidence the skill, not to
  * write it down.
  */
-export function buildRecommendations(input: ScoreInput, dimensions: ScoreDimension[]): Recommendation[] {
+export function buildRecommendations(
+  input: ScoreInput,
+  dimensions: ScoreDimension[],
+): Recommendation[] {
   const recommendations: Recommendation[] = []
   const { matches, keywordCoverage, ats } = input
 
@@ -225,7 +231,9 @@ export function buildRecommendations(input: ScoreInput, dimensions: ScoreDimensi
       detail:
         `This posting asks for ${missingRequired
           .slice(0, 4)
-          .map((match) => match.canonical ? skillLabel(match.canonical) : truncate(match.text, 60))
+          .map((match) =>
+            match.canonical ? skillLabel(match.canonical) : truncate(match.text, 60),
+          )
           .join(', ')}` +
         `. RoleFit will not add these to your resume, because your current resume does not support them. ` +
         `If you do have this experience, add it to your resume and re-run the analysis.`,

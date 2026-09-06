@@ -10,9 +10,7 @@ import { z } from 'zod'
  * storage credentials out of the browser bundle.
  */
 
-const booleanish = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((v) => v === 'true' || v === '1')
+const booleanish = z.enum(['true', 'false', '1', '0']).transform((v) => v === 'true' || v === '1')
 
 const envSchema = z
   .object({
@@ -24,7 +22,11 @@ const envSchema = z
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(5),
 
     AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
-    AUTH_SESSION_TTL: z.coerce.number().int().min(300).default(60 * 60 * 24 * 7),
+    AUTH_SESSION_TTL: z.coerce
+      .number()
+      .int()
+      .min(300)
+      .default(60 * 60 * 24 * 7),
 
     AI_PROVIDER: z.enum(['deterministic', 'anthropic', 'openai']).default('deterministic'),
     AI_API_KEY: z.string().optional(),
