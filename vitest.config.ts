@@ -15,6 +15,22 @@ const serverOnlyStub = fileURLToPath(
   new URL('./node_modules/server-only/empty.js', import.meta.url),
 )
 
+/**
+ * Environment shared by every suite. Set here rather than in a setup file
+ * because `process.env.NODE_ENV` is typed readonly and assigning to it is a
+ * compile error under strict TypeScript.
+ */
+const baseEnv = {
+  NODE_ENV: 'test',
+  LOG_LEVEL: 'error',
+  AI_PROVIDER: 'deterministic',
+  // Satisfies the env contract so code paths that read configuration can be
+  // unit tested. Integration suites override DATABASE_URL with a real one.
+  DATABASE_URL: 'postgresql://rolefit:rolefit@localhost:5432/rolefit_test',
+  AUTH_SECRET: 'unit-test-secret-value-long-enough-to-satisfy-validation-0123456789',
+  STORAGE_DRIVER: 'local',
+} as const satisfies Partial<NodeJS.ProcessEnv>
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -25,9 +41,6 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    // Node 20+ ships a global crypto; make sure suites see the same one the
-    // application uses for ids and hashing.
-    environment: 'node',
     projects: [
       {
         extends: true,
@@ -35,7 +48,7 @@ export default defineConfig({
           name: 'unit',
           include: ['tests/unit/**/*.test.ts'],
           environment: 'node',
-          setupFiles: ['tests/setup/unit.ts'],
+          env: baseEnv,
         },
       },
       {
@@ -45,7 +58,8 @@ export default defineConfig({
           name: 'unit-dom',
           include: ['tests/unit/**/*.test.tsx'],
           environment: 'jsdom',
-          setupFiles: ['tests/setup/unit.ts', 'tests/setup/dom.ts'],
+          env: baseEnv,
+          setupFiles: ['tests/setup/dom.ts'],
         },
       },
       {
@@ -54,9 +68,11 @@ export default defineConfig({
           name: 'integration',
           include: ['tests/integration/**/*.test.ts'],
           environment: 'node',
+          env: { ...baseEnv, STORAGE_DRIVER: 'local' },
           setupFiles: ['tests/setup/integration.ts'],
-          // Database-backed suites share one schema; run them in sequence.
-          fileParallelism: false,
+          // Database-backed suites share one schema, so they must not run in
+          // parallel processes against the same tables.
+          poolOptions: { forks: { singleFork: true } },
           testTimeout: 30_000,
           hookTimeout: 60_000,
         },
