@@ -76,6 +76,13 @@ Add every variable above to the Production environment, and a separate set
 pointing at a **different database and bucket** for Preview. Preview deployments
 sharing production data is how test accounts end up in a real user's dashboard.
 
+You do **not** need to set `NEXT_PUBLIC_APP_URL` for Preview: a preview
+deployment's hostname is generated per-deployment and cannot be known in
+advance, so the CSRF check trusts the platform-provided `VERCEL_URL`,
+`VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL`. These come from the
+platform, not from a request header, so a forged `Host` cannot influence them —
+which is why `Host` itself stays untrusted in production.
+
 `vercel.json` already sets the region and per-route `maxDuration`.
 
 ### 3. Migrate

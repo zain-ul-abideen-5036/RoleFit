@@ -28,6 +28,35 @@ function normalizeOrigin(value: string): string | null {
   }
 }
 
+/**
+ * Hostnames the hosting platform assigns to this deployment.
+ *
+ * A preview deployment runs with `NODE_ENV=production` on a generated hostname
+ * that cannot be known when the environment is configured. These variables are
+ * injected by the platform itself, not by a request, so trusting them does not
+ * hand an attacker anything: a forged `Host` header cannot change them.
+ *
+ * Deriving the set this way is what allows the `Host` header to stay untrusted
+ * in production, which is the property that actually matters — `Host` is
+ * attacker-controlled, and trusting it would defeat the check entirely.
+ */
+function platformOrigins(): string[] {
+  const hosts = [
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ]
+
+  return (
+    hosts
+      .filter((host): host is string => Boolean(host))
+      // The platform supplies a bare hostname; deployments are always HTTPS.
+      .map((host) => (host.includes('://') ? host : `https://${host}`))
+      .map(normalizeOrigin)
+      .filter((origin): origin is string => origin !== null)
+  )
+}
+
 /** Origins permitted to make state-changing requests. */
 function allowedOrigins(request: Request): Set<string> {
   const env = getEnv()
@@ -36,9 +65,11 @@ function allowedOrigins(request: Request): Set<string> {
   const configured = normalizeOrigin(env.NEXT_PUBLIC_APP_URL)
   if (configured) allowed.add(configured)
 
-  // Vercel preview deployments get a generated hostname that cannot be known
-  // ahead of time. Trust the Host header only for the request's own origin, and
-  // only outside production where a fixed public URL is configured.
+  for (const origin of platformOrigins()) allowed.add(origin)
+
+  // Outside production the `Host` header is trusted so that a developer can
+  // reach the app on localhost, a LAN address or a tunnel without configuring
+  // each one. It is never trusted in production, where it is attacker-supplied.
   const host = request.headers.get('host')
   if (host && env.NODE_ENV !== 'production') {
     allowed.add(`http://${host}`)

@@ -128,6 +128,33 @@ const envSchema = z
         })
       }
 
+      // NEXT_PUBLIC_APP_URL falls back to a localhost default, which is right
+      // for development and catastrophic in production: it becomes the only
+      // origin the CSRF check accepts, so every sign-in, upload and export is
+      // refused. The failure is silent at startup and total at runtime.
+      //
+      // The test is whether the variable was *set*, not whether it looks like
+      // localhost — serving a production build on localhost is a legitimate
+      // thing to do (local verification, the end-to-end suite), and there the
+      // value is deliberate and correct. A platform-provided deployment URL
+      // also counts as configured, since a preview deployment has no fixed
+      // hostname anyone could have set in advance.
+      const wasExplicitlySet = Boolean(process.env.NEXT_PUBLIC_APP_URL?.trim())
+      const hasPlatformUrl = Boolean(
+        process.env.VERCEL_URL ??
+        process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+        process.env.VERCEL_BRANCH_URL,
+      )
+
+      if (!wasExplicitlySet && !hasPlatformUrl) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['NEXT_PUBLIC_APP_URL'],
+          message:
+            'NEXT_PUBLIC_APP_URL must be set to the public origin in production (for example https://rolefit.app). Unset, it falls back to localhost and the CSRF origin check then rejects every sign-in, upload and export.',
+        })
+      }
+
       // The local storage driver writes to the filesystem, which is ephemeral
       // on serverless platforms — a generated document would vanish between
       // invocations. That is fatal there, but perfectly workable for a
