@@ -111,6 +111,7 @@ export default defineConfig({
         'lib/matching/**/*.ts',
         'lib/optimization/**/*.ts',
         'lib/parsing/**/*.ts',
+        'lib/storage/**/*.ts',
         'lib/errors.ts',
         'lib/utils.ts',
       ],
@@ -120,7 +121,6 @@ export default defineConfig({
         '**/__testing**',
         // Covered by the integration suite (real PostgreSQL).
         'lib/security/**',
-        'lib/storage/**',
         'lib/config/**',
         'server/**',
         // Covered by Playwright against a production build.

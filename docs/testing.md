@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 203   | ~4s     | Pure functions. No database, network or model. |
+| Unit                         | 248   | ~5s     | Pure functions. No database, network or model. |
 | Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -91,6 +91,35 @@ content starts a new page rather than drawing below the bottom margin, and dates
 are right-aligned to the margin. That is stricter than eyeballing a render, and
 it runs on every commit.
 
+### Object storage — 45 unit tests
+
+Three levels, separated because they buy different things.
+
+**Local driver** — the real filesystem driver against a real temporary
+directory, no mocks: byte-for-byte round trip, generated documents, deletion
+being idempotent, and no direct URL (local objects are streamed through an
+authenticated route instead).
+
+**Signing** — the real S3 driver and the real AWS signer with placeholder
+credentials. `getSignedUrl` performs no I/O, so this asserts the exact URL a
+provider would receive with no network and no account. It pins the Backblaze B2
+endpoint shape (`s3.<region>.backblazeb2.com/<bucket>/<key>`), the signing
+region, the expiry, the download filename, and that the application key never
+appears in the URL.
+
+**Commands** — the real SDK command objects with only the network send stubbed,
+so assertions run against the request the driver actually builds: bucket, key,
+content type, `ServerSideEncryption`, the checksum in metadata, and the absence
+of any public ACL. Provider failures must surface as `STORAGE_FAILURE` without
+leaking the upstream message, which names a key id and a bucket.
+
+Across all three, a key the driver did not generate is refused before anything
+is written, read, deleted or signed — traversal, an unknown namespace, a
+non-UUID owner, an absolute path.
+
+**No test here reaches a real provider.** Nothing has been run against a live
+Backblaze account; that requires credentials CI does not have.
+
 ### CSRF origin verification — 21 unit tests
 
 Security and availability in one file, deliberately: a change that fixes one of
@@ -169,31 +198,32 @@ silently drift from what the product actually produces.
 
 Each was a real bug, fixed rather than tested around.
 
-| Found by | Defect                                                                                                                                                                                     |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Unit     | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                     |
-| Unit     | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                             |
-| Unit     | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                        |
-| Unit     | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                |
-| Unit     | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                               |
-| E2E      | The environment validator refused to start any production build using the local storage driver                                                                                             |
-| E2E      | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                               |
-| E2E      | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                 |
-| E2E      | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                          |
-| Audit    | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                         |
-| Audit    | The resume preview scrolled but was not keyboard-focusable                                                                                                                                 |
-| Audit    | The job description parser emitted the same requirement in two categories                                                                                                                  |
-| Unit     | A location on a shared contact line was never extracted                                                                                                                                    |
-| Unit     | Custom resume sections were dropped from short resumes                                                                                                                                     |
-| Unit     | A job posting with no section headings yielded no skills at all                                                                                                                            |
-| Audit    | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))           |
-| Audit    | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21)) |
+| Found by | Defect                                                                                                                                                                                                            |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit     | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                                            |
+| Unit     | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                                                    |
+| Unit     | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                                               |
+| Unit     | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                                       |
+| Unit     | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                                                      |
+| E2E      | The environment validator refused to start any production build using the local storage driver                                                                                                                    |
+| E2E      | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                                                      |
+| E2E      | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                                        |
+| E2E      | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                                                 |
+| Audit    | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                                                |
+| Audit    | The resume preview scrolled but was not keyboard-focusable                                                                                                                                                        |
+| Audit    | The job description parser emitted the same requirement in two categories                                                                                                                                         |
+| Unit     | A location on a shared contact line was never extracted                                                                                                                                                           |
+| Unit     | Custom resume sections were dropped from short resumes                                                                                                                                                            |
+| Unit     | A job posting with no section headings yielded no skills at all                                                                                                                                                   |
+| Audit    | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                                  |
+| Audit    | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                        |
+| Unit     | The `STORAGE_BUCKET` "required when s3" check could never fire, because the field is defaulted — forgetting it silently addressed a bucket named after the default, which on Backblaze B2 belongs to someone else |
 
 ## Coverage
 
 `npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
-over the domain logic the unit suite owns. Current: **88% statements, 79%
-branches, 89% functions**.
+over the domain logic the unit suite owns. Current: **88% statements, 80%
+branches, 90% functions**.
 
 The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
 `server/` are excluded because they are covered by the integration suite against
