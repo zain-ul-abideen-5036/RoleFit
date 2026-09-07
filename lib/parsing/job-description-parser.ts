@@ -247,7 +247,18 @@ export function parseJobDescription(
     .flatMap(([, sectionLines]) => toStatements(sectionLines))
     .join('\n')
 
-  const requiredCorpus = [...requiredStatements, ...responsibilityStatements].join('\n')
+  // A posting with no recognisable section headings puts everything in the
+  // "other" bucket. Without this fallback such a posting yields no skills at
+  // all, which is a worse answer than treating its prose as requirements.
+  const otherStatements = toStatements(buckets.get('other') ?? [])
+  const hasStructure = requiredStatements.length > 0 || responsibilityStatements.length > 0
+
+  const requiredCorpus = (
+    hasStructure
+      ? [...requiredStatements, ...responsibilityStatements]
+      : [...requiredStatements, ...responsibilityStatements, ...otherStatements]
+  ).join('\n')
+
   const preferredCorpus = preferredStatements.join('\n')
 
   // Skills named in a "preferred" block are preferred; everything else that is

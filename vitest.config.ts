@@ -88,17 +88,49 @@ export default defineConfig({
         },
       },
     ],
+    /**
+     * Coverage is scoped to the pure domain logic the unit suite actually owns.
+     *
+     * Everything excluded below is covered — by the integration suite against a
+     * real database, or by Playwright against a production build. Including it
+     * here would report those modules as 0% and force the threshold down to a
+     * number that means nothing, which is worse than not measuring them.
+     *
+     * `npm run test:integration` and `npm run test:e2e` are where the rest is
+     * verified. See docs/testing.md.
+     */
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['lib/**/*.ts', 'server/**/*.ts'],
-      exclude: ['**/*.d.ts', 'lib/**/types.ts', '**/__testing**'],
+      include: [
+        'lib/ai/**/*.ts',
+        'lib/ats/**/*.ts',
+        'lib/documents/**/*.ts',
+        'lib/domain/**/*.ts',
+        'lib/matching/**/*.ts',
+        'lib/optimization/**/*.ts',
+        'lib/parsing/**/*.ts',
+        'lib/errors.ts',
+        'lib/utils.ts',
+      ],
+      exclude: [
+        '**/*.d.ts',
+        'lib/**/types.ts',
+        '**/__testing**',
+        // Covered by the integration suite (real PostgreSQL).
+        'lib/security/**',
+        'lib/storage/**',
+        'lib/config/**',
+        'server/**',
+        // Covered by Playwright against a production build.
+        'lib/client/**',
+      ],
       thresholds: {
-        lines: 70,
-        functions: 70,
+        lines: 80,
+        functions: 80,
         branches: 70,
-        statements: 70,
+        statements: 80,
       },
     },
   },

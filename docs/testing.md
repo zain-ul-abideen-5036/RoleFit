@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 114   | ~2s     | Pure functions. No database, network or model. |
+| Unit                         | 182   | ~4s     | Pure functions. No database, network or model. |
 | Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -39,6 +39,30 @@ Every case feeds the validator output a cooperative model would never produce:
 
 And the cases that must _pass_: aligning `Postgres` to `PostgreSQL`, preserving
 an existing `35%` exactly, and reordering without flagging it as fabrication.
+
+### Provider adapters — 26 unit tests
+
+The Anthropic and OpenAI adapters talk to a mocked `fetch`, never a real API.
+What they verify is the behaviour that only appears under failure: schema
+repair with the specific issues fed back, failing closed rather than returning
+partially-valid data, retrying a 429 but not a 400, aborting on timeout, a
+fresh fence nonce per request, and never leaking an upstream error body — an
+invalid-API-key response must not put the key in a user-facing message.
+
+Before these existed the adapters sat at 7% coverage: entirely unexercised code
+that talks to a paid API.
+
+### Parsing — 42 unit tests
+
+Upload validation is treated as the security control it is: an HTML file
+renamed `.pdf`, a `.xlsx` renamed `.docx`, a legacy `.doc`, an encrypted PDF, an
+empty file, an oversized file, and a declared MIME type that contradicts the
+bytes. Filename sanitisation is tested against directory traversal in both
+separator styles.
+
+The resume parser is tested for what it extracts _and_ for what it refuses to
+invent: no name when the first line is not name-like, null contact fields when
+the resume has none, and a number inside a URL not mistaken for a phone number.
 
 ### Matching — 30 unit tests
 
@@ -139,14 +163,26 @@ Each was a real bug, fixed rather than tested around.
 | E2E      | Rate limits were not configurable, so a full pass tripped the signup limiter                                                   |
 | E2E      | The uploader accepted a file before React hydrated and silently dropped it                                                     |
 | E2E      | Server components threw a 401 that logged a stack trace on every signed-out visit                                              |
+| Audit    | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                             |
+| Audit    | The resume preview scrolled but was not keyboard-focusable                                                                     |
+| Audit    | The job description parser emitted the same requirement in two categories                                                      |
+| Unit     | A location on a shared contact line was never extracted                                                                        |
+| Unit     | Custom resume sections were dropped from short resumes                                                                         |
+| Unit     | A job posting with no section headings yielded no skills at all                                                                |
 
 ## Coverage
 
-`npm run test:coverage` enforces 70% on lines, functions, branches and
-statements across `lib/` and `server/`.
+`npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
+over the domain logic the unit suite owns. Current: **88% statements, 79%
+branches, 89% functions**.
 
-The threshold is deliberately modest and the suite deliberately targeted.
-Coverage measures which lines ran, not whether the guarantees hold; the 40
+The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
+`server/` are excluded because they are covered by the integration suite against
+a real database, and `lib/client` by Playwright against a production build.
+Including them would report those modules as 0% and force the threshold down to
+a number that means nothing.
+
+Coverage measures which lines ran, not whether the guarantees hold. The 40
 adversarial anti-fabrication tests are worth more than the percentage they add.
 
 ## Continuous integration

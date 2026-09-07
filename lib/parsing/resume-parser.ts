@@ -167,15 +167,27 @@ function parsePersonalDetails(headerLines: readonly string[]): PersonalDetails {
     first.split(/\s+/).length <= 5
   const fullName = isNameLike ? first : null
 
-  // A location line has a comma and no contact markers, e.g. "Berlin, Germany".
+  // A location looks like "Berlin, Germany" or "San Francisco, CA". It is
+  // usually one field on a delimited contact line rather than a line of its
+  // own, so each line is split before matching — requiring a whole-line match
+  // misses the overwhelmingly common single-line contact header.
+  const LOCATION_RE = /^[A-Za-z][A-Za-z .'-]*,\s*[A-Za-z][A-Za-z .'-]{1,}$/
   let location: string | null = null
-  for (const line of headerLines.slice(0, 5)) {
-    const trimmed = line.trim()
-    if (trimmed === fullName) continue
-    if (EMAIL_RE.test(trimmed) || /https?:|www\./i.test(trimmed)) continue
-    if (/^[A-Za-z .'-]+,\s*[A-Za-z .'-]{2,}$/.test(trimmed) && trimmed.length <= 60) {
-      location = trimmed
-      break
+
+  for (const line of headerLines.slice(0, 6)) {
+    if (location) break
+
+    for (const part of line.split(/[|•·]|\s{3,}/)) {
+      const candidate = part.trim()
+      if (!candidate || candidate === fullName || candidate.length > 60) continue
+      if (EMAIL_RE.test(candidate) || /https?:|www\./i.test(candidate)) continue
+      // A phone number can contain a comma-free run of letters; require no digits.
+      if (/\d/.test(candidate)) continue
+
+      if (LOCATION_RE.test(candidate)) {
+        location = candidate
+        break
+      }
     }
   }
 
@@ -529,7 +541,11 @@ export function parseResumeText(rawText: string, options: ParseResumeOptions = {
       return
     }
 
-    if (looksLikeCustomHeading(trimmed) && index > headerLineLimit) {
+    // Only after a recognised section has been seen. Before that we are still
+    // in the contact block, where a name is also Title Case and would be
+    // misread as a heading. Keying off a fixed line number instead dropped
+    // custom sections from short resumes entirely.
+    if (looksLikeCustomHeading(trimmed) && currentKey !== null) {
       if (index < firstHeadingIndex) firstHeadingIndex = index
       currentCustom = { heading: trimmed.replace(/[:\s]+$/, ''), lines: [] }
       customSections.push(currentCustom)
