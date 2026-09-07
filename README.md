@@ -117,6 +117,23 @@ and never presents the score without that caveat.
 | Storage    | S3-compatible, or local for development    | Server-generated keys only                                                |
 | Testing    | Vitest, Playwright                         | Unit, integration against real PostgreSQL, E2E against a production build |
 
+### Intended production architecture
+
+Not yet deployed — this is the target the configuration and documentation are
+written against, on four services that each have a free tier and none of which
+requires a payment card to sign up.
+
+| Component        | Service                      | Holds                                       |
+| ---------------- | ---------------------------- | ------------------------------------------- |
+| Application      | Vercel                       | The Next.js app                             |
+| Database         | Neon (PostgreSQL)            | Accounts, resumes, analyses, change history |
+| Document storage | Backblaze B2 (S3-compatible) | Uploaded resumes, generated PDF and DOCX    |
+| Rate limiting    | Upstash (Redis)              | Counters shared across instances            |
+
+The storage layer is a generic S3 driver, so AWS S3, Cloudflare R2 and MinIO
+work through the same variables. [`docs/deployment.md`](docs/deployment.md) is a
+step-by-step walkthrough.
+
 ## Quick start
 
 Requires Node 20+, npm, and Docker (for PostgreSQL).
@@ -147,14 +164,16 @@ and `AI_API_KEY` in `.env.local`.
 
 Every variable is documented in [`.env.example`](.env.example). The essentials:
 
-| Variable            | Required        | Notes                                                        |
-| ------------------- | --------------- | ------------------------------------------------------------ |
-| `DATABASE_URL`      | yes             | PostgreSQL connection string                                 |
-| `AUTH_SECRET`       | yes             | 32+ random bytes; signs session JWTs                         |
-| `AI_PROVIDER`       | no              | `deterministic` (default), `anthropic`, `openai`             |
-| `AI_API_KEY`        | if provider set | Server-side only, never exposed to the browser               |
-| `STORAGE_DRIVER`    | no              | `local` (default) or `s3`; must be `s3` on serverless        |
-| `RATE_LIMIT_DRIVER` | no              | `memory` (default) or `upstash`; use `upstash` in production |
+| Variable            | Required        | Notes                                                          |
+| ------------------- | --------------- | -------------------------------------------------------------- |
+| `DATABASE_URL`      | yes             | PostgreSQL connection string                                   |
+| `AUTH_SECRET`       | yes             | 32+ random bytes; signs session JWTs                           |
+| `AI_PROVIDER`       | no              | `deterministic` (default), `anthropic`, `openai`               |
+| `AI_API_KEY`        | if provider set | Server-side only, never exposed to the browser                 |
+| `STORAGE_DRIVER`    | no              | `local` (default) or `s3`; must be `s3` on serverless          |
+| `STORAGE_REGION`    | if `s3`         | No default — it signs the request, so a wrong value fails late |
+| `STORAGE_BUCKET`    | if `s3`         | No default — B2 bucket names are globally unique               |
+| `RATE_LIMIT_DRIVER` | no              | `memory` (default) or `upstash`; use `upstash` in production   |
 
 Configuration is validated at startup and fails with every invalid key listed
 at once, rather than erroring deep inside a request handler.

@@ -37,6 +37,29 @@ function isServerlessPlatform(): boolean {
   )
 }
 
+/**
+ * The region embedded in an S3-compatible endpoint hostname, if it has one.
+ *
+ * Backblaze B2 (`s3.us-west-004.backblazeb2.com`) and AWS S3
+ * (`s3.eu-central-1.amazonaws.com`) both name their region in the host.
+ * Cloudflare R2 and MinIO do not, and return `null` here rather than a guess.
+ *
+ * The segment must look like a region — two or more letters, a word, a number
+ * — so `s3.amazonaws.com` does not yield a "region" of `amazonaws`.
+ */
+function regionFromEndpoint(endpoint: string | undefined): string | null {
+  if (!endpoint) return null
+
+  let host: string
+  try {
+    host = new URL(endpoint.includes('://') ? endpoint : `https://${endpoint}`).hostname
+  } catch {
+    return null
+  }
+
+  return /^s3\.([a-z]{2,}-[a-z]+-\d{1,3})\./.exec(host)?.[1] ?? null
+}
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -96,7 +119,7 @@ const envSchema = z
     }
 
     if (value.STORAGE_DRIVER === 's3') {
-      for (const key of ['STORAGE_ACCESS_KEY', 'STORAGE_SECRET_KEY', 'STORAGE_BUCKET'] as const) {
+      for (const key of ['STORAGE_ACCESS_KEY', 'STORAGE_SECRET_KEY'] as const) {
         if (!value[key]) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -104,6 +127,46 @@ const envSchema = z
             message: `${key} is required when STORAGE_DRIVER is "s3"`,
           })
         }
+      }
+
+      // Checked against the raw variable rather than the parsed value, because
+      // this field is defaulted: a `!value.STORAGE_BUCKET` test can never fire,
+      // so forgetting it silently addressed a bucket named after the default.
+      // Bucket names are per-account at best and globally unique on Backblaze
+      // B2, so no default can be right for someone else's account.
+      if (!process.env.STORAGE_BUCKET?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['STORAGE_BUCKET'],
+          message:
+            'STORAGE_BUCKET must be set explicitly when STORAGE_DRIVER is "s3". Bucket names are globally unique on Backblaze B2, so the built-in default will not be your bucket.',
+        })
+      }
+
+      // The region is part of the SigV4 signature, so a wrong one is not a
+      // routing mistake that fails loudly — it is a signature mismatch that
+      // surfaces as an opaque 403 on the first upload, long after startup.
+      // `auto` is correct for Cloudflare R2 and wrong everywhere else, so a
+      // default cannot be right for every provider: require it explicitly.
+      if (!process.env.STORAGE_REGION?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['STORAGE_REGION'],
+          message:
+            'STORAGE_REGION must be set explicitly when STORAGE_DRIVER is "s3". It is part of the request signature, so a wrong value fails as an opaque 403 on the first upload rather than at startup. Backblaze B2: the region inside your endpoint, e.g. "us-west-004". AWS S3: the bucket region, e.g. "eu-central-1". Cloudflare R2: "auto".',
+        })
+      }
+
+      // Many S3-compatible endpoints carry their region in the hostname, which
+      // makes a mismatch checkable rather than merely documented. Endpoints
+      // that do not (R2, MinIO) simply skip this.
+      const endpointRegion = regionFromEndpoint(value.STORAGE_ENDPOINT)
+      if (endpointRegion && endpointRegion !== value.STORAGE_REGION) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['STORAGE_REGION'],
+          message: `STORAGE_REGION is "${value.STORAGE_REGION}" but STORAGE_ENDPOINT points at region "${endpointRegion}". They must match, because the endpoint decides where the request goes and the region decides how it is signed.`,
+        })
       }
     }
 
