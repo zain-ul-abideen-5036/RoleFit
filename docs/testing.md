@@ -1,10 +1,13 @@
 # Testing
 
-| Suite       | Count | Runtime | Runs against                                   |
-| ----------- | ----- | ------- | ---------------------------------------------- |
-| Unit        | 114   | ~2s     | Pure functions. No database, network or model. |
-| Integration | 27    | ~25s    | A real PostgreSQL instance.                    |
-| End-to-end  | 12    | ~40s    | A production build in Chromium.                |
+| Suite                        | Count | Runtime | Runs against                                   |
+| ---------------------------- | ----- | ------- | ---------------------------------------------- |
+| Unit                         | 114   | ~2s     | Pure functions. No database, network or model. |
+| Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
+| End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
+| Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
+
+Both browser suites run under `npm run test:e2e` — 31 tests in total.
 
 ```bash
 npm test                  # unit
@@ -74,6 +77,21 @@ untouched afterwards.
 
 E2E additionally covers unauthenticated API access (401), a state-changing
 request with no `Origin` header (403), and one from a foreign origin (403).
+
+### Accessibility and responsive — 19 tests
+
+axe (WCAG 2.2 AA tags) runs against every public page, the landing page in dark
+mode, and every authenticated screen with real data in it — dashboard, all four
+optimize steps, change review, preview, history, the full analysis page and
+settings. The dashboard is additionally scanned in dark mode at 390px.
+
+Beyond axe: eight breakpoints from 320px to 1920px are checked for horizontal
+overflow, the mobile drawer is asserted to trap focus and restore it to the
+trigger on Escape, the skip link is asserted to be the first tab stop, and the
+sign-in form is completed with the keyboard alone.
+
+Automated checks catch roughly a third of accessibility problems. They are a
+floor, not a certificate.
 
 ### Full journey — end-to-end
 
