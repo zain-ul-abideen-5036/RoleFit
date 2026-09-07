@@ -48,7 +48,10 @@ export default defineConfig({
   webServer: {
     command: `npm run start -- --port ${PORT}`,
     url: `${BASE_URL}/api/health`,
-    reuseExistingServer: !process.env.CI,
+    // Always start a fresh server. Reusing whatever happens to be on the port
+    // means testing a stale build, which produces failures and — worse —
+    // passes that describe code no longer in the tree.
+    reuseExistingServer: false,
     timeout: 180_000,
     stdout: 'pipe',
     stderr: 'pipe',

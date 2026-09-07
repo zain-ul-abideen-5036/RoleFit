@@ -45,13 +45,22 @@ export function ResumeDocument({
         </header>
       ) : null}
 
+      {/*
+        The compact variant scrolls, so it must be reachable by keyboard —
+        a scroll container that only responds to a mouse wheel strands anyone
+        navigating with a keyboard or switch device. `paper` does not scroll,
+        so it stays out of the tab order.
+      */}
       <div
         data-testid="resume-body"
+        {...(paper
+          ? {}
+          : { tabIndex: 0, role: 'group', 'aria-label': `${title ?? 'Resume'} content` })}
         className={cn(
           'print-sheet',
           paper
             ? 'mx-auto max-w-[52rem] px-8 py-10 sm:px-12 sm:py-14'
-            : 'max-h-[32rem] overflow-y-auto px-5 py-5',
+            : 'max-h-[32rem] overflow-y-auto px-5 py-5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring',
         )}
       >
         {blocks.map((block, index) => (

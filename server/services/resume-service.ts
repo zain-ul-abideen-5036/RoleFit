@@ -96,7 +96,7 @@ export async function ingestResume(input: IngestResumeInput): Promise<IngestResu
 
   const record: CreateResumeInput = {
     userId: input.userId,
-    title: (input.title?.trim() || stripExtension(validated.displayFilename)).slice(0, 200),
+    title: (input.title?.trim() || deriveTitle(validated.displayFilename, profile)).slice(0, 200),
     originalFilename: validated.displayFilename,
     sourceFormat: validated.format,
     sizeBytes: validated.sizeBytes,
@@ -119,6 +119,27 @@ export async function ingestResume(input: IngestResumeInput): Promise<IngestResu
   return { resume, signals: extraction.signals, deduplicated: false }
 }
 
-function stripExtension(filename: string): string {
-  return sanitizeFilename(filename).replace(/\.(pdf|docx)$/i, '')
+/**
+ * A label the user will recognise in a list.
+ *
+ * Filenames are frequently generic — `resume.pdf`, `cv-final-2.docx` — and
+ * reading "resume" back to someone in a list of their resumes is useless. The
+ * parsed candidate name is preferred when the parser found one; otherwise the
+ * filename is tidied rather than shown raw.
+ */
+function deriveTitle(filename: string, profile: ResumeProfile): string {
+  const base = sanitizeFilename(filename).replace(/\.(pdf|docx)$/i, '')
+  const generic = /^(resume|cv|my[\s_-]?resume|untitled|document)([\s_-]*\d*)$/i.test(base.trim())
+
+  const name = profile.personal.fullName?.trim()
+  if (name && (generic || base.trim().length === 0)) return `${name} — Resume`
+
+  if (base.trim().length === 0) return 'Resume'
+
+  // Tidy separators so "avery_chen-resume" reads as "Avery Chen Resume".
+  return base
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\p{Ll}/gu, (character) => character.toUpperCase())
 }

@@ -5,6 +5,7 @@ import {
   cleanDocumentText,
   haystackContains,
   normalizeBulletGlyphs,
+  normalizeText,
   toTokenHaystack,
   toTokenNeedle,
 } from '@/lib/matching/normalize'
@@ -328,7 +329,34 @@ export function parseJobDescription(
 
   profile.keywords = buildKeywords(requirementCorpus, profile)
 
+  // A degree line legitimately matches both the qualifications sweep and the
+  // education sweep, so the same sentence can be extracted twice. Left in, the
+  // user is shown the identical gap twice and it is double-counted in the
+  // score. Deduplicate across every category, keeping the first occurrence so
+  // the more specific category wins.
+  dedupeAcrossCategories(profile)
+
   return profile
+}
+
+/** Removes a requirement that already appeared in an earlier category. */
+function dedupeAcrossCategories(profile: JobDescriptionProfile): void {
+  const seen = new Set<string>()
+
+  const keep = (requirement: Requirement): boolean => {
+    const key = requirement.canonical ?? normalizeText(requirement.text)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  }
+
+  // Order matters: earlier categories are the more specific classification.
+  profile.requiredSkills = profile.requiredSkills.filter(keep)
+  profile.preferredSkills = profile.preferredSkills.filter(keep)
+  profile.certifications = profile.certifications.filter(keep)
+  profile.education = profile.education.filter(keep)
+  profile.qualifications = profile.qualifications.filter(keep)
+  profile.responsibilities = profile.responsibilities.filter(keep)
 }
 
 /**
