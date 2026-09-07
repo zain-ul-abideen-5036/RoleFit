@@ -237,7 +237,13 @@ function matchRequirement(
   }
 
   if (!candidate) {
-    return { ...base, status: 'missing' as const, confidence: 0, method: 'none' as const, evidence: [] }
+    return {
+      ...base,
+      status: 'missing' as const,
+      confidence: 0,
+      method: 'none' as const,
+      evidence: [],
+    }
   }
 
   return {

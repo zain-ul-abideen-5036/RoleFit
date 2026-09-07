@@ -14,11 +14,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-import type {
-  AnalysisReport,
-  JobDescriptionProfile,
-  ResumeProfile,
-} from '@/lib/domain/types'
+import type { AnalysisReport, JobDescriptionProfile, ResumeProfile } from '@/lib/domain/types'
 import type { AtsReport } from '@/lib/ats/types'
 import type { ChangeSet } from '@/lib/optimization/types'
 
@@ -26,11 +22,25 @@ import type { ChangeSet } from '@/lib/optimization/types'
    Enums
    ========================================================================== */
 
-export const documentKindEnum = pgEnum('document_kind', ['source_resume', 'generated_pdf', 'generated_docx'])
+export const documentKindEnum = pgEnum('document_kind', [
+  'source_resume',
+  'generated_pdf',
+  'generated_docx',
+])
 export const sourceFormatEnum = pgEnum('source_format', ['pdf', 'docx'])
 export const runStatusEnum = pgEnum('run_status', ['queued', 'running', 'succeeded', 'failed'])
-export const changeActionEnum = pgEnum('change_action', ['added', 'modified', 'removed', 'reordered'])
-export const changeDecisionEnum = pgEnum('change_decision', ['pending', 'accepted', 'rejected', 'edited'])
+export const changeActionEnum = pgEnum('change_action', [
+  'added',
+  'modified',
+  'removed',
+  'reordered',
+])
+export const changeDecisionEnum = pgEnum('change_decision', [
+  'pending',
+  'accepted',
+  'rejected',
+  'edited',
+])
 export const usageKindEnum = pgEnum('usage_kind', ['analysis', 'optimization', 'document_export'])
 export const auditActionEnum = pgEnum('audit_action', [
   'user.signup',
@@ -266,7 +276,10 @@ export const changeRecords = pgTable(
     /** Why the change was proposed, in plain language. */
     rationale: text('rationale').notNull(),
     /** Source spans from the original resume that justify the rewrite. */
-    evidence: jsonb('evidence').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    evidence: jsonb('evidence')
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     decision: changeDecisionEnum('decision').notNull().default('pending'),
     /** Populated when the user hand-edits the proposed text. */
     editedText: text('edited_text'),

@@ -5,7 +5,7 @@ export default defineConfig({
   out: './db/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'postgresql://rolefit:rolefit@localhost:5432/rolefit',
+    url: process.env.DATABASE_URL ?? 'postgresql://rolefit:rolefit@localhost:5433/rolefit',
   },
   strict: true,
   verbose: true,

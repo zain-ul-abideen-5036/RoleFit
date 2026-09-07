@@ -165,8 +165,7 @@ export const errors = {
     new AppError(ERROR_CODES.FORBIDDEN, context ? { context } : {}),
   notFound: (context?: Record<string, unknown>) =>
     new AppError(ERROR_CODES.NOT_FOUND, context ? { context } : {}),
-  conflict: (message?: string) =>
-    new AppError(ERROR_CODES.CONFLICT, message ? { message } : {}),
+  conflict: (message?: string) => new AppError(ERROR_CODES.CONFLICT, message ? { message } : {}),
   rateLimited: (retryAfterSeconds: number) =>
     new AppError(ERROR_CODES.RATE_LIMITED, { retryAfterSeconds }),
   internal: (cause?: unknown, context?: Record<string, unknown>) =>

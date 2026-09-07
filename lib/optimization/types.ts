@@ -43,6 +43,15 @@ export const proposedChangeSchema = z.object({
   addressesRequirements: z.array(entryIdSchema).max(20).default([]),
   /** High-impact changes are surfaced first and default to explicit review. */
   impact: z.enum(['high', 'medium', 'low']).default('medium'),
+  /**
+   * For `reordered` changes: the proposed order, as entry ids (experience and
+   * projects) or as the skill items themselves.
+   *
+   * Held structurally rather than parsed back out of `after`, so that rejecting
+   * a reorder is as reversible as rejecting a rewrite — the final document is
+   * always rebuilt from the original plus the decisions the user actually made.
+   */
+  orderedItems: z.array(z.string().max(200)).max(80).nullable().default(null),
 })
 
 export const changeSetSchema = z.object({

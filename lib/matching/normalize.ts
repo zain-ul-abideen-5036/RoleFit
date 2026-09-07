@@ -42,7 +42,15 @@ const PUNCTUATED_TECH: ReadonlyArray<readonly [RegExp, string]> = [
 ]
 
 /** Characters that behave like separators once punctuation is folded away. */
-const SEPARATORS = /[\s/\\|,;:()[\]{}<>"'`~!?@#$%^&*_=+‐‑‒–—―-]+/g
+const SEPARATORS = /[\s/\\|,;:()[\]{}<>"`~!?@#$%^&*_=+‐‑‒–—―-]+/g
+
+/**
+ * Possessives and contractions. Handled by deletion rather than by treating the
+ * apostrophe as a separator, which would leave a meaningless "s" token behind
+ * and let "teammate's review" drift away from "teammate review".
+ */
+const POSSESSIVE = /'s\b/g
+const APOSTROPHE = /'/g
 
 /**
  * Folds a raw string to comparable form: lower case, no diacritics, normalized
@@ -66,6 +74,8 @@ export function normalizeText(input: string): string {
 
   return (
     text
+      .replace(POSSESSIVE, '')
+      .replace(APOSTROPHE, '')
       // a period that ends a word is punctuation, not part of a token
       .replace(/\.(?=\s|$)/g, ' ')
       .replace(SEPARATORS, ' ')

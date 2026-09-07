@@ -10,9 +10,32 @@ import { z } from 'zod'
  * storage credentials out of the browser bundle.
  */
 
-const booleanish = z
-  .enum(['true', 'false', '1', '0'])
-  .transform((v) => v === 'true' || v === '1')
+const booleanish = z.enum(['true', 'false', '1', '0']).transform((v) => v === 'true' || v === '1')
+
+/**
+ * Configuration problems that are not fatal but should be seen.
+ *
+ * Collected during parsing and emitted once, after validation succeeds — a
+ * warning raised inside `superRefine` would be lost if a later issue aborted
+ * the parse.
+ */
+const warnings: string[] = []
+
+/**
+ * Whether the process runs on a platform with an ephemeral filesystem.
+ *
+ * Detected rather than assumed, so a self-hosted production deployment (or an
+ * end-to-end run against a production build) is not held to a constraint that
+ * does not apply to it.
+ */
+function isServerlessPlatform(): boolean {
+  return Boolean(
+    process.env.VERCEL ??
+    process.env.AWS_LAMBDA_FUNCTION_NAME ??
+    process.env.NETLIFY ??
+    process.env.CF_PAGES,
+  )
+}
 
 const envSchema = z
   .object({
@@ -24,7 +47,11 @@ const envSchema = z
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(5),
 
     AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
-    AUTH_SESSION_TTL: z.coerce.number().int().min(300).default(60 * 60 * 24 * 7),
+    AUTH_SESSION_TTL: z.coerce
+      .number()
+      .int()
+      .min(300)
+      .default(60 * 60 * 24 * 7),
 
     AI_PROVIDER: z.enum(['deterministic', 'anthropic', 'openai']).default('deterministic'),
     AI_API_KEY: z.string().optional(),
@@ -42,6 +69,12 @@ const envSchema = z
     STORAGE_SIGNED_URL_TTL: z.coerce.number().int().min(30).max(3600).default(300),
 
     RATE_LIMIT_DRIVER: z.enum(['memory', 'upstash']).default('memory'),
+    /**
+     * Scales every rate-limit bucket. Exists so load tests and end-to-end runs
+     * can exercise the real limiter rather than bypassing it. Leave at 1 in
+     * production: raising it weakens abuse protection across the board.
+     */
+    RATE_LIMIT_MULTIPLIER: z.coerce.number().min(1).max(100).default(1),
     UPSTASH_REDIS_REST_URL: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
@@ -94,13 +127,39 @@ const envSchema = z
           message: 'AUTH_SECRET still holds the placeholder value from .env.example',
         })
       }
+
+      // The local storage driver writes to the filesystem, which is ephemeral
+      // on serverless platforms — a generated document would vanish between
+      // invocations. That is fatal there, but perfectly workable for a
+      // self-hosted deployment, a container with a volume, or an end-to-end
+      // run against a production build. So this fails only where it is
+      // genuinely broken, and warns everywhere else rather than refusing to
+      // start.
       if (value.STORAGE_DRIVER === 'local') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['STORAGE_DRIVER'],
-          message:
-            'STORAGE_DRIVER=local is not durable on serverless hosting. Use "s3" in production.',
-        })
+        if (isServerlessPlatform()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['STORAGE_DRIVER'],
+            message:
+              'STORAGE_DRIVER=local cannot be used on serverless hosting: the filesystem does not persist between invocations. Set STORAGE_DRIVER=s3.',
+          })
+        } else {
+          warnings.push(
+            'STORAGE_DRIVER=local in production. Generated documents are stored on the local filesystem and will be lost if it is not persistent.',
+          )
+        }
+      }
+
+      if (value.RATE_LIMIT_MULTIPLIER > 1) {
+        warnings.push(
+          `RATE_LIMIT_MULTIPLIER=${value.RATE_LIMIT_MULTIPLIER} in production. Every rate limit is ${value.RATE_LIMIT_MULTIPLIER}x its intended value.`,
+        )
+      }
+
+      if (value.RATE_LIMIT_DRIVER === 'memory') {
+        warnings.push(
+          'RATE_LIMIT_DRIVER=memory in production. Limits are per-instance and will not hold across a horizontally scaled deployment. Set RATE_LIMIT_DRIVER=upstash.',
+        )
       }
     }
   })
@@ -117,6 +176,7 @@ let cached: Env | null = null
 export function getEnv(): Env {
   if (cached) return cached
 
+  warnings.length = 0
   const parsed = envSchema.safeParse(process.env)
 
   if (!parsed.success) {
@@ -124,6 +184,12 @@ export function getEnv(): Env {
       .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
       .join('\n')
     throw new Error(`Invalid environment configuration:\n${details}`)
+  }
+
+  for (const warning of warnings) {
+    // Written directly rather than through the logger: the logger reads
+    // configuration, and this runs while configuration is still being resolved.
+    process.stderr.write(`[rolefit] configuration warning: ${warning}\n`)
   }
 
   cached = parsed.data

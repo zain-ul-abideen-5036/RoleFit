@@ -128,6 +128,78 @@
   --animate-shimmer: shimmer 1.6s linear infinite;
 }
 
+/* ==========================================================================
+   Semantic utility mapping
+   `@theme inline` keeps these as references rather than resolved values, so
+   `bg-surface` follows the light/dark token swap at runtime. This is what lets
+   components read as `bg-surface text-fg border-line` instead of carrying raw
+   variable syntax everywhere.
+   ========================================================================== */
+
+@theme inline {
+  --color-canvas: var(--surface-canvas);
+  --color-surface: var(--surface-base);
+  --color-raised: var(--surface-raised);
+  --color-sunken: var(--surface-sunken);
+  --color-overlay: var(--surface-overlay);
+  --color-inverse: var(--surface-inverse);
+
+  --color-fg: var(--content-primary);
+  --color-fg-muted: var(--content-secondary);
+  --color-fg-subtle: var(--content-tertiary);
+  --color-fg-disabled: var(--content-disabled);
+  --color-fg-inverse: var(--content-inverse);
+  --color-fg-accent: var(--content-accent);
+
+  --color-line: var(--border-subtle);
+  --color-line-strong: var(--border-default);
+  --color-line-bold: var(--border-strong);
+  --color-line-accent: var(--border-accent);
+
+  --color-accent: var(--surface-accent);
+  --color-accent-hover: var(--surface-accent-hover);
+  --color-accent-subtle: var(--surface-accent-subtle);
+  --color-on-accent: var(--content-on-accent);
+
+  --color-cta: var(--surface-cta);
+  --color-cta-hover: var(--surface-cta-hover);
+  --color-on-cta: var(--content-on-cta);
+
+  --color-success-bg: var(--surface-success);
+  --color-success-line: var(--border-success);
+  --color-success-fg: var(--content-success);
+  --color-success-solid: var(--surface-success-solid);
+
+  --color-warning-bg: var(--surface-warning);
+  --color-warning-line: var(--border-warning);
+  --color-warning-fg: var(--content-warning);
+  --color-warning-solid: var(--surface-warning-solid);
+
+  --color-danger-bg: var(--surface-danger);
+  --color-danger-line: var(--border-danger);
+  --color-danger-fg: var(--content-danger);
+  --color-danger-solid: var(--surface-danger-solid);
+
+  --color-info-bg: var(--surface-info);
+  --color-info-line: var(--border-info);
+  --color-info-fg: var(--content-info);
+
+  --color-ring: var(--focus-ring);
+
+  --color-diff-added-bg: var(--diff-added-bg);
+  --color-diff-added-line: var(--diff-added-border);
+  --color-diff-added-fg: var(--diff-added-content);
+  --color-diff-removed-bg: var(--diff-removed-bg);
+  --color-diff-removed-line: var(--diff-removed-border);
+  --color-diff-removed-fg: var(--diff-removed-content);
+  --color-diff-modified-bg: var(--diff-modified-bg);
+  --color-diff-modified-line: var(--diff-modified-border);
+  --color-diff-modified-fg: var(--diff-modified-content);
+  --color-diff-reordered-bg: var(--diff-reordered-bg);
+  --color-diff-reordered-line: var(--diff-reordered-border);
+  --color-diff-reordered-fg: var(--diff-reordered-content);
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
