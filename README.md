@@ -184,9 +184,10 @@ at once, rather than erroring deep inside a request handler.
 
 The suites are weighted towards the guarantees that matter: 40 unit tests
 attack the anti-fabrication validator, 9 integration tests and 4 E2E tests
-attempt cross-account access, and the PDF renderer is verified geometrically —
-margins, line overlap, hard-wrapping and pagination are asserted from the real
-glyph positions in the output file.
+attempt cross-account access, the PDF renderer is verified geometrically —
+margins, line overlap, hard-wrapping and pagination asserted from the real glyph
+positions in the output file — and axe runs against every page in both themes
+with zero violations.
 
 See [docs/testing.md](docs/testing.md).
 
