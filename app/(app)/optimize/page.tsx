@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { OptimizeWizard } from '@/components/app/optimize-wizard'
-import { requireUser } from '@/server/auth/service'
+import { requirePageUser } from '@/server/auth/service'
 import { listResumes } from '@/server/repositories'
 
 export const metadata: Metadata = {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function OptimizePage() {
-  const user = await requireUser()
+  const user = await requirePageUser()
   const resumes = await listResumes(user.userId, 12)
 
   return (

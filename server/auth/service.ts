@@ -2,6 +2,8 @@ import 'server-only'
 
 import { createHash } from 'node:crypto'
 
+import { redirect } from 'next/navigation'
+
 import { and, eq, sql } from 'drizzle-orm'
 
 import { auditRecords, profiles, users, type User } from '@/db/schema'
@@ -260,10 +262,29 @@ export async function getCurrentUser(): Promise<AuthContext | null> {
   return { userId: user.id, email: user.email }
 }
 
-/** Resolves the current user or throws 401. Use at the top of every API route. */
+/**
+ * Resolves the current user or throws 401.
+ *
+ * For API routes. In a server component use `requirePageUser` instead: an
+ * unauthenticated page visit is an ordinary redirect, not an error, and
+ * throwing here would log a stack trace for every signed-out visitor.
+ */
 export async function requireUser(): Promise<AuthContext> {
   const user = await getCurrentUser()
   if (!user) throw errors.unauthenticated()
+  return user
+}
+
+/**
+ * Resolves the current user for a server component, redirecting to sign-in
+ * when there is no session.
+ *
+ * `redirect()` throws a control-flow signal Next.js understands, so nothing is
+ * reported as an application error.
+ */
+export async function requirePageUser(): Promise<AuthContext> {
+  const user = await getCurrentUser()
+  if (!user) redirect('/login')
   return user
 }
 

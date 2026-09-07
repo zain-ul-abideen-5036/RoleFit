@@ -46,6 +46,17 @@ export function ResumeUploader({
   const [error, setError] = React.useState<string | null>(null)
   const [fileName, setFileName] = React.useState<string | null>(null)
 
+  /**
+   * Uploading is driven entirely by a change handler, which does not exist
+   * until React hydrates. Presenting an enabled control before that point lets
+   * a fast user pick a file that is then silently dropped, with the UI still
+   * inviting them to choose one. The control is disabled until it truly works.
+   */
+  const [ready, setReady] = React.useState(false)
+  React.useEffect(() => {
+    setReady(true)
+  }, [])
+
   const upload = React.useCallback(
     async (file: File): Promise<void> => {
       setError(null)
@@ -128,6 +139,9 @@ export function ResumeUploader({
           type="file"
           accept={UPLOAD.acceptAttribute}
           className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          disabled={!ready}
           onChange={(event) => {
             const file = event.target.files?.[0]
             if (file) void upload(file)
@@ -141,6 +155,7 @@ export function ResumeUploader({
           className="mt-5"
           loading={uploading}
           loadingLabel="Uploading…"
+          disabled={!ready || uploading}
           onClick={() => inputRef.current?.click()}
         >
           Choose file

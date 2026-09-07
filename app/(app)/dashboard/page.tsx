@@ -10,7 +10,7 @@ import { Badge, EmptyState } from '@/components/ui/feedback'
 import { ScoreDisclaimer } from '@/components/ui/score'
 import { scoreBand } from '@/lib/constants'
 import { formatRelative, pluralize } from '@/lib/utils'
-import { requireUser } from '@/server/auth/service'
+import { requirePageUser } from '@/server/auth/service'
 import {
   getDashboardStats,
   listAnalyses,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const user = await requireUser()
+  const user = await requirePageUser()
 
   const [stats, resumes, analyses, runs] = await Promise.all([
     getDashboardStats(user.userId),

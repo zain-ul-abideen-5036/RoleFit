@@ -46,6 +46,7 @@ export function ResumeDocument({
       ) : null}
 
       <div
+        data-testid="resume-body"
         className={cn(
           'print-sheet',
           paper

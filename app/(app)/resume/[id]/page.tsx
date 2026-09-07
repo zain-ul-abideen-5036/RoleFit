@@ -13,7 +13,7 @@ import { Badge, EmptyState } from '@/components/ui/feedback'
 import { activeCapabilities } from '@/lib/ai'
 import { AppError } from '@/lib/errors'
 import { formatDate, pluralize } from '@/lib/utils'
-import { requireUser } from '@/server/auth/service'
+import { requirePageUser } from '@/server/auth/service'
 import {
   latestRunForResume,
   listChangeRecords,
@@ -40,7 +40,7 @@ export default async function ResumePage({
 }) {
   const { id } = await params
   const { run: runParam } = await searchParams
-  const user = await requireUser()
+  const user = await requirePageUser()
 
   let resume
   try {

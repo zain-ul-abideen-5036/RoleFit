@@ -91,7 +91,7 @@ function Hero() {
             {[
               'PDF and DOCX in and out',
               'Explainable readiness score',
-              'You approve every change',
+              'You review every change',
             ].map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <CheckCircle2 className="size-4 text-success-solid" aria-hidden="true" />
@@ -130,7 +130,7 @@ const STEPS = [
   {
     Icon: SlidersHorizontal,
     title: 'Review every change',
-    body: 'Rewrites are proposed with the original text alongside and a reason for each. Accept, edit or reject them individually. Nothing ships without your say-so.',
+    body: 'Rewrites are proposed with the original text alongside and a reason for each. Accept, edit or reject them individually. Minor tidy-ups start accepted so you are not clicking through trivia, and every one can be undone.',
   },
   {
     Icon: FileDown,

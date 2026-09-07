@@ -171,12 +171,19 @@ export async function consumeRateLimit(
   bucket: RateLimitBucket,
   identifier: string,
 ): Promise<RateLimitResult> {
-  const rule = RATE_LIMITS[bucket]
+  const env = getEnv()
+  const base = RATE_LIMITS[bucket]
+
+  // Scaling the ceiling rather than the window keeps burst behaviour and reset
+  // timing identical, so a test run exercises the real limiter.
+  const rule: RateLimitRule = {
+    limit: Math.ceil(base.limit * env.RATE_LIMIT_MULTIPLIER),
+    windowSeconds: base.windowSeconds,
+  }
+
   const key = `rolefit:rl:${bucket}:${identifier}`
 
-  return getEnv().RATE_LIMIT_DRIVER === 'upstash'
-    ? upstashConsume(key, rule)
-    : memoryConsume(key, rule)
+  return env.RATE_LIMIT_DRIVER === 'upstash' ? upstashConsume(key, rule) : memoryConsume(key, rule)
 }
 
 /** Consumes one unit and throws a 429 when the bucket is exhausted. */

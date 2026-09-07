@@ -10,7 +10,7 @@ import { Badge, EmptyState } from '@/components/ui/feedback'
 import { ScoreDisclaimer } from '@/components/ui/score'
 import { scoreBand } from '@/lib/constants'
 import { formatBytes, formatDateTime, pluralize } from '@/lib/utils'
-import { requireUser } from '@/server/auth/service'
+import { requirePageUser } from '@/server/auth/service'
 import { listAnalyses, listGeneratedDocuments, listOptimizationRuns } from '@/server/repositories'
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function HistoryPage() {
-  const user = await requireUser()
+  const user = await requirePageUser()
 
   const [analyses, runs, documents] = await Promise.all([
     listAnalyses(user.userId, 50),

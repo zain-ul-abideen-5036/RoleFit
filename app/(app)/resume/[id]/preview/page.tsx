@@ -5,7 +5,7 @@ import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { ExportBar } from '@/components/app/export-bar'
 import { ResumeDocument } from '@/components/app/resume-document'
 import { AppError } from '@/lib/errors'
-import { requireUser } from '@/server/auth/service'
+import { requirePageUser } from '@/server/auth/service'
 import { latestRunForResume, requireOptimizationRun, requireResume } from '@/server/repositories'
 import { buildDecidedProfile } from '@/server/services/optimization-service'
 
@@ -33,7 +33,7 @@ export default async function PreviewPage({
 }) {
   const { id } = await params
   const { run: runParam } = await searchParams
-  const user = await requireUser()
+  const user = await requirePageUser()
 
   let resume
   try {

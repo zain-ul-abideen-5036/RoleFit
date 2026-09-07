@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/feedback'
 import { profiles } from '@/db/schema'
 import { activeCapabilities, activeProviderName } from '@/lib/ai'
 import { PRODUCT } from '@/lib/constants'
-import { requireUser } from '@/server/auth/service'
+import { requirePageUser } from '@/server/auth/service'
 import { getDashboardStats } from '@/server/repositories'
 import { getDb } from '@/server/db/client'
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  const user = await requireUser()
+  const user = await requirePageUser()
 
   const [profile, stats] = await Promise.all([
     getDb().query.profiles.findFirst({

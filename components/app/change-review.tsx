@@ -81,6 +81,7 @@ export function ChangeReview({
   const accepted = changes.filter(
     (change) => change.decision === 'accepted' || change.decision === 'edited',
   )
+  const rejected = changes.filter((change) => change.decision === 'rejected')
 
   async function decide(id: string, decision: Decision, editedText?: string): Promise<void> {
     setBusyId(id)
@@ -197,6 +198,7 @@ export function ChangeReview({
             {pending.length > 0 ? (
               <Badge tone="warning">{pending.length} awaiting your decision</Badge>
             ) : null}
+            {rejected.length > 0 ? <Badge tone="neutral">{rejected.length} rejected</Badge> : null}
             <Badge tone="neutral">Engine: {provider}</Badge>
           </div>
 
@@ -216,7 +218,9 @@ export function ChangeReview({
           <div>
             <CardTitle as="h2">Proposed changes</CardTitle>
             <CardDescription>
-              Nothing is written into your document until you accept it.
+              Substantive rewrites wait for your decision. Minor tidy-ups — a reorder, a single-word
+              swap — start accepted so you are not clicking through trivia, and every one can be
+              undone.
             </CardDescription>
           </div>
           {pending.length > 0 ? (

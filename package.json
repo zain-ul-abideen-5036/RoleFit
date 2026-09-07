@@ -12,7 +12,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css}\"",
@@ -29,7 +29,8 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test",
-    "db:setup": "docker compose up -d postgres && tsx scripts/wait-for-db.ts && tsx scripts/migrate.ts"
+    "db:setup": "docker compose up -d postgres && tsx scripts/wait-for-db.ts && tsx scripts/migrate.ts",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",
@@ -71,6 +72,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@playwright/test": "^1.50.1",
     "@tailwindcss/postcss": "^4.0.6",
     "@testing-library/dom": "^10.4.0",
