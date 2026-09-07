@@ -172,9 +172,14 @@ export function SiteFooter({ className }: { className?: string }) {
               <ul className="mt-4 flex flex-col gap-2.5">
                 {section.links.map((link) => (
                   <li key={link.href}>
+                    {/*
+                      inline-flex with vertical padding, so the link is a real
+                      24px+ target. An inline anchor's padding does not grow its
+                      layout box, which leaves an 18px tap target on a phone.
+                    */}
                     <Link
                       href={link.href}
-                      className="rounded text-sm text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      className="inline-flex min-h-6 items-center rounded py-0.5 text-sm text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     >
                       {link.label}
                     </Link>
@@ -192,7 +197,7 @@ export function SiteFooter({ className }: { className?: string }) {
           <div className="flex items-center gap-4">
             <a
               href={PRODUCT.repository}
-              className="rounded text-xs text-fg-subtle transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex min-h-6 items-center rounded text-xs text-fg-subtle transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               rel="noreferrer noopener"
               target="_blank"
             >

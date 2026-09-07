@@ -274,23 +274,57 @@ export function ChangeReview({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="flex flex-col gap-2">
-              {unaddressed.map((entry) => (
-                <li
-                  key={entry.requirementId}
-                  className="rounded-lg border border-line bg-canvas px-3.5 py-3"
-                >
-                  <p className="text-sm text-fg">{entry.text}</p>
-                  <p className="mt-1 text-xs text-fg-subtle">{entry.reason}</p>
-                </li>
-              ))}
-            </ul>
+            <UnaddressedList entries={unaddressed} />
           </CardContent>
         </Card>
       ) : null}
 
       <p className="text-center text-xs text-fg-subtle">
         Reviewing resume <span className="font-mono">{resumeId.slice(0, 8)}</span>
+      </p>
+    </div>
+  )
+}
+
+/**
+ * The gap list.
+ *
+ * A demanding posting can produce twenty or more gaps, and an undifferentiated
+ * wall of them buries the changes the user is actually here to review. The
+ * first few are shown and the rest are one disclosure away — every gap is still
+ * reachable, none is hidden.
+ */
+const VISIBLE_GAPS = 6
+
+function UnaddressedList({ entries }: { entries: UnaddressedRequirement[] }) {
+  const [expanded, setExpanded] = React.useState(false)
+  const visible = expanded ? entries : entries.slice(0, VISIBLE_GAPS)
+  const hidden = entries.length - visible.length
+
+  return (
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-2">
+        {visible.map((entry) => (
+          <li
+            key={entry.requirementId}
+            className="rounded-lg border border-line bg-canvas px-3.5 py-2.5"
+          >
+            <p className="text-sm text-fg">{entry.text}</p>
+          </li>
+        ))}
+      </ul>
+
+      {hidden > 0 || expanded ? (
+        <div>
+          <Button variant="secondary" size="sm" onClick={() => setExpanded((value) => !value)}>
+            {expanded ? 'Show fewer' : `Show all ${entries.length}`}
+          </Button>
+        </div>
+      ) : null}
+
+      <p className="text-xs leading-relaxed text-fg-subtle">
+        Your resume contains no evidence for these, so nothing was written about them. If you do
+        have this experience, add it to your resume and run the analysis again.
       </p>
     </div>
   )
@@ -482,6 +516,13 @@ function describePath(path: string): string {
     return `${section} · bullet ${Number(bullet[2]) + 1}`
   }
 
-  if (path.startsWith('skills.')) return 'Skills order'
+  // `skills.skill-2.items` — the group id alone is meaningless to a reader,
+  // but two identically-labelled cards are worse, so surface the number.
+  const skills = /^skills\.([A-Za-z0-9_-]+)\.items$/.exec(path)
+  if (skills) {
+    const ordinal = /(\d+)$/.exec(skills[1] ?? '')?.[1]
+    return ordinal ? `Skills group ${ordinal}` : 'Skills order'
+  }
+
   return path
 }

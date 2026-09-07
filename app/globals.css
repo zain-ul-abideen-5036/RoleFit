@@ -38,7 +38,9 @@
   --color-ink-200: #dee1e9;
   --color-ink-300: #c4cad7;
   --color-ink-400: #949db1;
-  --color-ink-500: #6e7891;
+  /* 5.40:1 on white, 5.08:1 on the canvas. The previous #6e7891 measured
+     4.41:1 and failed WCAG AA for normal text. */
+  --color-ink-500: #616a82;
   --color-ink-600: #576079;
   --color-ink-700: #474e62;
   --color-ink-800: #3d4253;
@@ -260,8 +262,11 @@
   --surface-accent-subtle: var(--color-signal-50);
   --content-on-accent: #ffffff;
 
-  --surface-cta: var(--color-ember-600);
-  --surface-cta-hover: var(--color-ember-700);
+  /* White on ember-600 measures 3.77:1 and fails AA. ember-700 measures
+     6.16:1 and ember-800 8.41:1, while still reading unmistakably as the
+     warm conversion accent. */
+  --surface-cta: var(--color-ember-700);
+  --surface-cta-hover: var(--color-ember-800);
   --content-on-cta: #ffffff;
 
   --surface-success: var(--color-verdant-50);
