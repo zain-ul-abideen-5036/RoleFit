@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 182   | ~4s     | Pure functions. No database, network or model. |
+| Unit                         | 203   | ~4s     | Pure functions. No database, network or model. |
 | Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -91,6 +91,23 @@ content starts a new page rather than drawing below the bottom margin, and dates
 are right-aligned to the margin. That is stricter than eyeballing a render, and
 it runs on every commit.
 
+### CSRF origin verification — 21 unit tests
+
+Security and availability in one file, deliberately: a change that fixes one of
+these tends to break the other, and #21 was exactly that — a check so strict it
+refused the deployment itself.
+
+Refused: a foreign origin; a foreign origin on a preview deployment; the `Host`
+header in production, which is attacker-supplied; a request carrying neither
+`Origin` nor `Referer`; a foreign `Referer` when `Origin` is absent. A rejection
+never names the origin it expected.
+
+Allowed: the configured origin; each of the three platform-provided origins
+(`VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`); a
+`Referer` fallback; the `Host` header outside production, so a LAN address or a
+tunnel works without configuration; and a production build served on localhost,
+which is what local verification and the end-to-end suite do.
+
 ### Authorization — 9 integration + 4 E2E tests
 
 A second account attempts to read, delete and generate from the first account's
@@ -152,23 +169,25 @@ silently drift from what the product actually produces.
 
 Each was a real bug, fixed rather than tested around.
 
-| Found by | Defect                                                                                                                         |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Unit     | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                         |
-| Unit     | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere |
-| Unit     | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_            |
-| Unit     | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                    |
-| Unit     | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                   |
-| E2E      | The environment validator refused to start any production build using the local storage driver                                 |
-| E2E      | Rate limits were not configurable, so a full pass tripped the signup limiter                                                   |
-| E2E      | The uploader accepted a file before React hydrated and silently dropped it                                                     |
-| E2E      | Server components threw a 401 that logged a stack trace on every signed-out visit                                              |
-| Audit    | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                             |
-| Audit    | The resume preview scrolled but was not keyboard-focusable                                                                     |
-| Audit    | The job description parser emitted the same requirement in two categories                                                      |
-| Unit     | A location on a shared contact line was never extracted                                                                        |
-| Unit     | Custom resume sections were dropped from short resumes                                                                         |
-| Unit     | A job posting with no section headings yielded no skills at all                                                                |
+| Found by | Defect                                                                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit     | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                     |
+| Unit     | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                             |
+| Unit     | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                        |
+| Unit     | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                |
+| Unit     | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                               |
+| E2E      | The environment validator refused to start any production build using the local storage driver                                                                                             |
+| E2E      | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                               |
+| E2E      | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                 |
+| E2E      | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                          |
+| Audit    | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                         |
+| Audit    | The resume preview scrolled but was not keyboard-focusable                                                                                                                                 |
+| Audit    | The job description parser emitted the same requirement in two categories                                                                                                                  |
+| Unit     | A location on a shared contact line was never extracted                                                                                                                                    |
+| Unit     | Custom resume sections were dropped from short resumes                                                                                                                                     |
+| Unit     | A job posting with no section headings yielded no skills at all                                                                                                                            |
+| Audit    | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))           |
+| Audit    | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21)) |
 
 ## Coverage
 
