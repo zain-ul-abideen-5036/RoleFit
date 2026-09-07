@@ -1,31 +1,35 @@
 # GitHub workflow
 
-> **Status.** This repository has a complete local history — feature branches,
-> conventional commits, and PR-shaped `--no-ff` merge commits into `main`. It has
-> **not** been pushed, and no issues or pull requests exist on GitHub, because
-> the environment this was built in had no GitHub credentials (`gh` was not
-> installed and no `GITHUB_TOKEN` was present).
+> **Status.** Published to
+> [zain-ul-abideen-5036/RoleFit](https://github.com/zain-ul-abideen-5036/RoleFit).
+> The full local history is on `main` — feature branches, conventional commits
+> and PR-shaped `--no-ff` merge commits — along with all branches, 11 labels and
+> 18 issues.
 >
-> Everything needed to create them is here. [`seed.sh`](seed.sh) creates the
-> labels and issues in one command once you have authenticated.
+> **On pull requests.** The five branches that built the platform were merged
+> locally before the repository had credentials, so GitHub refuses a retroactive
+> PR for them: `No commits between main and feature/core-platform`. Rather than
+> manufacture changes to force a diff, the merge commits on `main` are left as
+> the record of that work, and each delivered issue was closed with a comment
+> citing the merge commit that delivered it. Work from here uses the full
+> branch → PR → review → merge flow.
 
-## Pushing
+## Cloning
 
 ```bash
-gh auth login                     # or: export GITHUB_TOKEN=...
-git remote add origin https://github.com/zain-ul-abideen-5036/RoleFit.git
-git push -u origin main
-git push origin --all             # feature branches, for the history
+gh repo clone zain-ul-abideen-5036/RoleFit
 ```
 
-## Creating the labels and issues
+## Re-seeding labels and issues
+
+Already applied to the repository. The script is idempotent, so re-running it
+updates the labels and skips any issue whose exact title already exists — useful
+when forking the project or restoring a label someone deleted.
 
 ```bash
 cd docs/github
 ./seed.sh
 ```
-
-The script is idempotent — re-running it will not duplicate labels or issues.
 
 ## Branching model
 
