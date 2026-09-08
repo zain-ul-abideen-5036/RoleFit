@@ -281,9 +281,11 @@ describe('no changes at all', () => {
   it('says so rather than rendering an empty list', () => {
     render(<ChangeReview {...props({ changes: [] })} />)
 
-    // An optimization that proposed nothing is a real outcome — often the right
-    // one — and has to read as such rather than as a failure.
-    expect(screen.getByText(/no changes/i)).toBeInTheDocument()
+    // An optimization that proposed nothing is a real outcome and has to read
+    // as such rather than as a failure — but it must also say which outcome it
+    // was, which is what `describeNoChanges` decides. The default props use the
+    // rule-based engine.
+    expect(screen.getByText(/found nothing it could change/i)).toBeInTheDocument()
   })
 
   it('offers no bulk controls with nothing to decide', () => {
@@ -373,5 +375,85 @@ describe('an addition', () => {
 
     const list = screen.getByText('Added').closest('li') ?? document.body
     expect(within(list).getByText('Reordered skills to lead with Python.')).toBeInTheDocument()
+  })
+})
+
+describe('an empty result explains itself', () => {
+  /**
+   * The reported bug: a resume scoring 36 produced no changes, and the screen
+   * answered "Your resume already reads clearly for this role" beneath a green
+   * tick — while listing, directly below, the requirements it had just declined
+   * to address. The reader's reasonable conclusion was that optimization was
+   * broken.
+   */
+
+  it('does not congratulate a resume that scored badly', () => {
+    render(<ChangeReview {...props({ changes: [], baselineScore: 36, canRewriteProse: false })} />)
+
+    expect(screen.queryByText(/already reads clearly/i)).not.toBeInTheDocument()
+  })
+
+  it('names the engine as the reason when it cannot rewrite prose', () => {
+    render(<ChangeReview {...props({ changes: [], baselineScore: 36, canRewriteProse: false })} />)
+
+    expect(screen.getByText(/rule-based engine found nothing/i)).toBeInTheDocument()
+    expect(screen.getByText(/does not rewrite sentences/i)).toBeInTheDocument()
+  })
+
+  it('ties the empty result to the unaddressed requirements', () => {
+    // The two were presented as unrelated, which is what made the screen read
+    // as self-contradictory.
+    render(
+      <ChangeReview
+        {...props({
+          changes: [],
+          baselineScore: 36,
+          canRewriteProse: false,
+          unaddressed: [
+            { requirementId: 'r1', text: 'Kubernetes in production', reason: 'No evidence' },
+            { requirementId: 'r2', text: 'Terraform', reason: 'No evidence' },
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/cannot act on the 2 requirements below/i)).toBeInTheDocument()
+  })
+
+  it('says the gap needs real experience when a real provider found nothing', () => {
+    render(
+      <ChangeReview
+        {...props({
+          changes: [],
+          baselineScore: 36,
+          canRewriteProse: true,
+          provider: 'anthropic',
+          unaddressed: [
+            { requirementId: 'r1', text: 'Kubernetes in production', reason: 'No evidence' },
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/adding real experience rather than rewording/i)).toBeInTheDocument()
+  })
+
+  it('still congratulates a genuinely strong match', () => {
+    // The original copy was not wrong, only unconditional. This is the case it
+    // was written for.
+    render(
+      <ChangeReview
+        {...props({
+          changes: [],
+          baselineScore: 88,
+          canRewriteProse: true,
+          provider: 'anthropic',
+          unaddressed: [],
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/No changes were needed/i)).toBeInTheDocument()
+    expect(screen.getByText(/already reads clearly/i)).toBeInTheDocument()
   })
 })

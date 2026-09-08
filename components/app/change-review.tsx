@@ -3,7 +3,7 @@
 import * as React from 'react'
 
 import { useRouter } from 'next/navigation'
-import { Check, Download, FileText, Pencil, RotateCcw, X } from 'lucide-react'
+import { Check, Download, FileText, Info, Pencil, RotateCcw, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -41,6 +41,61 @@ export interface UnaddressedRequirement {
   requirementId: string
   text: string
   reason: string
+}
+
+/**
+ * What to say when the run produced nothing.
+ *
+ * There are two entirely different reasons for an empty result and they need
+ * different words. The screen used to give the congratulatory one unconditionally
+ * — "your resume already reads clearly for this role" — under a green tick, next
+ * to a score of 36 and a list of requirements it had just declined to address.
+ * That is not a reassurance, it is a contradiction, and it leaves the reader
+ * assuming the feature is broken.
+ *
+ * The rule-based engine aligns terminology, removes filler and reorders. A
+ * resume with none of those problems yields nothing from it, no matter how
+ * poorly it matches the role — because closing that gap would mean writing
+ * experience the resume does not evidence, which is the one thing this product
+ * will not do.
+ */
+function describeNoChanges(args: {
+  canRewriteProse: boolean
+  baselineScore: number
+  unaddressedCount: number
+}): { title: string; description: string; goodNews: boolean } {
+  const { canRewriteProse, baselineScore, unaddressedCount } = args
+
+  if (!canRewriteProse) {
+    return {
+      goodNews: false,
+      title: 'The rule-based engine found nothing it could change',
+      description:
+        unaddressedCount > 0
+          ? `It aligns terminology, removes filler and reorders for relevance, and your resume had none of those problems. It does not rewrite sentences, so it cannot act on the ${unaddressedCount} ${pluralize(unaddressedCount, 'requirement')} below. Configure an AI provider for sentence-level rewriting.`
+          : 'It aligns terminology, removes filler and reorders for relevance, and your resume had none of those problems. It does not rewrite sentences — configure an AI provider for that.',
+    }
+  }
+
+  // A genuinely strong match with nothing left to do is the one case where an
+  // empty result is good news.
+  if (baselineScore >= 75 && unaddressedCount === 0) {
+    return {
+      goodNews: true,
+      title: 'No changes were needed',
+      description:
+        'Your resume already reads clearly for this role, and every rewrite the engine considered was either unnecessary or could not be supported by your source text.',
+    }
+  }
+
+  return {
+    goodNews: false,
+    title: 'No changes were proposed',
+    description:
+      unaddressedCount > 0
+        ? `Every rewrite the engine considered would have needed source text your resume does not contain. The ${unaddressedCount} ${pluralize(unaddressedCount, 'requirement')} below are the gap, and closing it means adding real experience rather than rewording.`
+        : 'Every rewrite the engine considered was either unnecessary or could not be supported by your source text.',
+  }
 }
 
 export interface ChangeReviewProps {
@@ -82,6 +137,12 @@ export function ChangeReview({
     (change) => change.decision === 'accepted' || change.decision === 'edited',
   )
   const rejected = changes.filter((change) => change.decision === 'rejected')
+
+  const noChanges = describeNoChanges({
+    canRewriteProse,
+    baselineScore,
+    unaddressedCount: unaddressed.length,
+  })
 
   async function decide(id: string, decision: Decision, editedText?: string): Promise<void> {
     setBusyId(id)
@@ -238,9 +299,9 @@ export function ChangeReview({
         <CardContent>
           {changes.length === 0 ? (
             <EmptyState
-              icon={<Check className="size-5" />}
-              title="No changes were proposed"
-              description="Your resume already reads clearly for this role, and every rewrite the engine considered was either unnecessary or could not be supported by your source text."
+              icon={noChanges.goodNews ? <Check className="size-5" /> : <Info className="size-5" />}
+              title={noChanges.title}
+              description={noChanges.description}
             />
           ) : (
             <ul className="flex flex-col gap-4">
