@@ -329,9 +329,8 @@ describe('how a match reports the way it was established', () => {
           id: 'exp-1',
           title: 'Senior Engineer',
           company: 'Acme',
-          startDate: '2020-01',
-          endDate: null,
           location: null,
+          dates: { start: '2020-01', end: null, isCurrent: true },
           bullets: ['Mentored junior engineers and led code review for the team'],
         },
       ],
@@ -361,9 +360,10 @@ describe('how a match reports the way it was established', () => {
 
     const allowed = new Set(['exact', 'alias', 'normalized', 'related', 'fuzzy', 'none'])
     for (const match of result.matches) {
-      expect(allowed.has(match.method), `${match.canonical ?? match.id}: ${match.method}`).toBe(
-        true,
-      )
+      expect(
+        allowed.has(match.method),
+        `${match.canonical ?? match.requirementId}: ${match.method}`,
+      ).toBe(true)
     }
   })
 })
