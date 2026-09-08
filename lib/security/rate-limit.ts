@@ -32,6 +32,14 @@ export interface RateLimitRule {
 export const RATE_LIMITS = {
   'auth:login': { limit: 8, windowSeconds: 600 },
   'auth:signup': { limit: 5, windowSeconds: 3600 },
+  /**
+   * Requesting a verification or reset email. Strict, because each request
+   * sends mail to an address the requester chose — a loose limit here is a
+   * spam cannon aimed at somebody else's inbox.
+   */
+  'auth:recovery_request': { limit: 5, windowSeconds: 3600 },
+  /** Presenting a token. Limits guessing, though 256 bits makes that hopeless. */
+  'auth:recovery_confirm': { limit: 20, windowSeconds: 3600 },
   'resume:upload': { limit: 20, windowSeconds: 3600 },
   'analysis:create': { limit: 30, windowSeconds: 3600 },
   'optimization:create': { limit: 20, windowSeconds: 3600 },
