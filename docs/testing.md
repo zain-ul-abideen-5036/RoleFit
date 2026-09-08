@@ -2,12 +2,12 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 422   | ~11s    | Pure functions. No database, network or model. |
-| Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
-| End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
+| Unit                         | 440   | ~12s    | Pure functions. No database, network or model. |
+| Integration                  | 55    | ~50s    | A real PostgreSQL instance.                    |
+| End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
 
-Both browser suites run under `npm run test:e2e` — 31 tests in total.
+Both browser suites run under `npm run test:e2e` — 44 tests in total.
 
 ```bash
 npm test                  # unit

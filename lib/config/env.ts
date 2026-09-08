@@ -101,6 +101,18 @@ const envSchema = z
     UPSTASH_REDIS_REST_URL: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
+    /**
+     * Transactional email, for verification and password reset.
+     *
+     * `none` is the default and disables both flows: the app stays fully
+     * usable and the UI stops offering them, rather than showing a reset link
+     * that silently does nothing.
+     */
+    EMAIL_PROVIDER: z.enum(['none', 'console', 'resend']).default('none'),
+    EMAIL_API_KEY: z.string().optional(),
+    /** Sender address. Must be on a domain verified with the provider. */
+    EMAIL_FROM: z.string().optional(),
+
     ANALYTICS_PROVIDER: z.enum(['none', 'console', 'posthog']).default('none'),
     ANALYTICS_KEY: z.string().optional(),
     ANALYTICS_HOST: z.string().optional(),
@@ -170,6 +182,18 @@ const envSchema = z
       }
     }
 
+    if (value.EMAIL_PROVIDER === 'resend') {
+      for (const key of ['EMAIL_API_KEY', 'EMAIL_FROM'] as const) {
+        if (!value[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when EMAIL_PROVIDER is "resend"`,
+          })
+        }
+      }
+    }
+
     if (value.RATE_LIMIT_DRIVER === 'upstash') {
       for (const key of ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'] as const) {
         if (!value[key]) {
@@ -216,6 +240,29 @@ const envSchema = z
           message:
             'NEXT_PUBLIC_APP_URL must be set to the public origin in production (for example https://rolefit.app). Unset, it falls back to localhost and the CSRF origin check then rejects every sign-in, upload and export.',
         })
+      }
+
+      // The console transport does not deliver mail, so a deployment using it
+      // advertises password recovery that silently never arrives.
+      //
+      // Refused on real hosting, where that is simply broken. Allowed — with a
+      // warning — for a production build run locally, which is what local
+      // verification and the end-to-end suite do. The link itself is withheld
+      // from the output in production by the transport, so this is about
+      // undelivered mail rather than a leaked credential.
+      if (value.EMAIL_PROVIDER === 'console') {
+        if (isServerlessPlatform()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['EMAIL_PROVIDER'],
+            message:
+              'EMAIL_PROVIDER=console does not send email and cannot be used on hosted production. Set EMAIL_PROVIDER=resend, or none to disable the recovery flows.',
+          })
+        } else {
+          warnings.push(
+            'EMAIL_PROVIDER=console in production. No email is delivered: verification and reset links are written to stderr with the link withheld, so the recovery flows cannot complete.',
+          )
+        }
       }
 
       // The local storage driver writes to the filesystem, which is ephemeral

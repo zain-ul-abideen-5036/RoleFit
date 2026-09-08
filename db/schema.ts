@@ -42,6 +42,10 @@ export const changeDecisionEnum = pgEnum('change_decision', [
   'edited',
 ])
 export const usageKindEnum = pgEnum('usage_kind', ['analysis', 'optimization', 'document_export'])
+export const authTokenPurposeEnum = pgEnum('auth_token_purpose', [
+  'email_verification',
+  'password_reset',
+])
 export const auditActionEnum = pgEnum('audit_action', [
   'user.signup',
   'user.login',
@@ -49,6 +53,10 @@ export const auditActionEnum = pgEnum('audit_action', [
   'user.logout',
   'user.password_changed',
   'user.deleted',
+  'user.email_verification_requested',
+  'user.email_verified',
+  'user.password_reset_requested',
+  'user.password_reset',
   'resume.created',
   'resume.deleted',
   'analysis.created',
@@ -98,6 +106,46 @@ export const profiles = pgTable('profiles', {
   autoPurgeUploads: boolean('auto_purge_uploads').notNull().default(false),
   ...timestamps,
 })
+
+/* ==========================================================================
+   auth tokens
+   ========================================================================== */
+
+/**
+ * Single-use tokens for email verification and password reset.
+ *
+ * Only a SHA-256 digest of the token is stored. The plaintext exists in the
+ * email and nowhere else, so a database read — a backup, a log, a compromised
+ * replica — cannot be turned into an account takeover.
+ *
+ * One table with a purpose column rather than two tables: the lifecycle is
+ * identical (issue, expire, redeem once) and the difference is only what
+ * redeeming does.
+ */
+export const authTokens = pgTable(
+  'auth_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: authTokenPurposeEnum('purpose').notNull(),
+    /** SHA-256 of the token. The token itself is never stored. */
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    /** Set the moment the token is redeemed; a set value means spent. */
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    // Lookup is by digest, and a digest must identify at most one token.
+    uniqueIndex('auth_tokens_hash_unique').on(table.tokenHash),
+    // Supports invalidating a user's outstanding tokens of one purpose when a
+    // new one is issued, and sweeping expired rows.
+    index('auth_tokens_user_purpose_idx').on(table.userId, table.purpose),
+    index('auth_tokens_expires_idx').on(table.expiresAt),
+  ],
+)
 
 /* ==========================================================================
    resumes
@@ -424,6 +472,10 @@ export const changeRecordsRelations = relations(changeRecords, ({ one }) => ({
   }),
 }))
 
+export const authTokensRelations = relations(authTokens, ({ one }) => ({
+  user: one(users, { fields: [authTokens.userId], references: [users.id] }),
+}))
+
 export const generatedDocumentsRelations = relations(generatedDocuments, ({ one }) => ({
   user: one(users, { fields: [generatedDocuments.userId], references: [users.id] }),
   resume: one(resumes, { fields: [generatedDocuments.resumeId], references: [resumes.id] }),
@@ -433,6 +485,8 @@ export const generatedDocumentsRelations = relations(generatedDocuments, ({ one 
    inferred row types
    ========================================================================== */
 
+export type AuthToken = typeof authTokens.$inferSelect
+export type NewAuthToken = typeof authTokens.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Profile = typeof profiles.$inferSelect

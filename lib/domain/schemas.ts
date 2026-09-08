@@ -281,4 +281,31 @@ export const loginInputSchema = z.object({
   password: z.string().min(1, 'Enter your password').max(200),
 })
 
+/**
+ * A token as presented in a link.
+ *
+ * base64url only, and length-bounded, so a malformed value is refused by the
+ * schema before it reaches a database lookup.
+ */
+export const authTokenSchema = z
+  .string()
+  .trim()
+  .min(20, 'That link is not valid')
+  .max(200, 'That link is not valid')
+  .regex(/^[A-Za-z0-9_-]+$/, 'That link is not valid')
+
+export const recoveryRequestSchema = z.object({
+  email: emailSchema,
+})
+
+export const verifyEmailInputSchema = z.object({
+  token: authTokenSchema,
+})
+
+export const resetPasswordInputSchema = z.object({
+  token: authTokenSchema,
+  /** A new password must meet current policy, unlike one being used to log in. */
+  password: passwordSchema,
+})
+
 export type ResumeProfileInput = z.input<typeof resumeProfileSchema>
