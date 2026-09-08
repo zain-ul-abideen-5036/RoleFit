@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 589   | ~15s    | Pure functions. No database, network or model. |
+| Unit                         | 656   | ~17s    | Pure functions. No database, network or model. |
 | Component                    | 105   | ~7s     | React components in jsdom.                     |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
@@ -167,6 +167,39 @@ enabled control before hydration lets a fast user pick a file that is silently
 dropped. The input's value reset has one too, because without it choosing the
 same file twice fires no `change` event and the UI appears frozen, which is
 exactly what someone does after a transient failure.
+
+### DOCX layout detection — 27 unit tests
+
+These signals decide whether the ATS report warns about layout, and they cannot
+be recovered afterwards: once a two-column resume is flattened to text it reads
+as ordinary prose. Detection has to be right at upload or the finding is lost.
+
+The markup is hand-written rather than taken from a fixture, because real DOCX
+XML is thousands of attributes wide and a wall of namespace declarations hides
+the one element a test is about. Table counting is asserted not to treat the
+properties child as a second table; all three text-box dialects are asserted
+together, since a document can mix them and detecting one would report a clean
+layout for a broken document; and a section with no columns element must read
+as single-column, because absent means default.
+
+### Generated-document validation — 16 unit tests
+
+The last point at which a silently broken export can be caught, so the tests
+are weighted towards failing loudly. The failure cases are the realistic ones:
+an HTML error page where a PDF should be, a file that is nothing but a correct
+signature, and a valid header followed by garbage — asserted not to throw,
+because a parser exception here reaches the user as a 500 on a download.
+
+A signature failure produces exactly one issue rather than cascading into "no
+extractable text" as well. One clear cause beats three symptoms.
+
+### The layout model — 24 unit tests
+
+One block list feeds the PDF renderer, the DOCX renderer and the preview, so
+the tests are structural. The first two assert what the model _cannot_ express:
+only known block kinds, and no table, column or image kind for a hostile layout
+to reach for. That is the design rather than a convention, and a test is what
+keeps it true after someone adds a block kind in a hurry.
 
 ### Errors — 36 unit tests
 
@@ -426,7 +459,7 @@ Each was a real bug, fixed rather than tested around.
 ## Coverage
 
 `npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
-over the domain logic the unit suite owns. Current: **94% statements, 85%
+over the domain logic the unit suite owns. Current: **95% statements, 86%
 branches, 97% functions**.
 
 The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
