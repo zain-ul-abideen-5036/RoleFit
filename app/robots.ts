@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 
+import { publicAppUrl } from '@/lib/config/public-url'
+
 /**
  * robots.txt.
  *
@@ -8,7 +10,7 @@ import type { MetadataRoute } from 'next'
  * search results is still correct.
  */
 export default function robots(): MetadataRoute.Robots {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+  const base = publicAppUrl()
 
   return {
     rules: [

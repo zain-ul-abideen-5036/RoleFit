@@ -2,6 +2,8 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { publicAppUrl } from '@/lib/config/public-url'
+
 /**
  * Server-side environment configuration.
  *
@@ -64,7 +66,16 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
-    NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
+    /**
+     * Resolved rather than defaulted to a constant, so every consumer agrees
+     * on one origin. Left unset on a hosting platform, this becomes the URL
+     * the platform assigned — which is what keeps a password reset link from
+     * pointing at localhost on a real deployment.
+     */
+    NEXT_PUBLIC_APP_URL: z
+      .string()
+      .url()
+      .default(() => publicAppUrl()),
 
     DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(5),
@@ -342,11 +353,34 @@ let cached: Env | null = null
  * every invalid key, so a misconfigured deployment fails fast and legibly
  * instead of erroring deep inside a request handler.
  */
+/**
+ * Drops variables whose value is an empty string.
+ *
+ * A hosting platform lets a variable be *defined with no value*, and that
+ * arrives as `''` rather than `undefined`. Zod's `.default()` only fires on
+ * `undefined`, so an empty value silently bypassed every default in this
+ * schema and then failed its own validator — an empty `NEXT_PUBLIC_APP_URL`
+ * threw `Invalid url`, and an empty `DATABASE_POOL_MAX` coerced to 0 and
+ * failed `min(1)`.
+ *
+ * Treating empty as absent is the only reading that matches what someone means
+ * when they leave a field blank in a dashboard.
+ */
+function withoutEmptyValues(source: NodeJS.ProcessEnv): Record<string, string> {
+  const values: Record<string, string> = {}
+
+  for (const [key, value] of Object.entries(source)) {
+    if (typeof value === 'string' && value.trim() !== '') values[key] = value
+  }
+
+  return values
+}
+
 export function getEnv(): Env {
   if (cached) return cached
 
   warnings.length = 0
-  const parsed = envSchema.safeParse(process.env)
+  const parsed = envSchema.safeParse(withoutEmptyValues(process.env))
 
   if (!parsed.success) {
     const details = parsed.error.issues
