@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 248   | ~5s     | Pure functions. No database, network or model. |
+| Unit                         | 349   | ~10s    | Pure functions. No database, network or model. |
 | Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -120,6 +120,52 @@ non-UUID owner, an absolute path.
 **No test here reaches a real provider.** Nothing has been run against a live
 Backblaze account; that requires credentials CI does not have.
 
+### Passwords — 18 unit tests
+
+Not whether bcrypt works, but the three decisions layered on it. Cost 12 is
+asserted from the hash prefix, so lowering it fails a test. `verifyPassword`
+returns false on a corrupt stored hash rather than throwing — a 500 on one
+address where every other gives a clean rejection is itself a signal the row
+exists. `needsRehash` fails towards rehashing, so anything unparseable is
+upgraded.
+
+The dummy verification is timed against a real one and asserted to be the same
+order of magnitude. That is the whole reason it exists: if it were cheap, or a
+no-op, response time would enumerate registered addresses.
+
+### Session tokens — 24 unit tests
+
+Weighted towards refusal, since the integration suite already covers the happy
+path through real HTTP. A token signed with a different secret, one edited
+after signing, the `alg=none` downgrade, a wrong audience, a wrong issuer, an
+expired one, and six correctly signed tokens whose claim shape is wrong —
+which matters because everything downstream trusts `userId`, `email` and
+`epoch` without re-checking them.
+
+The token is also asserted to carry no claims beyond those three: a session
+cookie travels to the browser on every request, so anything extra is personal
+data handed out for no reason.
+
+### Rate limiting — 24 unit tests
+
+Isolation, failing open, and privacy. One caller exhausting a bucket must not
+lock out everyone else, and exhausting signup must not block that caller from
+logging in. A Redis outage returns allowed rather than blocking, because an
+outage must not lock every user out of the product. An unauthenticated caller
+is identified by a truncated IP prefix, and two addresses in the same /24 are
+asserted to share a counter — which is what makes truncation a defense rather
+than a loophole.
+
+### Display helpers — 28 unit tests
+
+`lib/utils.ts` renders on both the server and the client, so a disagreement
+between them is a hydration mismatch rather than a cosmetic bug. Boundaries are
+what matter: `formatBytes` either side of a kilobyte and a megabyte,
+`formatRelative` at each of its four thresholds, `truncate` at exactly the
+limit and at the 60% word-boundary rule. `formatRelative` is also given a
+timestamp slightly in the future, because server and client clocks disagree and
+"-1m ago" would be visible nonsense.
+
 ### CSRF origin verification — 21 unit tests
 
 Security and availability in one file, deliberately: a change that fixes one of
@@ -222,7 +268,7 @@ Each was a real bug, fixed rather than tested around.
 ## Coverage
 
 `npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
-over the domain logic the unit suite owns. Current: **88% statements, 80%
+over the domain logic the unit suite owns. Current: **89% statements, 81%
 branches, 90% functions**.
 
 The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
