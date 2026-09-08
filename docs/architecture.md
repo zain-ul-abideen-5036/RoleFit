@@ -101,6 +101,29 @@ Three distinct relationships:
 Cloud providers are deliberately unrelated to one another. AWS experience is not
 GCP experience.
 
+### How a match reports itself (`lib/matching/matcher.ts`)
+
+Every match carries a `method` saying how it was established. All five are
+lexical:
+
+| `method`     | Established by                                         | Ceiling               |
+| ------------ | ------------------------------------------------------ | --------------------- |
+| `exact`      | The requirement's own token appears                    | full credit           |
+| `alias`      | A known equivalent appears (`k8s` → Kubernetes)        | full credit           |
+| `normalized` | An implication evidences it (PostgreSQL → SQL)         | full credit           |
+| `related`    | An adjacent skill (Redis → NoSQL)                      | partial, never strong |
+| `fuzzy`      | Token overlap against free text with no canonical form | scaled by overlap     |
+
+**There is deliberately no semantic or embedding-based method.** A match must
+cite the exact span that supports it, because the anti-fabrication validator
+checks quoted evidence against the source. An embedding score is neither
+reproducible across model versions nor quotable back to the user, so it cannot
+replace this path — only supplement it, clearly labelled and with a confidence
+floor. See [issue #17](https://github.com/zain-ul-abideen-5036/RoleFit/issues/17).
+
+`related` and `fuzzy` were once both reported as `semantic`, which wrongly
+implied a model participates in matching.
+
 ### Evidence index (`lib/matching/evidence.ts`)
 
 Flattens a resume into addressable spans with a section weight. A skill listed
