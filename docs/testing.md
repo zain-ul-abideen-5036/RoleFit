@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 656   | ~17s    | Pure functions. No database, network or model. |
+| Unit                         | 676   | ~17s    | Pure functions. No database, network or model. |
 | Component                    | 105   | ~7s     | React components in jsdom.                     |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |

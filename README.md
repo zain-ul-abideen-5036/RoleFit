@@ -102,6 +102,18 @@ and never presents the score without that caveat.
 - **Privacy** — resume text is never written to application logs. Account
   deletion removes every record and every stored file.
 - **Version history** — your original upload is kept untouched as version 1.
+- **Account recovery** — email verification and password reset, behind a
+  transport abstraction. No path reveals whether an address has an account, and
+  completing a reset invalidates every existing session. Off by default; the app
+  is fully usable with no email configured.
+- **Background processing** — optimization runs in the request by default, or in
+  a separate worker that claims jobs with `SELECT … FOR UPDATE SKIP LOCKED`.
+  Switching is an environment variable: the client reads the run status it is
+  given rather than assuming a mode.
+- **Gap suggestions** — with an embedding provider configured, each unmet
+  requirement is shown alongside the closest thing your resume already says,
+  quoted verbatim and explicitly not counted as a match. Nothing here
+  influences a score.
 
 ## Tech stack
 
@@ -164,49 +176,61 @@ and `AI_API_KEY` in `.env.local`.
 
 Every variable is documented in [`.env.example`](.env.example). The essentials:
 
-| Variable            | Required        | Notes                                                          |
-| ------------------- | --------------- | -------------------------------------------------------------- |
-| `DATABASE_URL`      | yes             | PostgreSQL connection string                                   |
-| `AUTH_SECRET`       | yes             | 32+ random bytes; signs session JWTs                           |
-| `AI_PROVIDER`       | no              | `deterministic` (default), `anthropic`, `openai`               |
-| `AI_API_KEY`        | if provider set | Server-side only, never exposed to the browser                 |
-| `STORAGE_DRIVER`    | no              | `local` (default) or `s3`; must be `s3` on serverless          |
-| `STORAGE_REGION`    | if `s3`         | No default — it signs the request, so a wrong value fails late |
-| `STORAGE_BUCKET`    | if `s3`         | No default — B2 bucket names are globally unique               |
-| `RATE_LIMIT_DRIVER` | no              | `memory` (default) or `upstash`; use `upstash` in production   |
+| Variable              | Required        | Notes                                                           |
+| --------------------- | --------------- | --------------------------------------------------------------- |
+| `DATABASE_URL`        | yes             | PostgreSQL connection string                                    |
+| `AUTH_SECRET`         | yes             | 32+ random bytes; signs session JWTs                            |
+| `AI_PROVIDER`         | no              | `deterministic` (default), `anthropic`, `openai`                |
+| `AI_API_KEY`          | if provider set | Server-side only, never exposed to the browser                  |
+| `STORAGE_DRIVER`      | no              | `local` (default) or `s3`; must be `s3` on serverless           |
+| `STORAGE_REGION`      | if `s3`         | No default — it signs the request, so a wrong value fails late  |
+| `STORAGE_BUCKET`      | if `s3`         | No default — B2 bucket names are globally unique                |
+| `RATE_LIMIT_DRIVER`   | no              | `memory` (default) or `upstash`; use `upstash` in production    |
+| `EMAIL_PROVIDER`      | no              | `none` (default), `console`, `resend`; `none` disables recovery |
+| `QUEUE_DRIVER`        | no              | `inline` (default) or `database` with a worker process          |
+| `EMBEDDINGS_PROVIDER` | no              | `none` (default) or `openai`; advisory gap hints only           |
 
 Configuration is validated at startup and fails with every invalid key listed
 at once, rather than erroring deep inside a request handler.
 
 ## Scripts
 
-| Command                     | What it does                                |
-| --------------------------- | ------------------------------------------- |
-| `npm run dev`               | Development server                          |
-| `npm run build`             | Production build                            |
-| `npm run verify`            | Format, lint, typecheck and unit tests      |
-| `npm test`                  | Unit tests                                  |
-| `npm run test:integration`  | Integration tests (needs PostgreSQL)        |
-| `npm run test:e2e`          | End-to-end tests against a production build |
-| `npm run test:coverage`     | Unit tests with coverage                    |
-| `npm run db:up` / `db:down` | Start / stop PostgreSQL                     |
-| `npm run db:migrate`        | Apply migrations                            |
-| `npm run db:generate`       | Generate a migration from schema changes    |
+| Command                     | What it does                                          |
+| --------------------------- | ----------------------------------------------------- |
+| `npm run dev`               | Development server                                    |
+| `npm run build`             | Production build                                      |
+| `npm run verify`            | Format, lint, typecheck and unit tests                |
+| `npm test`                  | Unit tests                                            |
+| `npm run test:integration`  | Integration tests (needs PostgreSQL)                  |
+| `npm run test:e2e`          | End-to-end tests against a production build           |
+| `npm run test:coverage`     | Unit tests with coverage                              |
+| `npm run db:up` / `db:down` | Start / stop PostgreSQL                               |
+| `npm run worker`            | Background job worker (needs `QUEUE_DRIVER=database`) |
+| `npm run db:migrate`        | Apply migrations                                      |
+| `npm run db:generate`       | Generate a migration from schema changes              |
 
 ## Testing
 
 | Suite       | Count | Runs against                                  |
 | ----------- | ----- | --------------------------------------------- |
-| Unit        | 114   | Pure functions; no database, network or model |
-| Integration | 27    | A real PostgreSQL instance                    |
-| End-to-end  | 12    | A production build in Chromium                |
+| Unit        | 676   | Pure functions; no database, network or model |
+| Component   | 105   | React components in jsdom                     |
+| Integration | 72    | A real PostgreSQL instance                    |
+| End-to-end  | 44    | A production build in Chromium                |
 
-The suites are weighted towards the guarantees that matter: 40 unit tests
-attack the anti-fabrication validator, 9 integration tests and 4 E2E tests
-attempt cross-account access, the PDF renderer is verified geometrically —
-margins, line overlap, hard-wrapping and pagination asserted from the real glyph
-positions in the output file — and axe runs against every page in both themes
-with zero violations.
+The suites are weighted towards the guarantees that matter rather than towards
+the percentage. 27 unit tests attack the anti-fabrication validator; 9
+integration and 4 E2E tests attempt cross-account access; 17 integration tests
+prove two workers never claim the same job; the browser suite compares the
+password-reset response for a known and an unknown address byte for byte; the
+PDF renderer is verified geometrically, with margins, line overlap,
+hard-wrapping and pagination asserted from the real glyph positions in the
+output file; and axe runs against every page in both themes with zero
+violations.
+
+Coverage is 95% statements and 86% branches over the domain logic the unit
+suite owns. The suites have earned their keep — every defect they caught is
+listed in [`docs/testing.md`](docs/testing.md).
 
 See [docs/testing.md](docs/testing.md).
 
