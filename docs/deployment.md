@@ -410,11 +410,12 @@ a deployment check needs.
 If anything is wrong you get HTTP 503 and `status: "degraded"`, with the failing
 check named:
 
-| What you see               | What it means                                                                                                            |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `config: "invalid"`        | One or more variables failed validation. The response lists them by name under `invalidConfig` — fix those and redeploy. |
-| `database: "unreachable"`  | `DATABASE_URL` is missing or wrong, or is missing `?sslmode=require`. Check you used the **pooled** string.              |
-| `database: "not-migrated"` | The database is reachable but the schema was never created. Run `npm run deploy:migrate` (Step 7).                       |
+| What you see               | What it means                                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `config: "invalid"`        | One or more variables failed validation. The response lists them by name under `invalidConfig` — fix those and redeploy.  |
+| `database: "unreachable"`  | `DATABASE_URL` is missing or wrong, or is missing `?sslmode=require`. Check you used the **pooled** string.               |
+| `database: "not-migrated"` | The database is reachable but the schema was never created. Run `npm run deploy:migrate` (Step 7).                        |
+| `database: "unknown"`      | Not checked. The pool is built from the same configuration that failed, so no verdict is possible until `config` is `ok`. |
 
 `invalidConfig` gives you the variable names and nothing else — never a value,
 never the validation message. That is on purpose: the response is public, and a
