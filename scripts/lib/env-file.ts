@@ -67,3 +67,38 @@ export function loadEnvFileIfPresent(path = PRODUCTION_ENV_FILE): string[] {
 
   return applied
 }
+
+/**
+ * Replaces one variable's value, leaving the rest of the file byte-identical.
+ *
+ * Exists for rotating `AUTH_SECRET` after a leak. Rewriting the file from the
+ * template would also be a way to get a new secret, and it is the wrong one:
+ * it discards every credential the operator filled in, so the tool for
+ * responding to a leak would hand them a blank file at the worst moment.
+ *
+ * Comments, blank lines, ordering and unrelated values are preserved, because
+ * this file is meant to stay readable after the tool has touched it. Returns
+ * null when the key is not present, so a caller can refuse rather than silently
+ * append a variable to a file that was not what it expected.
+ */
+export function replaceEnvValue(
+  contents: string,
+  key: string,
+  value: string,
+): { contents: string; replaced: number } | null {
+  let replaced = 0
+
+  const updated = contents.split(/\r?\n/).map((line) => {
+    // Anchored to the start, so a key appearing inside a comment or inside
+    // another value is left alone.
+    const match = /^(\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*=)/.exec(line)
+    if (!match || match[2] !== key) return line
+
+    replaced += 1
+    return `${match[1] ?? ''}${key}=${value}`
+  })
+
+  if (replaced === 0) return null
+
+  return { contents: updated.join('\n'), replaced }
+}
