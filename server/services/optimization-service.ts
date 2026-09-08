@@ -45,14 +45,18 @@ export interface RunOptimizationResult {
   rejectedCount: number
 }
 
-export async function runOptimization(input: RunOptimizationInput): Promise<RunOptimizationResult> {
-  const startedAt = Date.now()
-
+/**
+ * Creates the run row without doing any work.
+ *
+ * Split out so the inline and queued paths share one definition of what a run
+ * is. The row exists — and is visible in history — before any work starts,
+ * whichever path runs it.
+ */
+export async function createRunRecord(input: RunOptimizationInput): Promise<OptimizationRun> {
   const analysis = await requireAnalysis(input.userId, input.analysisId)
   const resume = await requireResume(input.userId, analysis.resumeId)
-  const jobDescription = await requireJobDescription(input.userId, analysis.jobDescriptionId)
 
-  const run = await createOptimizationRun({
+  return createOptimizationRun({
     userId: input.userId,
     analysisId: analysis.id,
     resumeId: resume.id,
@@ -61,6 +65,23 @@ export async function runOptimization(input: RunOptimizationInput): Promise<RunO
     model: null,
     promptVersion: 'pending',
   })
+}
+
+/**
+ * Does the work for a run that already exists.
+ *
+ * Called directly by the inline path and by the worker. Takes `userId` as well
+ * as `runId` so every read stays scoped to the owner — a worker processing a
+ * queue is not a reason to widen access.
+ */
+export async function executeRun(
+  userId: string,
+  run: OptimizationRun,
+): Promise<RunOptimizationResult> {
+  const startedAt = Date.now()
+  const analysis = await requireAnalysis(userId, run.analysisId)
+  const resume = await requireResume(userId, analysis.resumeId)
+  const jobDescription = await requireJobDescription(userId, analysis.jobDescriptionId)
 
   try {
     const result = await optimizeResume({
@@ -69,7 +90,7 @@ export async function runOptimization(input: RunOptimizationInput): Promise<RunO
       analysis: analysis.report,
     })
 
-    await completeOptimizationRun(input.userId, run.id, {
+    await completeOptimizationRun(userId, run.id, {
       proposedProfile: result.proposedProfile,
       changeSet: result.changeSet,
       projectedAtsReport: result.projectedAts,
@@ -82,7 +103,7 @@ export async function runOptimization(input: RunOptimizationInput): Promise<RunO
     const changes = await insertChangeRecords(
       result.changeSet.changes.map((change) => ({
         optimizationRunId: run.id,
-        userId: input.userId,
+        userId: userId,
         targetPath: change.targetPath,
         section: change.section,
         action: change.action,
@@ -98,7 +119,7 @@ export async function runOptimization(input: RunOptimizationInput): Promise<RunO
     )
 
     await recordUsage({
-      userId: input.userId,
+      userId: userId,
       kind: 'optimization',
       provider: result.provider,
       inputTokens: result.usage.inputTokens,
@@ -107,7 +128,7 @@ export async function runOptimization(input: RunOptimizationInput): Promise<RunO
     })
 
     logger.info('optimization.completed', {
-      userId: input.userId,
+      userId: userId,
       runId: run.id,
       provider: result.provider,
       changeCount: result.changeSet.changes.length,
@@ -126,15 +147,27 @@ export async function runOptimization(input: RunOptimizationInput): Promise<RunO
     }
   } catch (error) {
     const appError = toAppError(error)
-    await failOptimizationRun(input.userId, run.id, appError.code)
+    await failOptimizationRun(userId, run.id, appError.code)
     logger.error('optimization.failed', {
-      userId: input.userId,
+      userId: userId,
       runId: run.id,
       code: appError.code,
       error,
     })
     throw appError
   }
+}
+
+/**
+ * Creates a run and processes it in the same request.
+ *
+ * The default path. A deterministic run finishes in well under a second and an
+ * LLM run inside `AI_TIMEOUT_MS`, so waiting is cheaper than the round trips
+ * polling would cost.
+ */
+export async function runOptimization(input: RunOptimizationInput): Promise<RunOptimizationResult> {
+  const run = await createRunRecord(input)
+  return executeRun(input.userId, run)
 }
 
 /* ==========================================================================
