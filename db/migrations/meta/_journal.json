@@ -8,6 +8,13 @@
       "when": 1788718689566,
       "tag": "0000_colorful_oracle",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788847802763,
+      "tag": "0001_left_fantastic_four",
+      "breakpoints": true
     }
   ]
 }
