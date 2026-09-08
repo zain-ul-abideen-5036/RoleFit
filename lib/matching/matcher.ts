@@ -39,7 +39,7 @@ const STRONG_THRESHOLD = 0.72
 /** Below `STRONG` but at or above this: partial evidence, surfaced as such. */
 const PARTIAL_THRESHOLD = 0.4
 /** Free-text similarity below this is treated as noise, not weak evidence. */
-const SEMANTIC_FLOOR = 0.22
+const FUZZY_FLOOR = 0.22
 
 export interface MatchResult {
   matches: RequirementMatch[]
@@ -172,7 +172,7 @@ function matchSkillRequirement(
   for (const item of index) {
     const source = item.discreteSkill
     if (source && relatedSkills(source).includes(canonical)) {
-      return { evidence: toEvidence(item), confidence: 0.35, method: 'semantic' }
+      return { evidence: toEvidence(item), confidence: 0.35, method: 'related' }
     }
   }
 
@@ -197,11 +197,11 @@ function matchTextRequirement(
 
     const similarity = tokenSimilarity(requirement.text, item.excerpt)
     const raw = coverage * 0.72 + similarity * 0.28
-    if (raw < SEMANTIC_FLOOR) continue
+    if (raw < FUZZY_FLOOR) continue
 
     const confidence = Math.min(1, raw * (0.7 + item.weight * 0.3))
     if (!best || confidence > best.confidence) {
-      best = { evidence: toEvidence(item), confidence, method: 'semantic' }
+      best = { evidence: toEvidence(item), confidence, method: 'fuzzy' }
     }
   }
 
@@ -320,4 +320,4 @@ export function strongMatches(matches: readonly RequirementMatch[]): Requirement
   return matches.filter((match) => match.status === 'strong')
 }
 
-export { PARTIAL_THRESHOLD, SEMANTIC_FLOOR, STRONG_THRESHOLD }
+export { FUZZY_FLOOR, PARTIAL_THRESHOLD, STRONG_THRESHOLD }

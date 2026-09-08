@@ -182,8 +182,21 @@ export const requirementMatchSchema = z.object({
   status: matchStatusSchema,
   /** 0-1. Deterministically computed by the matching engine. */
   confidence: z.number().min(0).max(1),
-  /** How the match was established — surfaced in the UI for transparency. */
-  method: z.enum(['exact', 'alias', 'normalized', 'semantic', 'none']),
+  /**
+   * How the match was established.
+   *
+   * Every one of these is lexical. There is deliberately no semantic or
+   * embedding-based method: a match must cite the span that supports it, and
+   * an embedding score is neither reproducible across model versions nor
+   * quotable back to the user.
+   *
+   *  - `exact`      the requirement's own token appears
+   *  - `alias`      a known equivalent appears (`k8s` for Kubernetes)
+   *  - `normalized` an implication evidences it (PostgreSQL evidences SQL)
+   *  - `related`    an adjacent skill, partial credit only, never sufficient
+   *  - `fuzzy`      token overlap against free text with no canonical form
+   */
+  method: z.enum(['exact', 'alias', 'normalized', 'related', 'fuzzy', 'none']),
   evidence: z.array(evidenceSchema).max(6).default([]),
 })
 
