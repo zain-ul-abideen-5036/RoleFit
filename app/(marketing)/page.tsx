@@ -61,7 +61,7 @@ function Hero() {
             Never invents experience you don&apos;t have
           </Badge>
 
-          <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-fg sm:text-5xl lg:text-[3.4rem]">
+          <h1 className="font-display text-4xl font-medium leading-[1.06] tracking-tight text-fg sm:text-5xl lg:text-[3.4rem]">
             Tailor your resume.
             <br />
             Match the role.
@@ -188,7 +188,7 @@ function AntiFabrication() {
             The difference that matters
           </Badge>
 
-          <h2 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
             It will not put a skill on your resume that you don&apos;t have
           </h2>
 
@@ -400,7 +400,7 @@ function AtsSection() {
             ATS readiness
           </Badge>
 
-          <h2 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
             A score you can act on, with the maths shown
           </h2>
 
@@ -669,7 +669,7 @@ function FinalCta() {
   return (
     <section className="bg-surface">
       <div className="container-page py-16 text-center lg:py-24">
-        <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+        <h2 className="mx-auto max-w-2xl font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
           Send a resume that answers the job you&apos;re applying for
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-fg-muted">

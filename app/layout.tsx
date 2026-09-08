@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google'
+import { Fraunces, IBM_Plex_Mono, Instrument_Sans } from 'next/font/google'
 
 import { ThemeScript } from '@/components/theme/theme-script'
 import { publicAppUrl, publicAppUrlObject } from '@/lib/config/public-url'
@@ -15,17 +15,42 @@ import './globals.css'
  * Google Fonts.
  */
 
-const sans = Plus_Jakarta_Sans({
+/**
+ * Three faces, each doing one job.
+ *
+ * A grotesque for the interface, a serif for display, and a monospace for
+ * quoted source text. The third is not decoration: evidence from a resume is
+ * shown verbatim, and a monospace face is what tells the reader they are
+ * looking at the document rather than at our prose about it.
+ */
+
+const sans = Instrument_Sans({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-plus-jakarta',
+  variable: '--font-instrument-sans',
+  // Variable font: one file covers the range, so this costs nothing extra.
   weight: ['400', '500', '600', '700'],
 })
 
-const mono = JetBrains_Mono({
+/**
+ * Display only — headings and the score. Optical sizing is what makes a
+ * serif work at interface sizes; without it the same face set at 14px looks
+ * spindly and at 48px looks heavy.
+ */
+const display = Fraunces({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-jetbrains-mono',
+  variable: '--font-fraunces',
+  // No `weight` here on purpose: next/font rejects `axes` alongside a fixed
+  // weight list, and the whole point of this face is the variable axes. The
+  // full weight range comes with the variable file.
+  axes: ['SOFT', 'WONK', 'opsz'],
+})
+
+const mono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-ibm-plex-mono',
   weight: ['400', '500'],
 })
 
@@ -81,7 +106,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+    >
       <head>
         <ThemeScript />
       </head>

@@ -4,6 +4,23 @@
    RoleFit Design System
    Layer 1: primitives  ->  Layer 2: semantic tokens  ->  Layer 3: components
    Never hard-code a colour, radius or shadow in a component. Use a token.
+
+   The direction: a monochrome instrument with one earned accent.
+
+   Most products of this kind paint a brand colour on the primary button and
+   call that identity. RoleFit does not, because the only thing on these
+   screens worth colouring is the verdict on someone's resume. Actions are
+   near-black on warm stone; colour is spent on score, status and diff, where
+   it carries meaning. A page with a lot of colour on it is a page telling the
+   user something, not a page decorated.
+
+   The ground is warm rather than the cool grey these interfaces default to.
+   Cool grey reads clinical, and this product is read by people applying for
+   work, which is not a clinical situation.
+
+   Plum is the accent: links, focus, selection, the score arc. It is the one
+   hue that collides with none of the semantics it has to sit beside — green
+   for met, amber for partial, red for missing.
    ========================================================================== */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -11,41 +28,49 @@
 @theme {
   /* ---------------------------------------------------------------- fonts */
   --font-sans:
-    var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    var(--font-instrument-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
+  /* Display only. Never body text: a serif at 14px over a long page is harder
+     to read, and the contrast with the grotesque is what gives it its force. */
+  --font-display: var(--font-fraunces), ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono:
-    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
+    var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
     monospace;
 
-  /* --------------------------------------------------- primitive: signal  */
-  /* Brand blue. Precision, trust, alignment. */
-  --color-signal-50: #eff4ff;
-  --color-signal-100: #dbe6ff;
-  --color-signal-200: #bed3ff;
-  --color-signal-300: #91b6ff;
-  --color-signal-400: #5d8dfd;
-  --color-signal-500: #3865f8;
-  --color-signal-600: #2457e6;
-  --color-signal-700: #1a3fc4;
-  --color-signal-800: #1c379f;
-  --color-signal-900: #1d347e;
-  --color-signal-950: #16224d;
+  /* --------------------------------------------------- primitive: plum   */
+  /* The accent. Spent on links, focus, selection and the score arc, and on
+     nothing else. Deliberately not blue: blue is what every tool in this
+     category reaches for, and it is also the hue a reader is most likely to
+     mistake for a disabled state once it sits next to real status colour. */
+  --color-plum-50: #fbf5fa;
+  --color-plum-100: #f6e9f3;
+  --color-plum-200: #ecd4e8;
+  --color-plum-300: #dcb2d5;
+  --color-plum-400: #c684bb;
+  --color-plum-500: #ad5f9f;
+  /* 5.31:1 on the canvas — clears AA for normal text as a link colour. */
+  --color-plum-600: #8f4483;
+  --color-plum-700: #75366b;
+  --color-plum-800: #5f2d57;
+  --color-plum-900: #4c2646;
+  --color-plum-950: #2d132a;
 
   /* ----------------------------------------------------- primitive: ink   */
-  /* Cool neutral. Body text, surfaces, borders. */
-  --color-ink-50: #f7f8fa;
-  --color-ink-100: #eef0f4;
-  --color-ink-200: #dee1e9;
-  --color-ink-300: #c4cad7;
-  --color-ink-400: #949db1;
-  /* 5.40:1 on white, 5.08:1 on the canvas. The previous #6e7891 measured
-     4.41:1 and failed WCAG AA for normal text. */
-  --color-ink-500: #616a82;
-  --color-ink-600: #576079;
-  --color-ink-700: #474e62;
-  --color-ink-800: #3d4253;
-  --color-ink-900: #2a2e3b;
-  --color-ink-950: #14161e;
+  /* Warm neutral. Body text, surfaces, borders — and, unusually, the primary
+     action, which is near-black rather than a brand colour. A warm grey has a
+     trace of red in it; the cool greys this replaced read as hardware. */
+  --color-ink-50: #faf9f7;
+  --color-ink-100: #f2f0ec;
+  --color-ink-200: #e6e2db;
+  --color-ink-300: #d2ccc1;
+  --color-ink-400: #a49c8e;
+  /* 5.44:1 on white, 5.13:1 on the canvas — AA for normal text. */
+  --color-ink-500: #6f6759;
+  --color-ink-600: #5d564a;
+  --color-ink-700: #4a443b;
+  --color-ink-800: #3a352e;
+  --color-ink-900: #272420;
+  --color-ink-950: #17150f;
 
   /* ---------------------------------------------------- primitive: ember  */
   /* Accent. Reserved for marketing CTAs and high-emphasis moments only. */
@@ -94,24 +119,32 @@
   --color-orchid-900: #4c1d95;
 
   /* ------------------------------------------------------ radius / shape  */
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.625rem;
-  --radius-xl: 0.875rem;
-  --radius-2xl: 1.125rem;
+  /* Tightened by roughly a third. Generous corner radius is the single
+     strongest period marker in an interface, and a soft 18px card is what
+     makes a 2021 product look like a 2021 product. An instrument has edges. */
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
 
   /* ------------------------------------------------------------ spacing   */
   /* Density 6/10 - standard product density on a 4px base. */
   --spacing: 0.25rem;
 
   /* ------------------------------------------------------------ shadows   */
-  /* Sharp, low-spread. Swiss style: shadows delineate, they do not decorate. */
-  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(16 24 40 / 0.07), 0 1px 2px -1px rgb(16 24 40 / 0.05);
-  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.04);
-  --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.07), 0 4px 6px -2px rgb(16 24 40 / 0.03);
-  --shadow-xl: 0 20px 24px -4px rgb(16 24 40 / 0.08), 0 8px 8px -4px rgb(16 24 40 / 0.03);
+  /* Nearly gone, and warm-tinted where they remain. Separation on these
+     screens is carried by a hairline border and by the canvas being a shade
+     darker than the card. A drop shadow under every panel is the other half
+     of what dates an interface, and it stops meaning anything once every
+     surface has one — so these are reserved for surfaces that genuinely
+     float: menus, popovers, the odd sticky bar. */
+  --shadow-xs: 0 1px 1px 0 rgb(39 36 32 / 0.03);
+  --shadow-sm: 0 1px 2px 0 rgb(39 36 32 / 0.05);
+  --shadow-md: 0 2px 6px -2px rgb(39 36 32 / 0.07), 0 1px 2px -1px rgb(39 36 32 / 0.04);
+  --shadow-lg: 0 8px 20px -6px rgb(39 36 32 / 0.1), 0 2px 6px -2px rgb(39 36 32 / 0.05);
+  --shadow-xl: 0 16px 32px -8px rgb(39 36 32 / 0.12), 0 4px 10px -4px rgb(39 36 32 / 0.05);
 
   /* ------------------------------------------------------------- motion   */
   /* Motion dial 3/10 - subtle. Motion clarifies state, never entertains. */
@@ -250,23 +283,26 @@
   --content-tertiary: var(--color-ink-500);
   --content-disabled: var(--color-ink-400);
   --content-inverse: #ffffff;
-  --content-accent: var(--color-signal-700);
+  --content-accent: var(--color-plum-700);
 
   --border-subtle: var(--color-ink-200);
   --border-default: var(--color-ink-300);
   --border-strong: var(--color-ink-400);
-  --border-accent: var(--color-signal-600);
+  --border-accent: var(--color-plum-600);
 
-  --surface-accent: var(--color-signal-600);
-  --surface-accent-hover: var(--color-signal-700);
-  --surface-accent-subtle: var(--color-signal-50);
+  /* The primary action is near-black, not a brand colour. Colour on these
+     screens belongs to the verdict on the resume; a blue button competes with
+     it for the same attention and wins, which is the wrong way round. */
+  --surface-accent: var(--color-ink-950);
+  --surface-accent-hover: var(--color-ink-800);
+  --surface-accent-subtle: var(--color-plum-50);
   --content-on-accent: #ffffff;
 
-  /* White on ember-600 measures 3.77:1 and fails AA. ember-700 measures
-     6.16:1 and ember-800 8.41:1, while still reading unmistakably as the
-     warm conversion accent. */
-  --surface-cta: var(--color-ember-700);
-  --surface-cta-hover: var(--color-ember-800);
+  /* The one place the accent is spent on a filled surface: the single
+     highest-intent action on a marketing page. Using it twice on one screen
+     is a bug rather than a style choice. */
+  --surface-cta: var(--color-plum-700);
+  --surface-cta-hover: var(--color-plum-800);
   --content-on-cta: #ffffff;
 
   --surface-success: var(--color-verdant-50);
@@ -288,7 +324,7 @@
   --border-info: var(--color-orchid-200);
   --content-info: var(--color-orchid-700);
 
-  --focus-ring: var(--color-signal-600);
+  --focus-ring: var(--color-plum-600);
 
   /* Diff semantics - always paired with an icon or label, never colour alone */
   --diff-added-bg: var(--color-verdant-50);
@@ -297,9 +333,9 @@
   --diff-removed-bg: var(--color-crimson-50);
   --diff-removed-border: var(--color-crimson-200);
   --diff-removed-content: var(--color-crimson-900);
-  --diff-modified-bg: var(--color-signal-50);
-  --diff-modified-border: var(--color-signal-200);
-  --diff-modified-content: var(--color-signal-900);
+  --diff-modified-bg: var(--color-plum-50);
+  --diff-modified-border: var(--color-plum-200);
+  --diff-modified-content: var(--color-plum-900);
   --diff-reordered-bg: var(--color-orchid-50);
   --diff-reordered-border: var(--color-orchid-200);
   --diff-reordered-content: var(--color-orchid-900);
@@ -325,21 +361,25 @@
   --content-tertiary: #8b93a7;
   --content-disabled: #5b6274;
   --content-inverse: var(--color-ink-950);
-  --content-accent: var(--color-signal-300);
+  --content-accent: var(--color-plum-300);
 
   --border-subtle: #262b38;
   --border-default: #333949;
   --border-strong: #454c60;
-  --border-accent: var(--color-signal-500);
+  --border-accent: var(--color-plum-500);
 
-  --surface-accent: var(--color-signal-500);
-  --surface-accent-hover: var(--color-signal-400);
-  --surface-accent-subtle: color-mix(in oklab, var(--color-signal-500) 14%, #12151d);
-  --content-on-accent: #ffffff;
+  /* Inverted, same idea: the primary action is the highest-contrast neutral
+     available rather than a hue. */
+  --surface-accent: var(--color-ink-100);
+  --surface-accent-hover: #ffffff;
+  --surface-accent-subtle: color-mix(in oklab, var(--color-plum-500) 14%, #12151d);
+  /* Dark, not white: the accent surface is now the near-white neutral, so the
+     inherited #ffffff here would have been white on white. */
+  --content-on-accent: var(--color-ink-950);
 
-  --surface-cta: var(--color-ember-500);
-  --surface-cta-hover: var(--color-ember-400);
-  --content-on-cta: #1a0d04;
+  --surface-cta: var(--color-plum-300);
+  --surface-cta-hover: var(--color-plum-200);
+  --content-on-cta: var(--color-plum-950);
 
   --surface-success: color-mix(in oklab, var(--color-verdant-500) 14%, #12151d);
   --border-success: color-mix(in oklab, var(--color-verdant-500) 32%, #12151d);
@@ -360,7 +400,7 @@
   --border-info: color-mix(in oklab, var(--color-orchid-500) 32%, #12151d);
   --content-info: var(--color-orchid-200);
 
-  --focus-ring: var(--color-signal-400);
+  --focus-ring: var(--color-plum-400);
 
   --diff-added-bg: color-mix(in oklab, var(--color-verdant-500) 12%, #12151d);
   --diff-added-border: color-mix(in oklab, var(--color-verdant-500) 30%, #12151d);
@@ -368,9 +408,9 @@
   --diff-removed-bg: color-mix(in oklab, var(--color-crimson-500) 12%, #12151d);
   --diff-removed-border: color-mix(in oklab, var(--color-crimson-500) 30%, #12151d);
   --diff-removed-content: var(--color-crimson-200);
-  --diff-modified-bg: color-mix(in oklab, var(--color-signal-500) 12%, #12151d);
-  --diff-modified-border: color-mix(in oklab, var(--color-signal-500) 30%, #12151d);
-  --diff-modified-content: var(--color-signal-200);
+  --diff-modified-bg: color-mix(in oklab, var(--color-plum-500) 12%, #12151d);
+  --diff-modified-border: color-mix(in oklab, var(--color-plum-500) 30%, #12151d);
+  --diff-modified-content: var(--color-plum-200);
   --diff-reordered-bg: color-mix(in oklab, var(--color-orchid-500) 12%, #12151d);
   --diff-reordered-border: color-mix(in oklab, var(--color-orchid-500) 30%, #12151d);
   --diff-reordered-content: var(--color-orchid-200);

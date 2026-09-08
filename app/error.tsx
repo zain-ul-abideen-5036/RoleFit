@@ -34,7 +34,9 @@ export default function GlobalError({
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
       <Logo />
-      <h1 className="mt-10 text-3xl font-bold tracking-tight text-fg">Something went wrong</h1>
+      <h1 className="mt-10 font-display text-3xl font-medium tracking-tight text-fg">
+        Something went wrong
+      </h1>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-fg-muted">
         An unexpected error interrupted this page. Nothing you had saved has been lost — try again,
         and if it keeps happening let us know.
