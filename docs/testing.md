@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 451   | ~12s    | Pure functions. No database, network or model. |
+| Unit                         | 483   | ~13s    | Pure functions. No database, network or model. |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -123,6 +123,23 @@ The immutable-section backstop is driven by stubbing per-change validation to
 let a changed employer, a changed degree and an invented certification through.
 Each must throw rather than return a result with a warning attached, because a
 user has no way to judge that warning.
+
+### Embeddings — 32 unit tests
+
+No embedding API is called. The arithmetic (cosine similarity at every
+degenerate input — zero vectors, mismatched dimensions, empty), the ordering,
+and above all the boundaries.
+
+The boundary tests are the ones worth having: a requirement the lexical engine
+already evidenced causes **nothing to be embedded at all**, a provider failure
+returns an empty array rather than propagating, and a response with the wrong
+number of vectors discards the whole result rather than using part of it. The
+excerpt is asserted to be quoted verbatim from the source profile.
+
+The adapter is asserted to place vectors by the index the API reports rather
+than by arrival order, which the API does not guarantee — pairing by arrival
+would attach one requirement's vector to another's text, producing plausible
+and wrong output rather than an error.
 
 ### Background queue — 11 unit + 17 integration tests
 

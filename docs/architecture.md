@@ -124,6 +124,36 @@ floor. See [issue #17](https://github.com/zain-ul-abideen-5036/RoleFit/issues/17
 `related` and `fuzzy` were once both reported as `semantic`, which wrongly
 implied a model participates in matching.
 
+### Where embeddings do fit (`lib/embeddings/`)
+
+They do not enter matching. With `EMBEDDINGS_PROVIDER` set, one advisory thing
+is added: for each requirement the lexical engine reports as **missing**, the
+resume span nearest to it in embedding space is shown to the user, quoted
+verbatim, labelled "closest thing already on your resume", and explicitly not
+counted as a match.
+
+The boundaries are the design:
+
+|                                     |                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| Considered                          | Only `missing` requirements — nothing is embedded when there are none |
+| Affects the score                   | No. Computed _after_ `analyzeResume` has returned                     |
+| Affects a match status              | No                                                                    |
+| Passed to the optimizer as evidence | **No**                                                                |
+| Default                             | Off                                                                   |
+| Provider failure                    | Empty array; the analysis is unaffected                               |
+
+A near miss in embedding space is not a fact about the candidate, so the
+product cannot act on it. What it can do is put the candidate's own words in
+front of them and let them decide whether it is the same thing. Anything more
+would be the product asserting experience on someone's behalf — the thing the
+anti-fabrication validator exists to prevent.
+
+Similarity is computed in JavaScript, not pgvector. A resume has tens of spans
+and a posting tens of requirements, so a full comparison is a few thousand dot
+products over 1536 dimensions — single-digit milliseconds, against a database
+extension that local development and CI would both have to install.
+
 ### Evidence index (`lib/matching/evidence.ts`)
 
 Flattens a resume into addressable spans with a section weight. A skill listed

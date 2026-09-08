@@ -6,6 +6,9 @@ import type { Analysis, JobDescription } from '@/db/schema'
 import type { SourceDocumentSignals } from '@/lib/ats/types'
 import { emptySourceSignals } from '@/lib/ats/types'
 import { JOB_DESCRIPTION } from '@/lib/constants'
+import type { AnalysisReport, RequirementMatch, ResumeProfile } from '@/lib/domain/types'
+import { getEmbeddingProvider } from '@/lib/embeddings'
+import { suggestGapBridges } from '@/lib/embeddings/gap-suggestions'
 import { errors } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { cleanDocumentText } from '@/lib/matching/normalize'
@@ -37,6 +40,23 @@ export interface CreateAnalysisInput {
 export interface CreateAnalysisResult {
   analysis: Analysis
   jobDescription: JobDescription
+}
+
+/**
+ * Nearest-span suggestions for the gaps, when embeddings are configured.
+ *
+ * Returns an empty array otherwise, which is the default. Failures are already
+ * swallowed by `suggestGapBridges`; this exists so the caller has no branch and
+ * the score is computed before this is ever reached.
+ */
+async function gapSuggestionsFor(
+  resume: ResumeProfile,
+  matches: readonly RequirementMatch[],
+): Promise<AnalysisReport['gapSuggestions']> {
+  const provider = getEmbeddingProvider()
+  if (!provider) return []
+
+  return suggestGapBridges({ resume, matches, provider })
 }
 
 export async function createAnalysisForResume(
@@ -86,6 +106,10 @@ export async function createAnalysisForResume(
   signals.extractedCharacters = resume.rawText.length
 
   const { report, ats, overallScore } = analyzeResume(resume.profile, profile, signals)
+
+  // Advisory only, and computed after scoring so it cannot influence it. The
+  // score above is already final at this point.
+  report.gapSuggestions = await gapSuggestionsFor(resume.profile, report.requirementMatches)
 
   const analysis = await createAnalysis({
     userId: input.userId,

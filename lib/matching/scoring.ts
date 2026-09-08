@@ -304,6 +304,10 @@ export function buildAnalysisReport(input: ScoreInput): AnalysisReport {
     requirementMatches: [...matches],
     keywordCoverage: [...keywordCoverage],
     recommendations: buildRecommendations(input, dimensions),
+    // Populated later by the analysis service when embeddings are configured.
+    // Empty here on purpose: scoring is deterministic and offline, and must not
+    // acquire a network dependency to build a report.
+    gapSuggestions: [],
     counts: {
       strong: matches.filter((match) => match.status === 'strong').length,
       partial: matches.filter((match) => match.status === 'partial').length,

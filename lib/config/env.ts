@@ -116,6 +116,18 @@ const envSchema = z
      * job for a separate worker (`npm run worker`) and returns immediately,
      * which is what a slower provider or batch work needs.
      */
+    /**
+     * Embeddings, used only to suggest the closest thing a resume already says
+     * to a requirement it does not meet.
+     *
+     * `none` is the default. Nothing here influences a score or a match
+     * decision — those stay lexical and deterministic — so turning it off
+     * removes one advisory line from the gap list and nothing else.
+     */
+    EMBEDDINGS_PROVIDER: z.enum(['none', 'openai']).default('none'),
+    EMBEDDINGS_API_KEY: z.string().optional(),
+    EMBEDDINGS_MODEL: z.string().optional(),
+
     QUEUE_DRIVER: z.enum(['inline', 'database']).default('inline'),
     /** Seconds a worker waits before polling again when the queue is empty. */
     QUEUE_POLL_SECONDS: z.coerce.number().int().min(1).max(300).default(5),
@@ -192,6 +204,14 @@ const envSchema = z
           message: `STORAGE_REGION is "${value.STORAGE_REGION}" but STORAGE_ENDPOINT points at region "${endpointRegion}". They must match, because the endpoint decides where the request goes and the region decides how it is signed.`,
         })
       }
+    }
+
+    if (value.EMBEDDINGS_PROVIDER !== 'none' && !value.EMBEDDINGS_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['EMBEDDINGS_API_KEY'],
+        message: `EMBEDDINGS_API_KEY is required when EMBEDDINGS_PROVIDER is "${value.EMBEDDINGS_PROVIDER}"`,
+      })
     }
 
     if (value.EMAIL_PROVIDER === 'resend') {

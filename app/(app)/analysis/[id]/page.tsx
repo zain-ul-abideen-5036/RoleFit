@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, Badge, MatchBadge } from '@/components/ui/feedback'
 import { ScoreBreakdown, ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
+import { PRODUCT } from '@/lib/constants'
 import { AppError } from '@/lib/errors'
-import type { RequirementMatch } from '@/lib/domain/types'
+import type { AnalysisReport, RequirementMatch } from '@/lib/domain/types'
 import { pluralize } from '@/lib/utils'
 import { requirePageUser } from '@/server/auth/service'
 import { requireAnalysis, requireJobDescription, requireResume } from '@/server/repositories'
@@ -110,7 +111,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <RequirementList matches={missing} />
+              <RequirementList matches={missing} suggestions={report.gapSuggestions} />
             </CardContent>
           </Card>
         ) : (
@@ -260,10 +261,18 @@ function Tally({
 function RequirementList({
   matches,
   showEvidence = false,
+  suggestions = [],
 }: {
   matches: readonly RequirementMatch[]
   showEvidence?: boolean
+  /**
+   * Advisory nearest-span hints, keyed by requirement. Empty unless an
+   * embedding provider is configured.
+   */
+  suggestions?: AnalysisReport['gapSuggestions']
 }) {
+  const byRequirement = new Map(suggestions.map((entry) => [entry.requirementId, entry]))
+
   return (
     <ul className="flex flex-col gap-2.5">
       {matches.map((match) => (
@@ -291,6 +300,32 @@ function RequirementList({
               {match.evidence[0]!.excerpt}
             </blockquote>
           ) : null}
+
+          {/*
+            Deliberately not framed as a match. It is still a gap; this is the
+            nearest thing already on the resume, offered so the person can
+            decide whether it is the same thing. Only they can.
+          */}
+          {(() => {
+            const suggestion = byRequirement.get(match.requirementId)
+            if (!suggestion) return null
+
+            return (
+              <div className="mt-2.5 rounded-md border border-dashed border-line-strong px-3 py-2">
+                <p className="text-xs font-medium text-fg-subtle">
+                  Closest thing already on your resume
+                </p>
+                <blockquote className="mt-1 text-xs leading-relaxed text-fg-muted">
+                  <span className="text-fg-subtle">From your {suggestion.section}: </span>
+                  {suggestion.excerpt}
+                </blockquote>
+                <p className="mt-1.5 text-[11px] text-fg-subtle">
+                  Not counted as a match. If it is the same thing, say so in your own words —{' '}
+                  {PRODUCT.name} will not claim it for you.
+                </p>
+              </div>
+            )
+          })()}
         </li>
       ))}
     </ul>
