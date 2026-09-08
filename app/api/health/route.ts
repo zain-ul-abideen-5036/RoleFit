@@ -39,9 +39,13 @@ type DatabaseStatus = 'ok' | 'not-migrated' | 'unreachable'
  * database as broken, which is worse than not checking at all.
  */
 async function checkDatabase(): Promise<DatabaseStatus> {
-  const sql = getSql()
-
   try {
+    // Inside the try, not above it. `getSql()` builds the pool from `getEnv()`,
+    // so it throws whenever configuration is invalid — which is precisely when
+    // this endpoint is being read. Constructing it outside turned the one case
+    // this check exists to explain into an uncaught 500 with no body at all.
+    const sql = getSql()
+
     const [probe] = await sql<{ hasLedger: boolean }[]>`
       select to_regclass('drizzle.__drizzle_migrations') is not null as "hasLedger"
     `
