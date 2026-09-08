@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Field, FieldDescription, FieldLabel, Input, Textarea } from '@/components/ui/field'
 import { Alert, Badge, MatchBadge } from '@/components/ui/feedback'
 import { ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
-import { apiPost, toDisplayError } from '@/lib/client/api'
+import { apiGet, apiPost, toDisplayError } from '@/lib/client/api'
 import { JOB_DESCRIPTION, OPTIMIZATION_STAGES } from '@/lib/constants'
 import type { AnalysisReport } from '@/lib/domain/types'
 import { cn, pluralize } from '@/lib/utils'
@@ -58,8 +58,47 @@ interface AnalysisResponse {
 }
 
 interface OptimizationResponse {
-  run: { id: string; resumeId: string; projectedScore: number; provider: string }
+  run: {
+    id: string
+    resumeId: string
+    /** `queued` when a worker will do the work; otherwise already finished. */
+    status: 'queued' | 'running' | 'succeeded' | 'failed'
+    projectedScore: number | null
+    provider: string | null
+  }
   rejectedCount: number
+}
+
+/** How long to keep polling a queued run before giving up. */
+const POLL_TIMEOUT_MS = 120_000
+const POLL_INTERVAL_MS = 1_500
+
+/**
+ * Waits for a queued run to finish.
+ *
+ * Only reached when the deployment runs a worker (`QUEUE_DRIVER=database`); the
+ * inline mode returns a finished run and never enters this. The client decides
+ * by reading the status it was given rather than by knowing the mode.
+ */
+async function waitForRun(runId: string): Promise<void> {
+  const deadline = Date.now() + POLL_TIMEOUT_MS
+
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
+
+    const { run } = await apiGet<{ run: { status: string } }>(`/api/optimizations/${runId}`)
+
+    if (run.status === 'succeeded') return
+    if (run.status === 'failed') {
+      throw new Error('The optimization did not finish. Please try again.')
+    }
+  }
+
+  // A run still going after two minutes is not going to finish while someone
+  // watches. The run row survives, so it is visible in history either way.
+  throw new Error(
+    'This is taking longer than expected. Your run is still going — check your history in a moment.',
+  )
 }
 
 type Stage = (typeof OPTIMIZATION_STAGES)[number]['key']
@@ -125,6 +164,12 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
       const result = await apiPost<OptimizationResponse>('/api/optimizations', {
         analysisId: analysis.analysis.id,
       })
+
+      // Queued: a worker has the job, so wait for the run to report finished.
+      if (result.run.status !== 'succeeded') {
+        await waitForRun(result.run.id)
+      }
+
       setStage('generating')
       router.push(`/resume/${result.run.resumeId}?run=${result.run.id}`)
     } catch (caught) {
