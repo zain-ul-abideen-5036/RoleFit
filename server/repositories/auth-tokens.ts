@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, isNull, lt, sql } from 'drizzle-orm'
+import { and, eq, gt, isNull, lt, sql } from 'drizzle-orm'
 
 import { authTokens, type AuthToken } from '@/db/schema'
 import type { TokenPurpose } from '@/lib/security/tokens'
@@ -107,7 +107,9 @@ export async function countLiveAuthTokens(
         eq(authTokens.userId, userId),
         eq(authTokens.purpose, purpose),
         isNull(authTokens.consumedAt),
-        sql`${authTokens.expiresAt} > ${now}`,
+        // `gt` rather than a raw sql template: postgres.js cannot bind a JS
+        // Date as an untyped parameter and throws at bind time.
+        gt(authTokens.expiresAt, now),
       ),
     )
 
