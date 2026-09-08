@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic'
  * would be echoed back on a public endpoint.
  */
 
-type DatabaseStatus = 'ok' | 'not-migrated' | 'unreachable'
+type DatabaseStatus = 'ok' | 'not-migrated' | 'unreachable' | 'unknown'
 
 /**
  * Reachability and whether the schema exists, in as few round trips as it takes.
@@ -83,7 +83,15 @@ export async function GET(): Promise<NextResponse> {
     if (error instanceof EnvConfigError) invalidConfigKeys = error.keys
   }
 
-  const database = await checkDatabase()
+  // Reported as unknown rather than checked, because it cannot be checked. The
+  // pool is built from `getEnv()`, so when configuration is invalid — for any
+  // key, not just DATABASE_URL — the connection is never attempted and any
+  // verdict here would be invented.
+  //
+  // It said "unreachable" instead, and that cost a real deployment a detour:
+  // the actual fault was STORAGE_DRIVER, while the response sent its operator
+  // to go and re-check a Neon connection string that was correct all along.
+  const database = checks.config === 'ok' ? await checkDatabase() : 'unknown'
   checks.database = database
   if (database !== 'ok') healthy = false
 

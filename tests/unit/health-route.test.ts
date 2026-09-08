@@ -172,6 +172,32 @@ describe('the database check', () => {
     expect(body.checks).not.toMatchObject({ database: 'unreachable' })
   })
 
+  it('reports unknown rather than guessing when config is invalid', async () => {
+    // The pool is built from getEnv(), so an invalid config of any kind means
+    // the connection is never attempted. Saying "unreachable" there sent a real
+    // operator to re-check a Neon string that was correct; the fault was
+    // STORAGE_DRIVER.
+    getEnv.mockImplementation(() => {
+      throw new EnvConfigError('...', ['STORAGE_DRIVER'])
+    })
+
+    const { status, body } = await get()
+
+    expect(status).toBe(503)
+    expect(body.checks).toMatchObject({ config: 'invalid', database: 'unknown' })
+    expect(body.invalidConfig).toEqual(['STORAGE_DRIVER'])
+  })
+
+  it('does not attempt a connection it cannot configure', async () => {
+    getEnv.mockImplementation(() => {
+      throw new EnvConfigError('...', ['STORAGE_DRIVER'])
+    })
+
+    await get()
+
+    expect(getSql).not.toHaveBeenCalled()
+  })
+
   it('survives getSql itself throwing', async () => {
     // The regression this endpoint shipped with. `getSql()` builds its pool
     // from `getEnv()`, so it throws whenever configuration is invalid — and
@@ -203,6 +229,7 @@ describe('the database check', () => {
 
     expect(status).toBe(503)
     expect(body.invalidConfig).toEqual(['AUTH_SECRET', 'DATABASE_URL'])
+    expect(body.checks).toMatchObject({ database: 'unknown' })
   })
 
   it('never rejects, whatever fails', async () => {
@@ -218,16 +245,13 @@ describe('the database check', () => {
     await expect(GET()).resolves.toBeDefined()
   })
 
-  it('runs even when configuration is invalid', async () => {
-    // Both answers at once are what turn one request into a full diagnosis.
-    getEnv.mockImplementation(() => {
-      throw new EnvConfigError('...', ['DATABASE_URL'])
-    })
+  it('reports unreachable only when the config was good enough to try', async () => {
+    // The distinction that makes the answer trustworthy: this one really did
+    // fail to connect, rather than never having been attempted.
     stubSql(new Error('ECONNREFUSED'))
 
     const { body } = await get()
 
-    expect(body.checks).toMatchObject({ config: 'invalid', database: 'unreachable' })
-    expect(body.invalidConfig).toEqual(['DATABASE_URL'])
+    expect(body.checks).toMatchObject({ config: 'ok', database: 'unreachable' })
   })
 })
