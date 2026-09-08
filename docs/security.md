@@ -63,6 +63,64 @@ A 403 would confirm that the identifier exists, which is itself a disclosure.
   rate-limited by IP prefix rather than by email, so an attacker cannot lock a
   known account out of the product by failing on purpose.
 
+## Account recovery
+
+Two flows, both built around one rule: **no path reveals whether an address has
+an account.**
+
+| Situation                                       | What the caller sees                          |
+| ----------------------------------------------- | --------------------------------------------- |
+| Address has an account                          | `{ok: true}`                                  |
+| Address has no account                          | `{ok: true}`, after a dummy bcrypt comparison |
+| Address already verified                        | `{ok: true}`, nothing sent                    |
+| The provider rejected the send                  | `{ok: true}`, logged server-side              |
+| Token unknown / expired / spent / wrong purpose | One identical error                           |
+
+The dummy comparison on the unknown-address path is not decoration. Without it,
+response timing separates real addresses from unknown ones as reliably as a
+different message would. Signup already takes this line; a recovery form that
+broke it would hand back the oracle signup refuses to be.
+
+Distinguishing the four token failures would tell whoever holds a stolen or
+guessed token which of those things it is, and none of the four is separately
+actionable by a real user — the answer is always "request a new link".
+
+**Tokens.** 32 bytes from a CSPRNG, base64url. Only a SHA-256 digest is stored,
+so a database read — a backup, a log, a compromised replica — cannot be turned
+into an account takeover. SHA-256 rather than bcrypt deliberately: bcrypt is
+slow to make guessing a low-entropy secret expensive, and there is nothing to
+guess in 256 bits of entropy.
+
+**Single use.** Redemption is a conditional `UPDATE` with `consumed_at IS NULL`
+in the `WHERE` clause, and the caller learns whether it was the one that spent
+the token. A read-then-write would leave a race, and the window is not
+theoretical: mail clients prefetch links. Issuing a new token also consumes any
+outstanding one for that purpose, so re-requesting cannot leave two live links
+in two inboxes.
+
+**Lifetimes.** Verification 24 hours, reset one hour. An unverified address is
+an inconvenience; a live reset link in an old email is an account takeover
+waiting for someone to scroll back.
+
+**After a reset.** `session_epoch` is incremented, which strands every
+outstanding session token including an attacker's — a reset is what someone does
+when they believe an account is compromised. The login lockout is cleared, since
+a reset is how a locked-out person gets back in, and the address is marked
+verified, because redeeming the link proved control of the mailbox. The user is
+**not** signed in: redeeming proves control of the mailbox, not of the password
+just chosen, and a link found in a forwarded inbox must not become a session.
+
+**Transport.** The console driver writes messages to stderr for local
+development and withholds the body outside development, because the body is a
+credential. That guarantee lives in the transport rather than only in
+configuration, so a later edit to the env schema cannot reintroduce the leak. It
+is refused outright on hosted platforms, where no mail would be delivered at
+all.
+
+**Not gated.** No feature depends on a verified address. Verification exists so
+the account can be recovered by email, and the settings page says exactly that
+rather than showing an unexplained warning.
+
 ## CSRF
 
 Two layers. `SameSite=Lax` already prevents the session cookie being sent on a
