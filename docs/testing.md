@@ -2,8 +2,8 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 440   | ~12s    | Pure functions. No database, network or model. |
-| Integration                  | 55    | ~50s    | A real PostgreSQL instance.                    |
+| Unit                         | 451   | ~12s    | Pure functions. No database, network or model. |
+| Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
 
@@ -123,6 +123,23 @@ The immutable-section backstop is driven by stubbing per-change validation to
 let a changed employer, a changed degree and an invented certification through.
 Each must throw rather than return a result with a warning attached, because a
 user has no way to judge that warning.
+
+### Background queue — 11 unit + 17 integration tests
+
+The property that matters cannot be tested any other way. Two concurrent claims
+against one job must yield exactly one, and three workers against three jobs
+must take one each — a mock cannot exhibit `SKIP LOCKED`, and getting it wrong
+is invisible until two workers process the same run in production.
+
+Reclaiming is covered end to end: a job held by a worker that then vanished is
+refused to a second worker immediately and available past the timeout, with
+attempts incremented. Without that, a crashed worker strands a run permanently.
+
+The unit half pins the retry schedule, because a backoff that grows too slowly
+turns a failing dependency into a self-inflicted denial of service, and one
+without a cap makes a recovered dependency wait out nine days at attempt 20. It
+also asserts the claim timeout exceeds the longest a run may take — a claim
+expiring mid-run would let a second worker start the same one.
 
 ### Object storage — 45 unit tests
 
