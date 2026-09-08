@@ -172,6 +172,52 @@ describe('the database check', () => {
     expect(body.checks).not.toMatchObject({ database: 'unreachable' })
   })
 
+  it('survives getSql itself throwing', async () => {
+    // The regression this endpoint shipped with. `getSql()` builds its pool
+    // from `getEnv()`, so it throws whenever configuration is invalid — and
+    // constructing it outside the try turned every misconfigured deployment
+    // into an uncaught 500 with no body, which is strictly less information
+    // than the "invalid" it replaced. The earlier stub always returned a
+    // working tag, so it could not see this.
+    getSql.mockImplementation(() => {
+      throw new Error('Invalid environment configuration')
+    })
+
+    const { status, body } = await get()
+
+    expect(status).toBe(503)
+    expect(body.checks).toMatchObject({ database: 'unreachable' })
+  })
+
+  it('still reports the config diagnosis when getSql throws', async () => {
+    // Both failures have the same root cause, so this is the exact shape a
+    // deployment with missing variables produces. The names must survive it.
+    getEnv.mockImplementation(() => {
+      throw new EnvConfigError('...', ['AUTH_SECRET', 'DATABASE_URL'])
+    })
+    getSql.mockImplementation(() => {
+      throw new Error('Invalid environment configuration')
+    })
+
+    const { status, body } = await get()
+
+    expect(status).toBe(503)
+    expect(body.invalidConfig).toEqual(['AUTH_SECRET', 'DATABASE_URL'])
+  })
+
+  it('never rejects, whatever fails', async () => {
+    // A health endpoint that throws is a health endpoint that cannot report.
+    getEnv.mockImplementation(() => {
+      throw new Error('boom')
+    })
+    getSql.mockImplementation(() => {
+      throw new Error('boom')
+    })
+
+    const { GET } = await import('@/app/api/health/route')
+    await expect(GET()).resolves.toBeDefined()
+  })
+
   it('runs even when configuration is invalid', async () => {
     // Both answers at once are what turn one request into a full diagnosis.
     getEnv.mockImplementation(() => {
