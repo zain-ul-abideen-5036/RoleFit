@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 
+import { publicAppUrl } from '@/lib/config/public-url'
+
 /**
  * Sitemap.
  *
@@ -8,7 +10,7 @@ import type { MetadataRoute } from 'next'
  * reaches one anyway is still told not to index it.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+  const base = publicAppUrl()
   const lastModified = new Date()
 
   return [

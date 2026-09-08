@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google'
 
 import { ThemeScript } from '@/components/theme/theme-script'
+import { publicAppUrl, publicAppUrlObject } from '@/lib/config/public-url'
 import { PRODUCT } from '@/lib/constants'
 
 import './globals.css'
@@ -28,10 +29,10 @@ const mono = JetBrains_Mono({
   weight: ['400', '500'],
 })
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+const appUrl = publicAppUrl()
 
 export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
+  metadataBase: publicAppUrlObject(),
   title: {
     default: `${PRODUCT.name} — ${PRODUCT.tagline}`,
     template: `%s — ${PRODUCT.name}`,

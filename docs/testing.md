@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 689   | ~18s    | Pure functions. No database, network or model. |
+| Unit                         | 714   | ~18s    | Pure functions. No database, network or model. |
 | Component                    | 105   | ~7s     | React components in jsdom.                     |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
@@ -447,28 +447,30 @@ silently drift from what the product actually produces.
 
 Each was a real bug, fixed rather than tested around.
 
-| Found by  | Defect                                                                                                                                                                                                            |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit      | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                                            |
-| Unit      | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                                                    |
-| Unit      | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                                               |
-| Unit      | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                                       |
-| Unit      | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                                                      |
-| E2E       | The environment validator refused to start any production build using the local storage driver                                                                                                                    |
-| E2E       | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                                                      |
-| E2E       | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                                        |
-| E2E       | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                                                 |
-| Audit     | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                                                |
-| Audit     | The resume preview scrolled but was not keyboard-focusable                                                                                                                                                        |
-| Audit     | The job description parser emitted the same requirement in two categories                                                                                                                                         |
-| Unit      | A location on a shared contact line was never extracted                                                                                                                                                           |
-| Unit      | Custom resume sections were dropped from short resumes                                                                                                                                                            |
-| Unit      | A job posting with no section headings yielded no skills at all                                                                                                                                                   |
-| Audit     | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                                  |
-| Audit     | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                        |
-| Unit      | The `STORAGE_BUCKET` "required when s3" check could never fire, because the field is defaulted — forgetting it silently addressed a bucket named after the default, which on Backblaze B2 belongs to someone else |
-| Component | The optimizer's per-requirement reason for declining to address a gap was validated, stored, typed and passed to the component, then never rendered                                                               |
-| Unit      | An error-body assertion searched serialised JSON for `90`, which the random 12-hex-character incident id contains about one run in ten                                                                            |
+| Found by    | Defect                                                                                                                                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit        | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                                            |
+| Unit        | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                                                    |
+| Unit        | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                                               |
+| Unit        | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                                       |
+| Unit        | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                                                      |
+| E2E         | The environment validator refused to start any production build using the local storage driver                                                                                                                    |
+| E2E         | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                                                      |
+| E2E         | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                                        |
+| E2E         | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                                                 |
+| Audit       | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                                                |
+| Audit       | The resume preview scrolled but was not keyboard-focusable                                                                                                                                                        |
+| Audit       | The job description parser emitted the same requirement in two categories                                                                                                                                         |
+| Unit        | A location on a shared contact line was never extracted                                                                                                                                                           |
+| Unit        | Custom resume sections were dropped from short resumes                                                                                                                                                            |
+| Unit        | A job posting with no section headings yielded no skills at all                                                                                                                                                   |
+| Audit       | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                                  |
+| Audit       | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                        |
+| Unit        | The `STORAGE_BUCKET` "required when s3" check could never fire, because the field is defaulted — forgetting it silently addressed a bucket named after the default, which on Backblaze B2 belongs to someone else |
+| Component   | The optimizer's per-requirement reason for declining to address a gap was validated, stored, typed and passed to the component, then never rendered                                                               |
+| Audit       | An empty `NEXT_PUBLIC_APP_URL` failed the production build with `Invalid URL` on `/_not-found`, and would have failed every request at runtime — `??` and zod's `.default()` both ignore the empty string         |
+| Integration | The job claim predicate compared a database-defaulted `run_after` against the application's clock, so a freshly enqueued job was invisible under clock skew                                                       |
+| Unit        | An error-body assertion searched serialised JSON for `90`, which the random 12-hex-character incident id contains about one run in ten                                                                            |
 
 ## Coverage
 

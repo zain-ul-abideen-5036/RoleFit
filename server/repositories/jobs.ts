@@ -55,25 +55,38 @@ export async function enqueueJob(input: {
  * the worker holding it must be gone. Reclaiming on a timeout is what stops a
  * crashed worker stranding a user's run forever.
  */
-export async function claimNextJob(workerId: string, now: Date = new Date()): Promise<Job | null> {
-  const staleBefore = new Date(now.getTime() - CLAIM_TIMEOUT_MS)
+export async function claimNextJob(workerId: string, now?: Date): Promise<Job | null> {
+  // Comparisons run against the *database's* clock unless a caller supplies a
+  // time. `runAfter` is defaulted by `now()` in Postgres, so comparing it to
+  // the application's `new Date()` makes a freshly enqueued job invisible
+  // whenever the two clocks disagree by a millisecond — which they do, and
+  // which surfaced as an intermittent test failure right after a container
+  // restart. A worker and its database do not share a clock in production
+  // either.
+  // Interpolated as ISO strings with an explicit cast, not as Date objects:
+  // postgres.js cannot bind a JS Date as an untyped parameter and throws at
+  // bind time. The same trap caught the live-token count and the earlier
+  // version of this predicate.
+  const dueNow = now === undefined ? sql`now()` : sql`${now.toISOString()}::timestamptz`
+  const staleBefore =
+    now === undefined
+      ? sql`now() - make_interval(secs => ${CLAIM_TIMEOUT_MS / 1000})`
+      : sql`${new Date(now.getTime() - CLAIM_TIMEOUT_MS).toISOString()}::timestamptz`
 
   return getDb().transaction(async (tx) => {
     const candidates = await tx
       .select({ id: jobs.id })
       .from(jobs)
       .where(
-        // Drizzle operators rather than a raw sql template: postgres.js cannot
-        // bind a JS Date as an untyped parameter and throws at bind time.
         or(
-          and(eq(jobs.status, 'pending'), lte(jobs.runAfter, now)),
-          and(eq(jobs.status, 'claimed'), lt(jobs.claimedAt, staleBefore)),
+          and(eq(jobs.status, 'pending'), sql`${jobs.runAfter} <= ${dueNow}`),
+          and(eq(jobs.status, 'claimed'), sql`${jobs.claimedAt} < ${staleBefore}`),
         ),
       )
       .orderBy(asc(jobs.runAfter))
-      .limit(1)
       // Skips a row another transaction is already looking at, instead of
       // waiting for it. Without this two workers serialise on the same job.
+      .limit(1)
       .for('update', { skipLocked: true })
 
     const candidate = candidates[0]
@@ -83,10 +96,12 @@ export async function claimNextJob(workerId: string, now: Date = new Date()): Pr
       .update(jobs)
       .set({
         status: 'claimed',
-        claimedAt: now,
+        // Written from the database clock too, so a claim's age is measured
+        // against the same source that decides whether it is stale.
+        claimedAt: sql`now()`,
         claimedBy: workerId,
         attempts: sql`${jobs.attempts} + 1`,
-        updatedAt: now,
+        updatedAt: sql`now()`,
       })
       .where(eq(jobs.id, candidate.id))
       .returning()

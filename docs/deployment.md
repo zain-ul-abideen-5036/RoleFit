@@ -41,6 +41,10 @@ prints the exact variable list to paste into Vercel.
 Then: import the repo in Vercel, paste that block, deploy, add
 `NEXT_PUBLIC_APP_URL`, redeploy. Steps 6 and 9.
 
+The first deploy works without `NEXT_PUBLIC_APP_URL` — the app falls back to
+the hostname Vercel assigns. Setting it afterwards pins your canonical URL.
+Just do not create the variable with an empty value.
+
 **What still needs you, and why:** creating the three accounts, and clicking
 Deploy. I have no credentials for Neon, Backblaze, Upstash or Vercel, and
 generating fake ones would produce a guide that fails on your first attempt.
@@ -435,6 +439,12 @@ origin the CSRF check trusts. It is **required in production** — if it is unse
 startup fails with a message naming it. That is deliberate: it previously
 defaulted to localhost, passed validation, and then refused every sign-in,
 upload and export with a `403`.
+
+> **Do not create it empty.** Adding the variable in Vercel with a blank value
+> is not the same as leaving it out: an empty value used to fail the build with
+> `Invalid URL` on `/_not-found`, and then fail every request at runtime. Both
+> are fixed — the app now falls back to the URL Vercel assigns — but leaving it
+> out until you have a real value is still the cleaner path.
 
 **Preview deployments need nothing here.** A preview gets a hostname generated
 per deployment that nobody could configure in advance, so RoleFit trusts the
