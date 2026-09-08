@@ -26,7 +26,17 @@ interface AuthResponse {
   user: { id: string; email: string }
 }
 
-export function AuthForm({ mode }: { mode: AuthMode }) {
+export function AuthForm({
+  mode,
+  recoveryEnabled = false,
+  justReset = false,
+}: {
+  mode: AuthMode
+  /** False when the deployment has no email transport; hides the reset link. */
+  recoveryEnabled?: boolean
+  /** Arrived here straight after completing a reset. */
+  justReset?: boolean
+}) {
   const router = useRouter()
   const isSignup = mode === 'signup'
 
@@ -76,6 +86,12 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           ? 'Free while the product is in development. No card required.'
           : 'Welcome back. Pick up where you left off.'}
       </p>
+
+      {justReset && !formError ? (
+        <Alert tone="success" className="mt-6">
+          Your password has been changed. Sign in with the new one.
+        </Alert>
+      ) : null}
 
       {formError ? (
         <Alert tone="danger" live className="mt-6">
@@ -142,7 +158,22 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
             </button>
           </div>
           {isSignup ? null : (
-            <FieldDescription>Use the password you created when you signed up.</FieldDescription>
+            <FieldDescription>
+              {recoveryEnabled ? (
+                <>
+                  Use the password you created when you signed up, or{' '}
+                  <Link
+                    href="/forgot-password"
+                    className="font-medium text-fg-accent underline underline-offset-4 hover:text-fg"
+                  >
+                    reset it
+                  </Link>
+                  .
+                </>
+              ) : (
+                'Use the password you created when you signed up.'
+              )}
+            </FieldDescription>
           )}
         </Field>
 

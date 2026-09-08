@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { AuthForm } from '@/components/auth/auth-form'
+import { emailIsConfigured } from '@/lib/email'
 import { getCurrentUser } from '@/server/auth/service'
 
 export const metadata: Metadata = {
@@ -12,8 +13,15 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reset?: string }>
+}) {
   // Already signed in: send them where they were going.
   if (await getCurrentUser()) redirect('/dashboard')
-  return <AuthForm mode="login" />
+
+  const { reset } = await searchParams
+
+  return <AuthForm mode="login" recoveryEnabled={emailIsConfigured()} justReset={reset === '1'} />
 }
