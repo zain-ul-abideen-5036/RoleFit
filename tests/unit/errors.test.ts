@@ -78,15 +78,19 @@ describe('incident ids', () => {
 })
 
 describe('status codes', () => {
+  // Status before the error, so the `%i` in the title lands on the number.
+  // With the error second, vitest interpolated the object and every case was
+  // reported as "maps X to NaN" — which is exactly the wrong thing to read in
+  // a failure.
   it.each([
-    ['VALIDATION_FAILED', errors.validation(), 400],
-    ['UNAUTHENTICATED', errors.unauthenticated(), 401],
-    ['FORBIDDEN', errors.forbidden(), 403],
-    ['NOT_FOUND', errors.notFound(), 404],
-    ['CONFLICT', errors.conflict(), 409],
-    ['RATE_LIMITED', errors.rateLimited(30), 429],
-    ['INTERNAL', errors.internal(), 500],
-  ])('maps %s to %i', (_label, error, status) => {
+    ['VALIDATION_FAILED', 400, errors.validation()],
+    ['UNAUTHENTICATED', 401, errors.unauthenticated()],
+    ['FORBIDDEN', 403, errors.forbidden()],
+    ['NOT_FOUND', 404, errors.notFound()],
+    ['CONFLICT', 409, errors.conflict()],
+    ['RATE_LIMITED', 429, errors.rateLimited(30)],
+    ['INTERNAL', 500, errors.internal()],
+  ] as const)('maps %s to %i', (_label, status, error) => {
     expect(error.status).toBe(status)
   })
 })
@@ -153,8 +157,16 @@ describe('rate limiting', () => {
   })
 
   it('does not put the delay in the public body', () => {
-    // It belongs in a header, and duplicating it invites the two to disagree.
-    expect(JSON.stringify(errors.rateLimited(90).toPublicJSON())).not.toContain('90')
+    // It belongs in a Retry-After header, and duplicating it in the body
+    // invites the two to disagree.
+    //
+    // Asserted on the keys rather than by searching the serialised JSON: the
+    // incident id is random hex, so a substring search for "90" fails roughly
+    // one run in ten. That flake is the reason this is written this way.
+    const body = errors.rateLimited(90).toPublicJSON()
+
+    expect(Object.keys(body.error)).not.toContain('retryAfterSeconds')
+    expect(Object.values(body.error)).not.toContain(90)
   })
 })
 

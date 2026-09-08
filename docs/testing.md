@@ -3,7 +3,7 @@
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
 | Unit                         | 589   | ~15s    | Pure functions. No database, network or model. |
-| Component                    | 68    | ~4s     | React components in jsdom.                     |
+| Component                    | 105   | ~7s     | React components in jsdom.                     |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -125,7 +125,7 @@ let a changed employer, a changed degree and an invented certification through.
 Each must throw rather than return a result with a warning attached, because a
 user has no way to judge that warning.
 
-### Components — 68 tests
+### Components — 105 tests
 
 `vitest.config.ts` had a `unit-dom` project — jsdom, DOM matchers, a setup file
 patching `matchMedia` and `ResizeObserver` — from the first commit, and nothing
@@ -150,6 +150,23 @@ produces a form that looks correct and is unusable with a screen reader.
 carries a text label, and all four change actions are distinguishable by label.
 The loading button is asserted to change its accessible _name_, not just show a
 spinner — a spinner is invisible to a screen reader.
+
+**Change review.** The screen where the promise is kept, so the tests are about
+the promise: the original is visible beside the rewrite (a rewrite shown alone
+asks the user to trust it), accept-then-undo returns the change to pending (a
+one-way accept would make the screen a trap), a failed decision surfaces an
+alert rather than showing "Accepted", and "Accept all pending" leaves an
+already-decided change alone.
+
+Writing these found a real defect: the per-requirement reason the optimizer
+gives for declining to address a gap was validated, stored, typed and passed
+down two layers, then never rendered. Fixed in the same commit.
+
+**Upload.** The hydration guard has a test because it was a real bug — an
+enabled control before hydration lets a fast user pick a file that is silently
+dropped. The input's value reset has one too, because without it choosing the
+same file twice fires no `change` event and the UI appears frozen, which is
+exactly what someone does after a transient failure.
 
 ### Errors — 36 unit tests
 
@@ -383,26 +400,28 @@ silently drift from what the product actually produces.
 
 Each was a real bug, fixed rather than tested around.
 
-| Found by | Defect                                                                                                                                                                                                            |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit     | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                                            |
-| Unit     | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                                                    |
-| Unit     | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                                               |
-| Unit     | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                                       |
-| Unit     | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                                                      |
-| E2E      | The environment validator refused to start any production build using the local storage driver                                                                                                                    |
-| E2E      | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                                                      |
-| E2E      | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                                        |
-| E2E      | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                                                 |
-| Audit    | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                                                |
-| Audit    | The resume preview scrolled but was not keyboard-focusable                                                                                                                                                        |
-| Audit    | The job description parser emitted the same requirement in two categories                                                                                                                                         |
-| Unit     | A location on a shared contact line was never extracted                                                                                                                                                           |
-| Unit     | Custom resume sections were dropped from short resumes                                                                                                                                                            |
-| Unit     | A job posting with no section headings yielded no skills at all                                                                                                                                                   |
-| Audit    | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                                  |
-| Audit    | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                        |
-| Unit     | The `STORAGE_BUCKET` "required when s3" check could never fire, because the field is defaulted — forgetting it silently addressed a bucket named after the default, which on Backblaze B2 belongs to someone else |
+| Found by  | Defect                                                                                                                                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit      | A word boundary cannot anchor after `+` or `#`, so `C++` and `C#` were never slugified                                                                                                                            |
+| Unit      | The same bug made `40%` extract as bare `40`, letting a fabricated percentage pass whenever the bare number appeared elsewhere                                                                                    |
+| Unit      | Terminology alignment produced `REST APIs APIs`, and rewrote a candidate's _data pipelines_ into _Data Engineering_                                                                                               |
+| Unit      | pdf.js needs `workerSrc` left untouched in Node; assigning it defeats fake-worker detection                                                                                                                       |
+| Unit      | `Łukasz` lost its first letter — `Ł` has no canonical decomposition for the accent-stripping path to recover                                                                                                      |
+| E2E       | The environment validator refused to start any production build using the local storage driver                                                                                                                    |
+| E2E       | Rate limits were not configurable, so a full pass tripped the signup limiter                                                                                                                                      |
+| E2E       | The uploader accepted a file before React hydrated and silently dropped it                                                                                                                                        |
+| E2E       | Server components threw a 401 that logged a stack trace on every signed-out visit                                                                                                                                 |
+| Audit     | Two WCAG AA contrast failures, including the primary CTA at 3.77:1                                                                                                                                                |
+| Audit     | The resume preview scrolled but was not keyboard-focusable                                                                                                                                                        |
+| Audit     | The job description parser emitted the same requirement in two categories                                                                                                                                         |
+| Unit      | A location on a shared contact line was never extracted                                                                                                                                                           |
+| Unit      | Custom resume sections were dropped from short resumes                                                                                                                                                            |
+| Unit      | A job posting with no section headings yielded no skills at all                                                                                                                                                   |
+| Audit     | The CSRF origin check refused a Vercel preview deployment its own origin, so every request there returned 403 ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                                  |
+| Audit     | An unset `NEXT_PUBLIC_APP_URL` passed validation in production and then refused every state-changing request at runtime ([#21](https://github.com/zain-ul-abideen-5036/RoleFit/issues/21))                        |
+| Unit      | The `STORAGE_BUCKET` "required when s3" check could never fire, because the field is defaulted — forgetting it silently addressed a bucket named after the default, which on Backblaze B2 belongs to someone else |
+| Component | The optimizer's per-requirement reason for declining to address a gap was validated, stored, typed and passed to the component, then never rendered                                                               |
+| Unit      | An error-body assertion searched serialised JSON for `90`, which the random 12-hex-character incident id contains about one run in ten                                                                            |
 
 ## Coverage
 

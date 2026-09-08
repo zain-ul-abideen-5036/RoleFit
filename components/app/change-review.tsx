@@ -310,6 +310,16 @@ function UnaddressedList({ entries }: { entries: UnaddressedRequirement[] }) {
             className="rounded-lg border border-line bg-canvas px-3.5 py-2.5"
           >
             <p className="text-sm text-fg">{entry.text}</p>
+            {/*
+              The per-requirement reason, which the card's heading cannot give:
+              "no evidence at all" and "mentioned once with no detail" are
+              different situations and lead to different next steps. Length is
+              capped by the schema, and this is the same class of model-authored
+              text as a change rationale, which is already surfaced.
+            */}
+            {entry.reason.trim() ? (
+              <p className="mt-1 text-xs leading-relaxed text-fg-muted">{entry.reason}</p>
+            ) : null}
           </li>
         ))}
       </ul>
