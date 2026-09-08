@@ -6,11 +6,13 @@ import { Cpu, Database, Lock, ShieldCheck } from 'lucide-react'
 
 import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { DangerZone } from '@/components/app/danger-zone'
+import { EmailVerificationCard } from '@/components/app/email-verification-card'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/feedback'
-import { profiles } from '@/db/schema'
+import { profiles, users } from '@/db/schema'
 import { activeCapabilities, activeProviderName } from '@/lib/ai'
+import { emailIsConfigured } from '@/lib/email'
 import { PRODUCT } from '@/lib/constants'
 import { requirePageUser } from '@/server/auth/service'
 import { getDashboardStats } from '@/server/repositories'
@@ -26,12 +28,16 @@ export const dynamic = 'force-dynamic'
 export default async function SettingsPage() {
   const user = await requirePageUser()
 
-  const [profile, stats] = await Promise.all([
+  const [profile, stats, account] = await Promise.all([
     getDb().query.profiles.findFirst({
       where: eq(profiles.userId, user.userId),
       columns: { displayName: true, analyticsOptIn: true },
     }),
     getDashboardStats(user.userId),
+    getDb().query.users.findFirst({
+      where: eq(users.id, user.userId),
+      columns: { emailVerifiedAt: true },
+    }),
   ])
 
   const provider = activeProviderName()
@@ -45,6 +51,11 @@ export default async function SettingsPage() {
       />
 
       <PageBody className="flex max-w-3xl flex-col gap-6">
+        {/* Only shown where the deployment can actually send the link. */}
+        {emailIsConfigured() ? (
+          <EmailVerificationCard email={user.email} verified={account?.emailVerifiedAt != null} />
+        ) : null}
+
         <Card>
           <CardHeader>
             <CardTitle as="h2">Profile</CardTitle>
