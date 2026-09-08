@@ -8,19 +8,48 @@ import { cn } from '@/lib/utils'
  * The product's primary surface. Elevation is a hairline border plus a very low
  * shadow — the design direction treats shadows as delineation, not decoration,
  * so nothing here floats.
+ *
+ * A card is not the default container. Most groupings on a page are better
+ * served by a heading and a rule, and reaching for a card every time is what
+ * produces the bordered-box grid that reads as a template. Use one when the
+ * content genuinely is a discrete object: a run, a document, a proposal.
  */
 
-export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  function Card({ className, ...props }, ref) {
-    return (
-      <div
-        ref={ref}
-        className={cn('rounded-xl border border-line bg-surface text-fg shadow-xs', className)}
-        {...props}
-      />
-    )
-  },
-)
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * The card is itself a target — it wraps a link, or the whole surface is
+   * clickable. Adds hover and press feedback.
+   *
+   * Deliberately opt-in. A card that lifts under the pointer but does nothing
+   * when clicked is a promise the interface does not keep, and users learn
+   * within a page to stop trusting the cue.
+   */
+  interactive?: boolean
+}
+
+export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
+  { className, interactive = false, ...props },
+  ref,
+) {
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'rounded-xl border border-line bg-surface text-fg shadow-xs',
+        'transition-[border-color,box-shadow,transform] duration-[--duration-fast] ease-[--ease-standard]',
+        interactive && [
+          'hover:border-line-strong hover:shadow-md',
+          'active:scale-[0.997] active:shadow-xs active:duration-[--duration-instant]',
+          // The card may wrap the link rather than be one, so the ring is
+          // drawn from whatever inside it took focus.
+          'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring',
+        ],
+        className,
+      )}
+      {...props}
+    />
+  )
+})
 
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   function CardHeader({ className, ...props }, ref) {

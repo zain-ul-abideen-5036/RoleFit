@@ -9,14 +9,29 @@ import { cn } from '@/lib/utils'
 /**
  * Button.
  *
- * Sizes meet a comfortable touch target from `md` upward, focus rings are never
- * removed without replacement, and transitions apply to colour rather than
- * layout so nothing reflows on hover.
+ * Sizes meet a comfortable touch target from `md` upward, and focus rings are
+ * never removed without replacement.
+ *
+ * The press is the one piece of motion here that earns its place. It was
+ * `translate-y-px`, which is a jump rather than a press: it moves the label
+ * but nothing about the surface reads as depressed, and a 1px step at 60fps
+ * is a flicker. A scale under 1 with the shadow pulled in at the same time
+ * reads as the thing being pushed into the page, which is what actually
+ * happened.
+ *
+ * Transitions are confined to `background-color`, `box-shadow`, `transform`
+ * and `border-color`. All four are compositor-friendly or cheap; none of them
+ * reflows, so a page of buttons costs nothing on hover.
  */
 const buttonVariants = cva(
   [
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md',
-    'font-medium transition-colors duration-150',
+    'font-medium tracking-[-0.006em]',
+    'transition-[background-color,box-shadow,transform,border-color,color]',
+    'duration-[--duration-fast] ease-[--ease-standard]',
+    // The press: 1.5% down, and back on release. Small enough to feel like
+    // travel in the surface rather than a size change.
+    'active:scale-[0.985] active:duration-[--duration-instant]',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
     'disabled:pointer-events-none disabled:opacity-55',
     'cursor-pointer select-none',
@@ -25,14 +40,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-accent text-on-accent shadow-xs hover:bg-accent-hover active:translate-y-px',
+        primary:
+          'bg-accent text-on-accent shadow-xs hover:bg-accent-hover hover:shadow-sm active:shadow-none',
         /** Marketing CTAs only — the accent is reserved for conversion moments. */
-        cta: 'bg-cta text-on-cta shadow-sm hover:bg-cta-hover active:translate-y-px',
+        cta: 'bg-cta text-on-cta shadow-sm hover:bg-cta-hover hover:shadow-md active:shadow-xs',
         secondary:
-          'border border-line-strong bg-surface text-fg shadow-xs hover:bg-sunken active:translate-y-px',
+          'border border-line-strong bg-surface text-fg shadow-xs hover:border-line-bold hover:bg-sunken active:shadow-none',
         ghost: 'text-fg-muted hover:bg-sunken hover:text-fg',
-        danger: 'bg-danger-solid text-white shadow-xs hover:brightness-95 active:translate-y-px',
-        link: 'text-fg-accent underline-offset-4 hover:underline',
+        danger: 'bg-danger-solid text-white shadow-xs hover:brightness-95 active:shadow-none',
+        // Not a button shape at all, so it opts out of the press.
+        link: 'text-fg-accent underline-offset-4 hover:underline active:scale-100',
       },
       size: {
         sm: 'h-8 px-3 text-sm',

@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, FileText, Loader2, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Sparkles } from 'lucide-react'
 
 import {
   ParsedResumeSummary,
@@ -438,12 +438,24 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
   const activeIndex = OPTIMIZATION_STAGES.findIndex((entry) => entry.key === stage)
 
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-6 py-14">
-        <Loader2 className="size-8 animate-spin text-accent" aria-hidden="true" />
+    <Card className="relative overflow-hidden">
+      {/*
+        An indeterminate rail across the top edge rather than a spinning disc
+        in the middle.
 
+        The spinner said only "something is happening", which the stage list
+        below already says, and better. A rail sits where progress belongs on a
+        panel, occupies no vertical space, and leaves the centre of the card
+        for the thing worth reading. It is also honest: the travel does not
+        pretend to encode a percentage, because the duration here is not known.
+      */}
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-sunken">
+        <span className="block h-full w-1/3 animate-indeterminate rounded-full bg-accent" />
+      </span>
+
+      <CardContent className="flex flex-col items-center gap-6 py-14">
         <div className="text-center">
-          <p className="text-lg font-semibold text-fg" aria-live="polite">
+          <p className="font-display text-xl font-medium text-fg" aria-live="polite">
             {activeIndex >= 0 ? OPTIMIZATION_STAGES[activeIndex]!.label : 'Working…'}
           </p>
           <p className="mt-1.5 text-sm text-fg-muted">
@@ -460,8 +472,9 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
               <li
                 key={entry.key}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
-                  active && 'bg-accent-subtle font-medium text-fg-accent',
+                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm',
+                  'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+                  active && 'bg-sunken font-medium text-fg',
                   done && 'text-fg-subtle',
                   !active && !done && 'text-fg-disabled',
                 )}
@@ -469,7 +482,8 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
                 <span
                   className={cn(
                     'size-1.5 shrink-0 rounded-full',
-                    active ? 'bg-accent' : done ? 'bg-success-solid' : 'bg-line-bold',
+                    'transition-[background-color,transform] duration-[--duration-fast] ease-[--ease-standard]',
+                    active ? 'scale-125 bg-accent' : done ? 'bg-success-solid' : 'bg-line-bold',
                   )}
                   aria-hidden="true"
                 />

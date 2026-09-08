@@ -93,14 +93,41 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
             onClick={onNavigate}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+              'group relative flex items-center gap-3 rounded-md py-2.5 pl-4 pr-3 text-sm',
+              'transition-[color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
               active
-                ? 'bg-accent-subtle text-fg-accent'
-                : 'text-fg-muted hover:bg-sunken hover:text-fg',
+                ? 'font-medium text-fg'
+                : 'font-normal text-fg-muted hover:bg-sunken hover:text-fg',
             )}
           >
-            <Icon className="size-4.5 shrink-0" aria-hidden="true" />
+            {/*
+              A rail, not a filled pill.
+
+              The pill is the default every dashboard template ships with, and
+              it spends a saturated block of colour on a label the user already
+              knows they are looking at. A 2px rail marks the position just as
+              unambiguously, leaves the accent free for things that need it,
+              and reads as a document index rather than a row of tabs.
+
+              Weight carries the state as well as colour does, so the cue
+              survives being desaturated.
+            */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                'absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-accent',
+                'origin-center transition-transform duration-[--duration-fast] ease-[--ease-standard]',
+                active ? 'scale-y-100' : 'scale-y-0 group-hover:scale-y-50',
+              )}
+            />
+            <Icon
+              className={cn(
+                'size-4.5 shrink-0 transition-colors duration-[--duration-fast]',
+                active ? 'text-fg' : 'text-fg-subtle group-hover:text-fg-muted',
+              )}
+              aria-hidden="true"
+            />
             {label}
           </Link>
         )
@@ -373,7 +400,7 @@ export function PageHeader({
 }) {
   return (
     <div className="border-b border-line bg-surface">
-      <div className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8 sm:py-8">
+      <div className="mx-auto w-full max-w-6xl animate-enter px-5 py-6 sm:px-8 sm:py-8">
         {breadcrumb ? (
           <Link
             href={breadcrumb.href}
@@ -409,7 +436,18 @@ export function PageBody({
   className?: string
 }) {
   return (
-    <div className={cn('mx-auto w-full max-w-6xl px-5 py-6 sm:px-8 sm:py-8', className)}>
+    <div
+      className={cn(
+        'mx-auto w-full max-w-6xl px-5 py-6 sm:px-8 sm:py-8',
+        // One entrance, on the container, rather than a stagger across every
+        // child. Staggered lists look considered in a demo and feel slow on
+        // the fourth visit, because the user is waiting on content they
+        // already know the shape of. 280ms once, then the page is simply
+        // there. Disabled wholesale by the reduced-motion block in globals.
+        'animate-enter',
+        className,
+      )}
+    >
       {children}
     </div>
   )

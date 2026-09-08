@@ -147,10 +147,25 @@
   --shadow-xl: 0 16px 32px -8px rgb(39 36 32 / 0.12), 0 4px 10px -4px rgb(39 36 32 / 0.05);
 
   /* ------------------------------------------------------------- motion   */
-  /* Motion dial 3/10 - subtle. Motion clarifies state, never entertains. */
+  /* Motion clarifies state; it never entertains. The test for any animation
+     here is whether removing it would lose information — which direction a
+     panel came from, that a press registered, that a value changed. If not,
+     it does not belong.
+     Every value below is short. Interface motion that a user notices as
+     motion is too slow: the perception of quality comes from things landing
+     immediately and settling precisely, not from watching them travel. */
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  /* The workhorse: fast out, slow in. Standard for a reason — it reads as a
+     physical object decelerating into place rather than a value lerping. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Three durations, and only three. A design system with nine of these ends
+     up with each component picking one at random. */
+  --duration-instant: 90ms;
+  --duration-fast: 160ms;
+  --duration-settle: 280ms;
 
   /* ---------------------------------------------------------- typography  */
   --text-2xs: 0.6875rem;
@@ -158,9 +173,20 @@
   --text-2xs--letter-spacing: 0.02em;
 
   /* --------------------------------------------------------- animations   */
-  --animate-fade-in: fade-in 0.24s var(--ease-out-quad) both;
+  --animate-fade-in: fade-in var(--duration-settle) var(--ease-standard) both;
   --animate-rise: rise 0.34s var(--ease-out-expo) both;
   --animate-shimmer: shimmer 1.6s linear infinite;
+  /* Content arriving. The travel is 6px, not the 12px of `rise`: a page of
+     panels each sliding a centimetre is a page that looks busy. */
+  --animate-enter: enter var(--duration-settle) var(--ease-standard) both;
+  /* A panel that came from an edge, so the direction carries the meaning. */
+  --animate-slide-from-left: slide-from-left var(--duration-settle) var(--ease-standard) both;
+  /* A value that changed under the user rather than because of them. */
+  --animate-pulse-once: pulse-once 1s var(--ease-standard) 1;
+  /* Work of unknown duration. Deliberately not a percentage: the travel here
+     encodes activity only, and a bar that fills to 90% and waits is a lie the
+     user catches every time. */
+  --animate-indeterminate: indeterminate 1.5s var(--ease-standard) infinite;
 }
 
 /* ==========================================================================
@@ -252,6 +278,47 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse-once {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: var(--surface-accent-subtle);
+  }
+}
+
+@keyframes indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
   }
 }
 

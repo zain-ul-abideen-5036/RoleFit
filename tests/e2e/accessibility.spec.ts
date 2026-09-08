@@ -82,6 +82,51 @@ test.describe('public pages', () => {
 })
 
 /* ==========================================================================
+   Motion
+   ========================================================================== */
+
+test.describe('reduced motion', () => {
+  /**
+   * Entrance animations start at `opacity: 0`.
+   *
+   * That is fine while they run, and a disaster if anything ever stops them
+   * running: the page would render, pass every other check, and show nothing.
+   * The global `prefers-reduced-motion` block shortens durations rather than
+   * removing animations, which keeps the `both` fill mode landing on the end
+   * state — but that is a property worth holding onto rather than rediscovering
+   * from a blank screen.
+   */
+  test('content is visible, not stranded at opacity 0', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    await page.goto('/')
+
+    const heading = page.getByRole('heading', { level: 1 })
+    await expect(heading).toBeVisible()
+
+    const opacity = await heading.evaluate((el) => {
+      // Walk up: the animation is on a container, not the heading itself.
+      for (let node: HTMLElement | null = el as HTMLElement; node; node = node.parentElement) {
+        const value = Number(getComputedStyle(node).opacity)
+        if (value < 1) return value
+      }
+      return 1
+    })
+
+    expect(opacity, 'an ancestor is holding content invisible').toBe(1)
+    await context.close()
+  })
+
+  test('the landing page is still accessible with motion reduced', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    await page.goto('/')
+    await scan(page, '/ (reduced motion)')
+    await context.close()
+  })
+})
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 
