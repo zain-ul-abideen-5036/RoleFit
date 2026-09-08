@@ -22,7 +22,9 @@ export function LegalPage({
   return (
     <div className="container-page py-16 lg:py-20">
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">{title}</h1>
+        <h1 className="font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
+          {title}
+        </h1>
 
         <Alert tone="warning" className="mt-6">
           {updated}

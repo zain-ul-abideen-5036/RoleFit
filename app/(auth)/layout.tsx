@@ -57,7 +57,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <p className="text-xs font-semibold uppercase tracking-wider text-fg-accent">
           Why {PRODUCT.name}
         </p>
-        <h2 className="mt-4 max-w-md text-3xl font-bold leading-tight tracking-tight text-fg">
+        <h2 className="mt-4 max-w-md font-display text-3xl font-medium leading-tight tracking-tight text-fg">
           A tailored resume you can defend in the interview
         </h2>
         <p className="mt-4 max-w-md text-base leading-relaxed text-fg-muted">
