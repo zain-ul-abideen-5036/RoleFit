@@ -242,17 +242,27 @@ const envSchema = z
         })
       }
 
-      // The console transport prints verification and reset links to stderr.
-      // Those links are credentials, so this is a development affordance only.
-      // Refused rather than warned about: a warning in a log nobody reads is
-      // not a control, and the failure mode is account takeover from a log.
+      // The console transport does not deliver mail, so a deployment using it
+      // advertises password recovery that silently never arrives.
+      //
+      // Refused on real hosting, where that is simply broken. Allowed — with a
+      // warning — for a production build run locally, which is what local
+      // verification and the end-to-end suite do. The link itself is withheld
+      // from the output in production by the transport, so this is about
+      // undelivered mail rather than a leaked credential.
       if (value.EMAIL_PROVIDER === 'console') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['EMAIL_PROVIDER'],
-          message:
-            'EMAIL_PROVIDER=console writes password reset links to stderr and cannot be used in production. Set EMAIL_PROVIDER=resend, or none to disable the email flows.',
-        })
+        if (isServerlessPlatform()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['EMAIL_PROVIDER'],
+            message:
+              'EMAIL_PROVIDER=console does not send email and cannot be used on hosted production. Set EMAIL_PROVIDER=resend, or none to disable the recovery flows.',
+          })
+        } else {
+          warnings.push(
+            'EMAIL_PROVIDER=console in production. No email is delivered: verification and reset links are written to stderr with the link withheld, so the recovery flows cannot complete.',
+          )
+        }
       }
 
       // The local storage driver writes to the filesystem, which is ephemeral

@@ -236,10 +236,21 @@ test.describe('keyboard navigation', () => {
     await page.keyboard.press('Tab')
     await page.keyboard.type(PASSWORD)
 
-    // Tab past the show/hide toggle to reach the submit button.
+    // The full sequence, asserted stop by stop rather than jumped over: the
+    // show/hide toggle, then the password reset link in the field description,
+    // then submit. The link sits next to the password field because that is
+    // where someone realises they need it, and the cost is one extra Tab.
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Show password' })).toBeFocused()
+
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('link', { name: 'reset it' })).toBeFocused()
+
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeFocused()
+
+    // Completable without ever leaving the keyboard.
+    await page.keyboard.press('Enter')
+    await expect(page.locator('main').getByRole('alert')).toBeVisible()
   })
 })

@@ -66,6 +66,11 @@ export default defineConfig({
       // The suite creates many accounts from one address. The limiter still
       // runs — and is asserted on — but with headroom for a full pass.
       RATE_LIMIT_MULTIPLIER: '25',
+      // The console transport writes links to stderr instead of sending mail,
+      // which is what makes the recovery pages reachable in the suite. The
+      // suite never reads a token from it — the token-dependent paths are
+      // covered by the integration suite against a real database.
+      EMAIL_PROVIDER: 'console',
       ANALYTICS_PROVIDER: 'none',
       LOG_LEVEL: 'error',
     },
