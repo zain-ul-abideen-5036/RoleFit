@@ -276,6 +276,98 @@ describe('matchResumeToJob', () => {
    End-to-end against the demo fixtures
    ========================================================================== */
 
+describe('how a match reports the way it was established', () => {
+  /**
+   * The reported `method` is the engine's account of itself, so each value must
+   * mean one specific thing. Two mechanisms once shared the name `semantic`,
+   * which suggested a model participates in matching — the single thing this
+   * engine is built not to do.
+   */
+
+  it('reports an exact token match as exact', () => {
+    const result = matchResumeToJob(resumeWithSkills(['TypeScript']), jobWithSkills(['typescript']))
+    expect(result.matches.find((entry) => entry.canonical === 'typescript')?.method).toBe('exact')
+  })
+
+  it('reports a known equivalent spelling as alias', () => {
+    const result = matchResumeToJob(resumeWithSkills(['Postgres']), jobWithSkills(['postgresql']))
+    expect(result.matches.find((entry) => entry.canonical === 'postgresql')?.method).toBe('alias')
+  })
+
+  it('reports an implication as normalized', () => {
+    const result = matchResumeToJob(resumeWithSkills(['PostgreSQL']), jobWithSkills(['sql']))
+    expect(result.matches.find((entry) => entry.canonical === 'sql')?.method).toBe('normalized')
+  })
+
+  it('reports an adjacent skill as related, and never as evidence enough to satisfy', () => {
+    const result = matchResumeToJob(resumeWithSkills(['Redis']), jobWithSkills(['nosql']))
+    const match = result.matches.find((entry) => entry.canonical === 'nosql')
+
+    expect(match?.method).toBe('related')
+    // Partial credit is the whole point: adjacency is a hint, not experience.
+    expect(match?.status).not.toBe('strong')
+    expect(match?.confidence).toBeLessThan(0.4)
+  })
+
+  it('reports free-text overlap as fuzzy', () => {
+    const job: JobDescriptionProfile = {
+      ...emptyJobDescriptionProfile(),
+      responsibilities: [
+        {
+          id: 'req-text',
+          text: 'Mentor junior engineers and lead code review',
+          canonical: null,
+          priority: 'required',
+          category: 'responsibility',
+        },
+      ],
+    }
+    const resume: ResumeProfile = {
+      ...emptyResumeProfile(),
+      experience: [
+        {
+          id: 'exp-1',
+          title: 'Senior Engineer',
+          company: 'Acme',
+          startDate: '2020-01',
+          endDate: null,
+          location: null,
+          bullets: ['Mentored junior engineers and led code review for the team'],
+        },
+      ],
+    }
+
+    const match = matchResumeToJob(resume, job).matches.find(
+      (entry) => entry.requirementId === 'req-text',
+    )
+    expect(match?.method).toBe('fuzzy')
+    expect(match?.evidence[0]?.excerpt).toContain('Mentored junior engineers')
+  })
+
+  it('reports an unmatched requirement as none, with no evidence', () => {
+    const result = matchResumeToJob(resumeWithSkills(['Python']), jobWithSkills(['rust']))
+    const match = result.matches.find((entry) => entry.canonical === 'rust')
+
+    expect(match?.method).toBe('none')
+    expect(match?.status).toBe('missing')
+    expect(match?.evidence).toHaveLength(0)
+  })
+
+  it('never reports a method the schema does not define', () => {
+    const result = matchResumeToJob(
+      resumeWithSkills(['TypeScript', 'PostgreSQL', 'Redis']),
+      jobWithSkills(['typescript', 'sql', 'nosql', 'rust']),
+    )
+
+    const allowed = new Set(['exact', 'alias', 'normalized', 'related', 'fuzzy', 'none'])
+    for (const match of result.matches) {
+      expect(allowed.has(match.method), `${match.canonical ?? match.id}: ${match.method}`).toBe(
+        true,
+      )
+    }
+  })
+})
+
 describe('demo resume against demo job description', () => {
   const job = parseJobDescription(DEMO_JOB_DESCRIPTION_TEXT)
   const result = matchResumeToJob(demoResumeProfile(), job)
