@@ -410,10 +410,29 @@ a deployment check needs.
 If anything is wrong you get HTTP 503 and `status: "degraded"`, with the failing
 check named:
 
-| What you see              | What it means                                                                                                                                 |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `database: "unreachable"` | `DATABASE_URL` is wrong, or missing `?sslmode=require`. Check you used the **pooled** string.                                                 |
-| `config: "invalid"`       | A variable failed validation. Open **Vercel → your deployment → Runtime Logs**; the error names the exact variable and what is wrong with it. |
+| What you see               | What it means                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `config: "invalid"`        | One or more variables failed validation. The response lists them by name under `invalidConfig` — fix those and redeploy. |
+| `database: "unreachable"`  | `DATABASE_URL` is missing or wrong, or is missing `?sslmode=require`. Check you used the **pooled** string.              |
+| `database: "not-migrated"` | The database is reachable but the schema was never created. Run `npm run deploy:migrate` (Step 7).                       |
+
+`invalidConfig` gives you the variable names and nothing else — never a value,
+never the validation message. That is on purpose: the response is public, and a
+credential pasted into the wrong field would otherwise be echoed back on it. For
+the full message, open **Vercel → your deployment → Runtime Logs**, where the
+startup error names each variable and what is wrong with it.
+
+A first deploy with no variables set answers exactly this:
+
+```json
+{
+  "status": "degraded",
+  "checks": { "config": "invalid", "database": "unreachable" },
+  "invalidConfig": ["AUTH_SECRET", "DATABASE_URL"]
+}
+```
+
+That means the environment variables never reached Vercel. Go back to Step 6.
 
 Point an uptime monitor at this URL later. It fails when the database is
 unreachable or configuration is invalid, which is what a liveness probe should

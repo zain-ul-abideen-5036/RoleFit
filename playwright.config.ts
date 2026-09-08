@@ -47,7 +47,16 @@ export default defineConfig({
 
   webServer: {
     command: `npm run start -- --port ${PORT}`,
-    url: `${BASE_URL}/api/health`,
+    // Liveness, not readiness: this asks whether the process is serving, and
+    // nothing more. `/api/health` is the wrong probe here despite being the
+    // better check, because Playwright starts the web server *before* it runs
+    // globalSetup — so at this moment the database has not been migrated yet.
+    //
+    // That ordering was always true; it only became visible when the health
+    // check learned to report an unmigrated database as unhealthy. Pointing
+    // this at a gate that globalSetup has not yet opened deadlocks the run:
+    // the probe waits for migrations, and the migrations wait for the probe.
+    url: BASE_URL,
     // Always start a fresh server. Reusing whatever happens to be on the port
     // means testing a stale build, which produces failures and — worse —
     // passes that describe code no longer in the tree.

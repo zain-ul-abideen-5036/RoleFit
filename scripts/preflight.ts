@@ -13,7 +13,11 @@
  *
  *   npm run deploy:preflight                       # reads .env.production.local
  *   npm run deploy:preflight -- path/to/env        # or an explicit path
- *   npm run deploy:preflight -- --print-env        # just print the paste block
+ *   npm run deploy:preflight -- --print-env        # print the values to paste
+ *
+ * The default output carries no credentials, because terminal output is the
+ * thing people paste when asking for help. `--print-env` is the only path that
+ * prints secrets, and it warns before it does.
  *
  * Nothing here writes to the database or leaves anything behind: the storage
  * check deletes the object it uploads, and the Redis check deletes its key.
@@ -456,15 +460,23 @@ const VERCEL_KEYS = [
 ] as const
 
 /**
- * Prints the real values, unredacted, deliberately.
+ * Prints the real values, unredacted, deliberately — and only when asked.
  *
- * This is the output the operator copies into the hosting platform, so
- * masking it would make it useless. It goes to their own terminal on their own
- * machine; the redaction elsewhere in this file is for the check summary, which
- * is the part someone might paste into a chat while asking for help.
+ * This is the output the operator copies into the hosting platform, so masking
+ * it would make it useless. But it must never be part of the default run: this
+ * block and the check summary share one scroll buffer, and the summary is
+ * exactly what someone selects and pastes into a chat when a deploy will not
+ * come up. That happened, and it published a live database password, a storage
+ * key and a session secret in a single paste.
+ *
+ * So the default run is safe to share, this lives behind `--print-env`, and it
+ * says what it is about to print before printing it.
  */
 function printPasteBlock(env: Record<string, string>): void {
   process.stdout.write('\n')
+  process.stdout.write('!! The lines below are live credentials. Do not paste them into a\n')
+  process.stdout.write('!! chat, an issue, or a screenshot. They belong in the Vercel\n')
+  process.stdout.write('!! dashboard and nowhere else.\n\n')
   process.stdout.write('Paste these into Vercel (Settings -> Environment Variables):\n')
   process.stdout.write('-'.repeat(64) + '\n')
 
@@ -542,7 +554,15 @@ async function main(): Promise<void> {
   process.stdout.write(
     `All checks passed${skipped.length > 0 ? ` (${skipped.length} skipped)` : ''}.\n`,
   )
-  printPasteBlock(env)
+
+  // Deliberately not printed here. See printPasteBlock: this summary is what
+  // gets pasted when someone asks for help, and whatever shares the buffer with
+  // it gets pasted along with it.
+  process.stdout.write(
+    `\nTo print the variables to paste into Vercel:\n\n` +
+      `  npm run deploy:preflight -- --print-env\n\n` +
+      `That output contains live credentials. This output does not.\n`,
+  )
 }
 
 main().catch((error: unknown) => {

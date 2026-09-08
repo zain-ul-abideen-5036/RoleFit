@@ -15,10 +15,20 @@
  * Refuses to overwrite an existing file unless `--force` is passed. Overwriting
  * would regenerate `AUTH_SECRET` and sign out every existing session, which is
  * not something to do by accident.
+ *
+ *   npm run deploy:init -- --rotate-secret
+ *
+ * Replaces `AUTH_SECRET` in place and changes nothing else. This is the one to
+ * reach for after a secret has leaked: `--force` would also produce a new
+ * secret, but by rewriting the file from the template, which discards every
+ * credential already filled in. Handing someone a blank file in the middle of
+ * responding to a leak is the opposite of helpful.
  */
 import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+import { replaceEnvValue } from './lib/env-file'
 
 const TEMPLATE = '.env.production.template'
 const OUTPUT = '.env.production.local'
@@ -36,10 +46,47 @@ const BLANKS = [
   ['UPSTASH_REDIS_REST_TOKEN', 'Upstash — REST token'],
 ] as const
 
+/** 48 bytes, base64url: 64 characters, URL-safe so it survives being pasted. */
+function newSecret(): string {
+  return randomBytes(48).toString('base64url')
+}
+
+/** Regenerates AUTH_SECRET in place, leaving every other value untouched. */
+function rotateSecret(outputPath: string): void {
+  if (!existsSync(outputPath)) {
+    process.stderr.write(`No ${OUTPUT} to rotate. Run: npm run deploy:init\n`)
+    process.exit(1)
+  }
+
+  const result = replaceEnvValue(readFileSync(outputPath, 'utf8'), 'AUTH_SECRET', newSecret())
+
+  if (!result) {
+    process.stderr.write(
+      `${OUTPUT} has no AUTH_SECRET line. Refusing to append one, because a\n` +
+        `file in that shape is not the one this expected to be editing.\n`,
+    )
+    process.exit(1)
+  }
+
+  writeFileSync(outputPath, result.contents, { mode: 0o600 })
+
+  process.stdout.write(`Rotated AUTH_SECRET in ${OUTPUT}. Nothing else changed.\n\n`)
+  process.stdout.write(`Next:\n\n`)
+  process.stdout.write(`  1. npm run deploy:preflight -- --print-env\n`)
+  process.stdout.write(`  2. Update AUTH_SECRET in Vercel -> Settings -> Environment Variables\n`)
+  process.stdout.write(`  3. Redeploy\n\n`)
+  process.stdout.write(`Every existing session is signed out by this. That is the point.\n`)
+}
+
 function main(): void {
   const templatePath = resolve(process.cwd(), TEMPLATE)
   const outputPath = resolve(process.cwd(), OUTPUT)
   const force = process.argv.includes('--force')
+
+  if (process.argv.includes('--rotate-secret')) {
+    rotateSecret(outputPath)
+    return
+  }
 
   if (!existsSync(templatePath)) {
     process.stderr.write(`Missing ${TEMPLATE}. Are you in the project root?\n`)
@@ -65,9 +112,8 @@ function main(): void {
     process.exit(1)
   }
 
-  // 48 bytes, base64url: 64 characters, comfortably past the 32-character
-  // minimum, and URL-safe so it survives being pasted anywhere.
-  const secret = randomBytes(48).toString('base64url')
+  // Comfortably past the 32-character minimum the schema enforces.
+  const secret = newSecret()
 
   writeFileSync(outputPath, template.replace(PLACEHOLDER, secret), { mode: 0o600 })
 

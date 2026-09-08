@@ -346,6 +346,25 @@ const envSchema = z
 
 export type Env = z.infer<typeof envSchema>
 
+/**
+ * Thrown when the environment does not validate.
+ *
+ * Carries the offending variable *names* separately from the message so a
+ * caller can report them without reproducing the message text. The names are
+ * safe to surface; the messages are not, because a zod enum failure echoes the
+ * value it received, and a credential pasted into the wrong field would then be
+ * echoed with it.
+ */
+export class EnvConfigError extends Error {
+  override readonly name = 'EnvConfigError'
+  readonly keys: readonly string[]
+
+  constructor(message: string, keys: readonly string[]) {
+    super(message)
+    this.keys = keys
+  }
+}
+
 let cached: Env | null = null
 
 /**
@@ -386,7 +405,14 @@ export function getEnv(): Env {
     const details = parsed.error.issues
       .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
       .join('\n')
-    throw new Error(`Invalid environment configuration:\n${details}`)
+
+    // De-duplicated and ordered, because two issues can name one variable and
+    // a caller listing them would otherwise repeat it.
+    const keys = [
+      ...new Set(parsed.error.issues.map((issue) => issue.path.join('.') || '(root)')),
+    ].sort()
+
+    throw new EnvConfigError(`Invalid environment configuration:\n${details}`, keys)
   }
 
   for (const warning of warnings) {
