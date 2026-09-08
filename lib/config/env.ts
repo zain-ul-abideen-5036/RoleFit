@@ -101,6 +101,18 @@ const envSchema = z
     UPSTASH_REDIS_REST_URL: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
+    /**
+     * Transactional email, for verification and password reset.
+     *
+     * `none` is the default and disables both flows: the app stays fully
+     * usable and the UI stops offering them, rather than showing a reset link
+     * that silently does nothing.
+     */
+    EMAIL_PROVIDER: z.enum(['none', 'console', 'resend']).default('none'),
+    EMAIL_API_KEY: z.string().optional(),
+    /** Sender address. Must be on a domain verified with the provider. */
+    EMAIL_FROM: z.string().optional(),
+
     ANALYTICS_PROVIDER: z.enum(['none', 'console', 'posthog']).default('none'),
     ANALYTICS_KEY: z.string().optional(),
     ANALYTICS_HOST: z.string().optional(),
@@ -170,6 +182,18 @@ const envSchema = z
       }
     }
 
+    if (value.EMAIL_PROVIDER === 'resend') {
+      for (const key of ['EMAIL_API_KEY', 'EMAIL_FROM'] as const) {
+        if (!value[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when EMAIL_PROVIDER is "resend"`,
+          })
+        }
+      }
+    }
+
     if (value.RATE_LIMIT_DRIVER === 'upstash') {
       for (const key of ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'] as const) {
         if (!value[key]) {
@@ -215,6 +239,19 @@ const envSchema = z
           path: ['NEXT_PUBLIC_APP_URL'],
           message:
             'NEXT_PUBLIC_APP_URL must be set to the public origin in production (for example https://rolefit.app). Unset, it falls back to localhost and the CSRF origin check then rejects every sign-in, upload and export.',
+        })
+      }
+
+      // The console transport prints verification and reset links to stderr.
+      // Those links are credentials, so this is a development affordance only.
+      // Refused rather than warned about: a warning in a log nobody reads is
+      // not a control, and the failure mode is account takeover from a log.
+      if (value.EMAIL_PROVIDER === 'console') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['EMAIL_PROVIDER'],
+          message:
+            'EMAIL_PROVIDER=console writes password reset links to stderr and cannot be used in production. Set EMAIL_PROVIDER=resend, or none to disable the email flows.',
         })
       }
 
