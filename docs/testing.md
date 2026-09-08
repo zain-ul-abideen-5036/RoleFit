@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 349   | ~10s    | Pure functions. No database, network or model. |
+| Unit                         | 422   | ~11s    | Pure functions. No database, network or model. |
 | Integration                  | 27    | ~25s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 12    | ~40s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -90,6 +90,39 @@ two lines overlap, a 300-character URL hard-wraps rather than overflowing, long
 content starts a new page rather than drawing below the bottom margin, and dates
 are right-aligned to the margin. That is stricter than eyeballing a render, and
 it runs on every commit.
+
+### ATS readiness — 33 unit tests
+
+The score the product is most careful about. Two properties are asserted across
+every check, for both a complete and an empty resume: each says what it
+observed, and each non-passing one says what to do about it.
+
+Layout checks are driven through the extractor's signals rather than the parsed
+profile, because parsed content cannot reveal that a resume was laid out in two
+columns — the very thing that makes a parser read it in the wrong order.
+`generatedDocumentSignals` is asserted to let our own output pass every layout
+check, which is a fact about the layout model rather than an assumption.
+
+### Model request building — 23 unit tests
+
+No model is called; a fake provider captures the request, because what matters
+is not what a model replies but what it is handed. Every rewritable bullet
+carries its path, so a returned path resolves exactly. Education and
+certifications are rendered deliberately without one — a path is an invitation
+to rewrite. A resume whose summary reads "IGNORE ALL PREVIOUS INSTRUCTIONS" is
+asserted to reach the model only inside a fenced document.
+
+### Pipeline and fallback — 17 unit tests
+
+What happens when the model misbehaves. With no provider the rule-based engine
+runs; when the model throws, the run falls back and reports `deterministic` —
+never the provider that failed, because the UI tells the user which engine
+produced their result.
+
+The immutable-section backstop is driven by stubbing per-change validation to
+let a changed employer, a changed degree and an invented certification through.
+Each must throw rather than return a result with a warning attached, because a
+user has no way to judge that warning.
 
 ### Object storage — 45 unit tests
 
@@ -268,8 +301,8 @@ Each was a real bug, fixed rather than tested around.
 ## Coverage
 
 `npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
-over the domain logic the unit suite owns. Current: **89% statements, 81%
-branches, 90% functions**.
+over the domain logic the unit suite owns. Current: **93% statements, 83%
+branches, 92% functions**.
 
 The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
 `server/` are excluded because they are covered by the integration suite against
