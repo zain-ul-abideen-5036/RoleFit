@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 483   | ~13s    | Pure functions. No database, network or model. |
+| Unit                         | 589   | ~15s    | Pure functions. No database, network or model. |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -123,6 +123,51 @@ The immutable-section backstop is driven by stubbing per-change validation to
 let a changed employer, a changed degree and an invented certification through.
 Each must throw rather than return a result with a warning attached, because a
 user has no way to judge that warning.
+
+### Errors — 36 unit tests
+
+The load-bearing assertions are negative. An error whose cause reads
+`connection string: postgres://user:hunter2@db/rolefit` must not serialise the
+password or the scheme; one carrying another account's resume id in its context
+must not serialise the id. Everything useful for debugging is also useful to an
+attacker, which is why the public body is exactly three keys.
+
+`isAppError` is asserted to reject a duck-typed lookalike — the guard decides
+whether a value is safe to send to a user, so structural similarity must not be
+enough. `toAppError` returns an existing error by identity rather than
+re-wrapping, because re-wrapping would mint a second incident id for one event
+and the log would disagree with the reference the user quotes.
+
+### The AI provider factory — 20 unit tests
+
+The deterministic mode returns `null`, not a stub. A stub would let a caller
+report that a model produced a result when none did. The capability flags are
+pinned in both directions, including the invariant that `canRewriteProse` and
+`sendsDataToThirdParty` always agree — a provider that rewrites prose without
+sending anything anywhere does not exist here, and claiming otherwise would
+understate what a user is agreeing to.
+
+### The session cookie — 17 unit tests
+
+None of the security model is in the token. `httpOnly`, `SameSite=Lax` and
+`Secure` live in the `Set-Cookie` attributes, and each is asserted with the
+reason it holds that value. Clearing is asserted to set `maxAge: 0` **with the
+same attributes**, because a browser matches a cookie by name, path and flags —
+a clear that differed in any of them would leave the original in place.
+
+### Applying decisions — 33 unit tests
+
+Where the promise is kept, so most of these assert what does not happen: a
+pending change is not written (silence is not consent), rejecting everything
+leaves the profile byte-identical, and a stale target path is a no-op rather
+than a crash or a write somewhere else.
+
+The reorder cases are the valuable ones: an order that drops, duplicates or
+invents an entry is refused outright, because silently losing a job off
+someone's resume is the worst outcome this code has available to it. One test
+records a boundary that is easy to get backwards — a user's own edit is applied
+verbatim even when the optimizer would never have proposed it, since the
+anti-fabrication rules constrain the model, not the person.
 
 ### Embeddings — 32 unit tests
 
@@ -335,8 +380,8 @@ Each was a real bug, fixed rather than tested around.
 ## Coverage
 
 `npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
-over the domain logic the unit suite owns. Current: **93% statements, 83%
-branches, 92% functions**.
+over the domain logic the unit suite owns. Current: **94% statements, 85%
+branches, 97% functions**.
 
 The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
 `server/` are excluded because they are covered by the integration suite against
