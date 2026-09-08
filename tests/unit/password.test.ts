@@ -16,10 +16,12 @@ import {
  * keeps an unknown address indistinguishable from a wrong password.
  */
 
-// Cost 12 is ~250ms per hash by design, so these run deliberately few of them.
+// Cost 12 is deliberately expensive, and every case here pays it. The suites
+// below run concurrently so the work overlaps rather than queueing — the cases
+// share no state, so nothing is traded away for the speed.
 const TIMEOUT = 20_000
 
-describe('hashPassword', () => {
+describe.concurrent('hashPassword', () => {
   it(
     'produces a bcrypt hash at cost 12',
     async () => {
@@ -43,7 +45,7 @@ describe('hashPassword', () => {
   )
 })
 
-describe('verifyPassword', () => {
+describe.concurrent('verifyPassword', () => {
   it(
     'accepts the right password and rejects a wrong one',
     async () => {
@@ -76,7 +78,7 @@ describe('verifyPassword', () => {
   })
 })
 
-describe('needsRehash', () => {
+describe.concurrent('needsRehash', () => {
   it(
     'says no for a hash already at the current cost',
     async () => {
@@ -115,6 +117,8 @@ describe('needsRehash', () => {
   })
 })
 
+// Deliberately NOT concurrent: it measures elapsed time, and running it beside
+// other bcrypt work would make the comparison meaningless.
 describe('performDummyVerification', () => {
   it(
     'resolves without throwing, so the unknown-account path cannot 500',
