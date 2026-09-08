@@ -239,7 +239,7 @@ export function countPhrase(haystack: string, needle: string): number {
 }
 
 /**
- * Jaccard similarity over content tokens — the lexical half of the semantic
+ * Jaccard similarity over content tokens — the similarity half of the fuzzy
  * score. Cheap, deterministic and explainable, which matters more here than
  * the marginal accuracy of an embedding model.
  */
