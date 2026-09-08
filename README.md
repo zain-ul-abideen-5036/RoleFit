@@ -195,19 +195,22 @@ at once, rather than erroring deep inside a request handler.
 
 ## Scripts
 
-| Command                     | What it does                                          |
-| --------------------------- | ----------------------------------------------------- |
-| `npm run dev`               | Development server                                    |
-| `npm run build`             | Production build                                      |
-| `npm run verify`            | Format, lint, typecheck and unit tests                |
-| `npm test`                  | Unit tests                                            |
-| `npm run test:integration`  | Integration tests (needs PostgreSQL)                  |
-| `npm run test:e2e`          | End-to-end tests against a production build           |
-| `npm run test:coverage`     | Unit tests with coverage                              |
-| `npm run db:up` / `db:down` | Start / stop PostgreSQL                               |
-| `npm run worker`            | Background job worker (needs `QUEUE_DRIVER=database`) |
-| `npm run db:migrate`        | Apply migrations                                      |
-| `npm run db:generate`       | Generate a migration from schema changes              |
+| Command                     | What it does                                             |
+| --------------------------- | -------------------------------------------------------- |
+| `npm run dev`               | Development server                                       |
+| `npm run build`             | Production build                                         |
+| `npm run verify`            | Format, lint, typecheck and unit tests                   |
+| `npm test`                  | Unit tests                                               |
+| `npm run test:integration`  | Integration tests (needs PostgreSQL)                     |
+| `npm run test:e2e`          | End-to-end tests against a production build              |
+| `npm run test:coverage`     | Unit tests with coverage                                 |
+| `npm run db:up` / `db:down` | Start / stop PostgreSQL                                  |
+| `npm run worker`            | Background job worker (needs `QUEUE_DRIVER=database`)    |
+| `npm run deploy:init`       | Write `.env.production.local` with a fresh `AUTH_SECRET` |
+| `npm run deploy:migrate`    | Apply migrations to the production database              |
+| `npm run deploy:preflight`  | Verify every credential against the real services        |
+| `npm run db:migrate`        | Apply migrations                                         |
+| `npm run db:generate`       | Generate a migration from schema changes                 |
 
 ## Testing
 

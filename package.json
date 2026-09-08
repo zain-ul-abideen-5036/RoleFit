@@ -31,7 +31,10 @@
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test",
     "db:setup": "docker compose up -d postgres && tsx scripts/wait-for-db.ts && tsx scripts/migrate.ts",
     "lint:fix": "eslint . --fix",
-    "worker": "tsx scripts/worker.ts"
+    "worker": "tsx --conditions=react-server scripts/worker.ts",
+    "deploy:preflight": "tsx --conditions=react-server scripts/preflight.ts",
+    "deploy:migrate": "tsx scripts/migrate.ts",
+    "deploy:init": "tsx scripts/deploy-init.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",

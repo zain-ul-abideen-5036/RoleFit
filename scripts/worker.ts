@@ -9,6 +9,11 @@
  * Safe to run more than one. Claiming uses `FOR UPDATE SKIP LOCKED`, so two
  * workers never take the same job and never block each other.
  *
+ * Must be started through `npm run worker`, which passes
+ * `--conditions=react-server`. The modules below are marked `server-only`, a
+ * package that resolves to a throwing stub unless that export condition is
+ * present — Next.js sets it during a build, and a plain Node process does not.
+ *
  * Shutdown is graceful: SIGINT and SIGTERM stop the loop from taking new work
  * and let the job in flight finish, because killing a worker mid-run would
  * leave the claim to time out five minutes later for no reason.
