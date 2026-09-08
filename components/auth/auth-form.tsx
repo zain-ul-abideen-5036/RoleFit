@@ -4,13 +4,13 @@ import * as React from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 
+import { PasswordRequirements } from '@/components/auth/password-requirements'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldLabel, Input } from '@/components/ui/field'
 import { Alert } from '@/components/ui/feedback'
 import { apiPost, toDisplayError, type ApiFieldErrors } from '@/lib/client/api'
-import { cn } from '@/lib/utils'
 
 /**
  * Sign in / sign up form.
@@ -26,13 +26,6 @@ interface AuthResponse {
   user: { id: string; email: string }
 }
 
-const PASSWORD_RULES = [
-  { label: 'At least 12 characters', test: (value: string) => value.length >= 12 },
-  { label: 'A lowercase letter', test: (value: string) => /[a-z]/.test(value) },
-  { label: 'An uppercase letter', test: (value: string) => /[A-Z]/.test(value) },
-  { label: 'A number', test: (value: string) => /[0-9]/.test(value) },
-]
-
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const router = useRouter()
   const isSignup = mode === 'signup'
@@ -45,11 +38,6 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const [submitting, setSubmitting] = React.useState(false)
   const [formError, setFormError] = React.useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = React.useState<ApiFieldErrors>({})
-
-  const passwordChecks = PASSWORD_RULES.map((rule) => ({
-    ...rule,
-    passed: rule.test(password),
-  }))
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -158,30 +146,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           )}
         </Field>
 
-        {isSignup ? (
-          <ul className="-mt-1 flex flex-col gap-1.5" aria-label="Password requirements">
-            {passwordChecks.map((rule) => (
-              <li key={rule.label} className="flex items-center gap-2 text-xs">
-                <span
-                  className={cn(
-                    'flex size-4 items-center justify-center rounded-full border transition-colors',
-                    rule.passed
-                      ? 'border-success-line bg-success-bg text-success-fg'
-                      : 'border-line-strong text-transparent',
-                  )}
-                  aria-hidden="true"
-                >
-                  <Check className="size-2.5" />
-                </span>
-                <span className={rule.passed ? 'text-success-fg' : 'text-fg-subtle'}>
-                  {rule.label}
-                </span>
-                {/* Announced without relying on the colour of the tick. */}
-                <span className="sr-only">{rule.passed ? '(met)' : '(not yet met)'}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {isSignup ? <PasswordRequirements value={password} /> : null}
 
         <Button
           type="submit"
