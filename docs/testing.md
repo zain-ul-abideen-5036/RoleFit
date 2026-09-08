@@ -2,7 +2,7 @@
 
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
-| Unit                         | 676   | ~17s    | Pure functions. No database, network or model. |
+| Unit                         | 689   | ~18s    | Pure functions. No database, network or model. |
 | Component                    | 105   | ~7s     | React components in jsdom.                     |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
@@ -40,6 +40,20 @@ Every case feeds the validator output a cooperative model would never produce:
 
 And the cases that must _pass_: aligning `Postgres` to `PostgreSQL`, preserving
 an existing `35%` exactly, and reordering without flagging it as fabrication.
+
+### Provider adapter failure branches — 13 unit tests
+
+The branches that only run when a model misbehaves in a particular way, which
+are the ones that never run in development.
+
+An empty completion is retried rather than failing the run, and the retry is
+asserted to carry a message saying what was wrong — otherwise it is the same
+request sent twice. Missing usage figures report `null`, not zero: zero claims
+the call was free, `null` says "not reported". An injected document is
+neutralised rather than refused, because failing the run would let anyone with
+a hostile line in their resume deny themselves the product. The fence delimiter
+differs between requests, since a fixed one could be guessed and closed by a
+crafted resume.
 
 ### Provider adapters — 26 unit tests
 
@@ -460,7 +474,7 @@ Each was a real bug, fixed rather than tested around.
 
 `npm run test:coverage` enforces 80% statements, 80% functions and 70% branches
 over the domain logic the unit suite owns. Current: **95% statements, 86%
-branches, 97% functions**.
+branches, 98% functions**.
 
 The scope is deliberate. `lib/security`, `lib/storage`, `lib/config` and
 `server/` are excluded because they are covered by the integration suite against
