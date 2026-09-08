@@ -14,6 +14,38 @@ credit card to sign up.**
 
 ---
 
+## The short version
+
+Three signups, four commands, one paste. Everything that can be decided without
+an account is already decided.
+
+```bash
+# 1. Generates .env.production.local with a fresh AUTH_SECRET and every
+#    non-account value already filled in.
+npm run deploy:init
+
+# 2. Fill in the 8 blanks it lists, from Neon / Backblaze / Upstash.
+#    (Steps 1-3 below say exactly where each one is.)
+
+# 3. Create the database schema.
+npm run deploy:migrate
+
+# 4. Actually talk to all three services and check every value works.
+npm run deploy:preflight
+```
+
+Preflight connects to your database, uploads and deletes a real object in your
+bucket, and runs a real Redis command. Nothing is guessed. If it passes, it
+prints the exact variable list to paste into Vercel.
+
+Then: import the repo in Vercel, paste that block, deploy, add
+`NEXT_PUBLIC_APP_URL`, redeploy. Steps 6 and 9.
+
+**What still needs you, and why:** creating the three accounts, and clicking
+Deploy. I have no credentials for Neon, Backblaze, Upstash or Vercel, and
+generating fake ones would produce a guide that fails on your first attempt.
+Everything on this side of that line is automated.
+
 ## Architecture
 
 Four services. Only one of them runs your code.
@@ -221,14 +253,15 @@ a startup warning saying so rather than failing.
 
 ## Step 4 — AUTH_SECRET
 
-Run this on your own machine, in PowerShell:
+**Already done for you.** `npm run deploy:init` generated one and wrote it into
+`.env.production.local` — 48 random bytes in a URL-safe encoding. It was never
+printed to the terminal and is not in version control.
+
+If you ever need to generate another by hand:
 
 ```powershell
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
-
-It prints one long random line, something like `kJ3n...` — 48 random bytes in a
-URL-safe encoding. That is your `AUTH_SECRET`.
 
 **What it does:** it signs the session cookie that keeps people logged in. The
 server uses it to verify a cookie was issued by RoleFit and not forged. It never
@@ -241,8 +274,8 @@ Two consequences worth knowing:
 - If you change it later, every signed-in user is logged out. That is the
   intended behaviour, and it is also the emergency lever if the value ever leaks.
 
-Generate it once and keep it. RoleFit refuses to start in production if this
-still holds the placeholder value from `.env.example`.
+RoleFit refuses to start in production if this still holds a placeholder value,
+and `npm run deploy:preflight` checks it too.
 
 ---
 
@@ -252,15 +285,20 @@ This creates RoleFit's tables in your Neon database. Run it **once now**, from
 your own machine, using the **direct** (non-pooled) connection string from
 Step 1.
 
-In PowerShell, from the project folder:
+```bash
+npm run deploy:migrate
+```
+
+That reads `DATABASE_URL` from `.env.production.local`, so there is nothing to
+paste into a terminal and no credential in your shell history.
+
+If you would rather pass it explicitly — for a one-off against a different
+database — the underlying script takes it from the environment:
 
 ```powershell
 $env:DATABASE_URL="YOUR_DIRECT_NEON_CONNECTION_STRING"
 npm run db:migrate
 ```
-
-Replace `YOUR_DIRECT_NEON_CONNECTION_STRING` with the direct string you saved.
-It is only set for this terminal session and is not written to any file.
 
 Success looks like exactly this:
 
@@ -270,8 +308,12 @@ Migrations applied.
 
 Then confirm in the Neon console under **Tables**. You should see:
 
-`users`, `resumes`, `resume_versions`, `analyses`, `optimization_runs`,
-`proposed_changes`, `documents`
+13 tables: `users`, `profiles`, `resumes`, `resume_versions`,
+`job_descriptions`, `analyses`, `optimization_runs`, `change_records`,
+`generated_documents`, `auth_tokens`, `jobs`, `usage_records`, `audit_records`.
+
+You do not need to check them by hand — `npm run deploy:preflight` verifies the
+migration ledger for you.
 
 **Why not automatic:** migrations are deliberately not run on deploy. An
 automatic migration on every deploy will eventually run a destructive one
