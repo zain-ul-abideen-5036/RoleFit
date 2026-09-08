@@ -136,6 +136,45 @@ skills block from dominating the score.
 Seven dimensions with fixed weights summing to 1. Required requirements carry
 more weight than preferred ones, and partial evidence earns partial credit.
 
+## Background work
+
+`QUEUE_DRIVER=database` moves optimization off the request path.
+
+```
+POST /api/optimizations ──► create run row ──► insert job ──► 202 + run id
+                                                   │
+       client polls GET /api/optimizations/[id]     │
+                                                   ▼
+                                     worker: claim ──► executeRun ──► mark
+```
+
+**PostgreSQL, not a broker.** The database is already a hard dependency; a
+second one would bring its own credentials, failure modes and local setup.
+`SELECT ... FOR UPDATE SKIP LOCKED` provides exactly-once claiming across any
+number of workers, which is the only property a broker would add here.
+
+**One code path.** `createRunRecord` and `executeRun` are shared by the request
+and the worker. A worker that built its own run row would drift on exactly the
+details that matter — which columns start as `pending`, when the row becomes
+visible in history, what happens on failure. The worker also loads the run
+through the same user-scoped repository function, so processing a queue is not a
+reason to widen access.
+
+**Failure.** Attempts are recorded on the job; a failure returns it to `pending`
+with exponential backoff (10s doubling, capped at 5 minutes) until
+`maxAttempts`, then `dead`. `dead` is distinct from a retryable failure so a
+permanent problem does not look transient on a dashboard. Only an error _code_
+is stored — a failure from inside the pipeline can quote resume content.
+
+**A crashed worker.** A claim older than five minutes is available again. The
+timeout is deliberately longer than the longest a run may take, so a claim
+cannot expire while the work is still legitimately running.
+
+**The worker is not a serverless function.** Claiming is a loop and serverless
+has nowhere to loop. It runs as a long-lived process — a container, a systemd
+unit, a Railway service — and shuts down gracefully on SIGTERM so the job in
+flight finishes.
+
 ## Serverless considerations
 
 The application is built to deploy to Vercel:
@@ -145,9 +184,12 @@ The application is built to deploy to Vercel:
   start is correct.
 - Uploads are capped at 4.5 MB, matching the serverless request body limit.
 - Long routes declare `maxDuration`.
-- Optimization runs synchronously today, but the run row exists in
-  `queued`/`running` state first. Moving the processing step to a queue worker
-  is a change to one service, not to the API contract or the client.
+- Optimization dispatch is a deployment choice. `QUEUE_DRIVER=inline` (default)
+  runs the work in the request and returns the finished result; `database`
+  writes a job, returns `202` with the run id, and a long-lived worker
+  (`npm run worker`) claims it. Both responses carry a run and a status, and the
+  client branches on the status it is given rather than on knowing the mode — so
+  switching is an environment variable, not a code change.
 - `RATE_LIMIT_DRIVER=memory` is per-instance and documented as unsuitable for a
   scaled deployment; `upstash` uses shared Redis.
 - `STORAGE_DRIVER=local` is rejected outright on a serverless platform, since
