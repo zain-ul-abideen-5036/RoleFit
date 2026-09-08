@@ -3,6 +3,7 @@
 | Suite                        | Count | Runtime | Runs against                                   |
 | ---------------------------- | ----- | ------- | ---------------------------------------------- |
 | Unit                         | 589   | ~15s    | Pure functions. No database, network or model. |
+| Component                    | 68    | ~4s     | React components in jsdom.                     |
 | Integration                  | 72    | ~70s    | A real PostgreSQL instance.                    |
 | End-to-end                   | 25    | ~55s    | A production build in Chromium.                |
 | Accessibility and responsive | 19    | ~50s    | A production build in Chromium.                |
@@ -123,6 +124,32 @@ The immutable-section backstop is driven by stubbing per-change validation to
 let a changed employer, a changed degree and an invented certification through.
 Each must throw rather than return a result with a warning attached, because a
 user has no way to judge that warning.
+
+### Components — 68 tests
+
+`vitest.config.ts` had a `unit-dom` project — jsdom, DOM matchers, a setup file
+patching `matchMedia` and `ResizeObserver` — from the first commit, and nothing
+used it. These are the first tests in it.
+
+**Score presentation.** The product's most consequential copy. `ScoreDisclaimer`
+is asserted to contain both claims that keep the number honest, and asserted
+_not_ to contain "guarantee", "ensure", "will pass" or "ATS compliant" — a copy
+regression test, which is the right shape for a promise that lives in words.
+`ScoreRing` is asserted to give assistive technology the same number a sighted
+user reads off the ring: if those disagree, the second user is being told
+something different about their own resume.
+
+**The field contract.** Labels are checked through `getByLabelText`, which only
+resolves via a real association. The description and the error are announced
+_together_ rather than the error replacing the description, since the
+requirement is still relevant while the value is wrong. A subcomponent used
+outside `<Field>` throws, because silently rendering an unassociated label
+produces a form that looks correct and is unusable with a screen reader.
+
+**Status presentation.** Meaning never carried by colour alone: every badge
+carries a text label, and all four change actions are distinguishable by label.
+The loading button is asserted to change its accessible _name_, not just show a
+spinner — a spinner is invisible to a screen reader.
 
 ### Errors — 36 unit tests
 
