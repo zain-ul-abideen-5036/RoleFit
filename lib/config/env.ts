@@ -108,6 +108,18 @@ const envSchema = z
      * usable and the UI stops offering them, rather than showing a reset link
      * that silently does nothing.
      */
+    /**
+     * How optimization work is executed.
+     *
+     * `inline` (default) runs it inside the request, which is right while a
+     * deterministic run finishes in well under a second. `database` enqueues a
+     * job for a separate worker (`npm run worker`) and returns immediately,
+     * which is what a slower provider or batch work needs.
+     */
+    QUEUE_DRIVER: z.enum(['inline', 'database']).default('inline'),
+    /** Seconds a worker waits before polling again when the queue is empty. */
+    QUEUE_POLL_SECONDS: z.coerce.number().int().min(1).max(300).default(5),
+
     EMAIL_PROVIDER: z.enum(['none', 'console', 'resend']).default('none'),
     EMAIL_API_KEY: z.string().optional(),
     /** Sender address. Must be on a domain verified with the provider. */

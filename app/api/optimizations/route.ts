@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { activeCapabilities } from '@/lib/ai'
+import { queueIsEnabled } from '@/lib/queue'
 import { parseJsonBody, route } from '@/server/api/handler'
 import { listOptimizationRuns } from '@/server/repositories'
+import { enqueueJob } from '@/server/repositories/jobs'
 import { toChangeDto } from '@/server/api/dto'
-import { runOptimization } from '@/server/services/optimization-service'
+import { createRunRecord, runOptimization } from '@/server/services/optimization-service'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,13 +20,39 @@ const createRunSchema = z.object({
 /**
  * Starts an optimization run.
  *
- * Runs synchronously within the function's duration budget. The run row is
- * created before the work starts and marked failed on error, so the same API
- * shape supports a queued worker later without a client change.
+ * Two dispatch modes behind one contract. Inline runs the work in the request
+ * and returns 201 with the finished result; queued writes a job and returns 202
+ * with the run id and a `queued` status. Both responses carry a run and its
+ * status, so the client reads the status it is given rather than assuming which
+ * mode it is talking to.
  */
 export const POST = route(
   async ({ request, user }) => {
     const input = await parseJsonBody(request, createRunSchema)
+
+    if (queueIsEnabled()) {
+      const run = await createRunRecord({ userId: user.userId, analysisId: input.analysisId })
+      await enqueueJob({ userId: user.userId, runId: run.id, kind: 'optimization' })
+
+      // 202: accepted, not done. The client polls GET /api/optimizations/[id].
+      return NextResponse.json(
+        {
+          run: {
+            id: run.id,
+            resumeId: run.resumeId,
+            analysisId: run.analysisId,
+            status: 'queued',
+            projectedScore: null,
+            provider: null,
+          },
+          changeSet: null,
+          changes: [],
+          capabilities: activeCapabilities(),
+          rejectedCount: 0,
+        },
+        { status: 202 },
+      )
+    }
 
     const result = await runOptimization({
       userId: user.userId,
