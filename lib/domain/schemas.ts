@@ -247,6 +247,25 @@ export const analysisReportSchema = z.object({
     missing: z.number().int().min(0),
     requiredMissing: z.number().int().min(0),
   }),
+  /**
+   * For a missing requirement, the closest thing the resume already says.
+   *
+   * Advisory and always optional: empty when no embedding provider is
+   * configured, which is the default. Nothing here contributes to
+   * `overallScore`, a `requirementMatch`, or the optimizer's evidence — see
+   * lib/embeddings/gap-suggestions.ts.
+   */
+  gapSuggestions: z
+    .array(
+      z.object({
+        requirementId: z.string().max(64),
+        excerpt: documentText(400),
+        section: z.string().max(40),
+        similarity: z.number().min(0).max(1),
+      }),
+    )
+    .max(25)
+    .default([]),
 })
 
 /* ==========================================================================
