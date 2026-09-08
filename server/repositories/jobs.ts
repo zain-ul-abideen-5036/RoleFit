@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, asc, eq, lt, lte, sql } from 'drizzle-orm'
+import { and, asc, eq, lt, lte, or, sql } from 'drizzle-orm'
 
 import { jobs, type Job } from '@/db/schema'
 import { getDb } from '@/server/db/client'
@@ -63,10 +63,12 @@ export async function claimNextJob(workerId: string, now: Date = new Date()): Pr
       .select({ id: jobs.id })
       .from(jobs)
       .where(
-        sql`(
-          (${jobs.status} = 'pending' AND ${jobs.runAfter} <= ${now})
-          OR (${jobs.status} = 'claimed' AND ${jobs.claimedAt} < ${staleBefore})
-        )`,
+        // Drizzle operators rather than a raw sql template: postgres.js cannot
+        // bind a JS Date as an untyped parameter and throws at bind time.
+        or(
+          and(eq(jobs.status, 'pending'), lte(jobs.runAfter, now)),
+          and(eq(jobs.status, 'claimed'), lt(jobs.claimedAt, staleBefore)),
+        ),
       )
       .orderBy(asc(jobs.runAfter))
       .limit(1)
