@@ -42,6 +42,14 @@ export const changeDecisionEnum = pgEnum('change_decision', [
   'edited',
 ])
 export const usageKindEnum = pgEnum('usage_kind', ['analysis', 'optimization', 'document_export'])
+export const jobKindEnum = pgEnum('job_kind', ['optimization'])
+export const jobStatusEnum = pgEnum('job_status', [
+  'pending',
+  'claimed',
+  'succeeded',
+  'failed',
+  'dead',
+])
 export const authTokenPurposeEnum = pgEnum('auth_token_purpose', [
   'email_verification',
   'password_reset',
@@ -106,6 +114,56 @@ export const profiles = pgTable('profiles', {
   autoPurgeUploads: boolean('auto_purge_uploads').notNull().default(false),
   ...timestamps,
 })
+
+/* ==========================================================================
+   jobs
+   ========================================================================== */
+
+/**
+ * Background work queue.
+ *
+ * PostgreSQL rather than a dedicated broker, because the database is already a
+ * hard dependency and a second one would need its own credentials, failure
+ * modes and local setup. `SELECT ... FOR UPDATE SKIP LOCKED` gives exactly-once
+ * claiming across any number of workers, which is the only property a broker
+ * would add here.
+ *
+ * A job references the row its work produces (`optimization_runs`) rather than
+ * carrying a payload blob, so there is one source of truth for a run's state
+ * and the client can poll the run it already knows about.
+ */
+export const jobs = pgTable(
+  'jobs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: jobKindEnum('kind').notNull(),
+    status: jobStatusEnum('status').notNull().default('pending'),
+    /** The optimization_runs row this job advances. */
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => optimizationRuns.id, { onDelete: 'cascade' }),
+    /** Not before this time. Set into the future to back off after a failure. */
+    runAfter: timestamp('run_after', { withTimezone: true }).notNull().defaultNow(),
+    attempts: integer('attempts').notNull().default(0),
+    maxAttempts: integer('max_attempts').notNull().default(3),
+    /** Set while a worker holds the job, so a crashed claim can be reclaimed. */
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    claimedBy: varchar('claimed_by', { length: 120 }),
+    /** Error code only — never a message, which could carry resume content. */
+    lastErrorCode: varchar('last_error_code', { length: 80 }),
+    ...timestamps,
+  },
+  (table) => [
+    // The claim query's access path: pending work that is due, oldest first.
+    index('jobs_claimable_idx').on(table.status, table.runAfter),
+    index('jobs_user_idx').on(table.userId),
+    // One job per run: enqueueing twice for the same run is a bug, not a retry.
+    uniqueIndex('jobs_run_unique').on(table.runId),
+  ],
+)
 
 /* ==========================================================================
    auth tokens
@@ -472,6 +530,11 @@ export const changeRecordsRelations = relations(changeRecords, ({ one }) => ({
   }),
 }))
 
+export const jobsRelations = relations(jobs, ({ one }) => ({
+  user: one(users, { fields: [jobs.userId], references: [users.id] }),
+  run: one(optimizationRuns, { fields: [jobs.runId], references: [optimizationRuns.id] }),
+}))
+
 export const authTokensRelations = relations(authTokens, ({ one }) => ({
   user: one(users, { fields: [authTokens.userId], references: [users.id] }),
 }))
@@ -485,6 +548,8 @@ export const generatedDocumentsRelations = relations(generatedDocuments, ({ one 
    inferred row types
    ========================================================================== */
 
+export type Job = typeof jobs.$inferSelect
+export type NewJob = typeof jobs.$inferInsert
 export type AuthToken = typeof authTokens.$inferSelect
 export type NewAuthToken = typeof authTokens.$inferInsert
 export type User = typeof users.$inferSelect
