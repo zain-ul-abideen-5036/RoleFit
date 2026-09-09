@@ -25,7 +25,37 @@ function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10_000)}@example.test`
 }
 
+/**
+ * Waits for entrance animations to finish before measuring.
+ *
+ * axe computes contrast from the composited colour, so an element caught
+ * mid-fade is measured against a blend of itself and the surface behind it and
+ * reported as failing. That is a real measurement of a state that exists for
+ * 280ms and is not the state anyone reads the page in.
+ *
+ * Waiting on the animations themselves rather than a fixed sleep: a timeout
+ * tuned to today's duration silently stops covering anything the moment a
+ * duration changes.
+ */
+async function settle(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () =>
+      document
+        .getAnimations()
+        .filter((a) => a.playState === 'running')
+        .every((a) => {
+          const timing = a.effect?.getComputedTiming()
+          // Infinite animations (a shimmer, an indeterminate rail) never
+          // finish and must not block the scan.
+          return timing?.iterations === Infinity
+        }),
+    undefined,
+    { timeout: 5_000 },
+  )
+}
+
 async function scan(page: Page, context: string): Promise<void> {
+  await settle(page)
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()
 
   const violations = results.violations.map((violation) => ({

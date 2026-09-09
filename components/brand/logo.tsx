@@ -47,15 +47,15 @@ export function LogoMark({ variant = 'brand', title, className, ...props }: Logo
         Geometry is untouched — the seam is the identity. Only the fills moved,
         from two hardcoded hex values to semantic tokens.
 
-        They had to: the upper form was still painted #2457e6, the brand blue
-        from before the palette changed, so the mark was the last object in the
-        product carrying a colour nothing else used. Tokens also mean the
-        light and dark cases stop being two literals that can drift apart.
+        `fill-brand` resolves to the mark's own blue — #2457e6 in light,
+        signal-400 in dark, which is what it shipped with. It is a separate
+        token from `fg-accent` on purpose: that one is tuned for link text
+        against body copy, and the mark should not move when it is retuned.
       */}
       <path
         d={UPPER_PATH}
         transform={`translate(${-SEAM} ${-SEAM})`}
-        className={isMono ? 'fill-current opacity-55' : 'fill-fg-accent'}
+        className={isMono ? 'fill-current opacity-55' : 'fill-brand'}
       />
       <path
         d={LOWER_PATH}
