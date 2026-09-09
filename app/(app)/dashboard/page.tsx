@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-import { ArrowRight, FileText, Gauge, History, Sparkles, Upload } from 'lucide-react'
+import { ArrowRight, FileText, Sparkles, Upload } from 'lucide-react'
 
 import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, EmptyState } from '@/components/ui/feedback'
 import { ScoreDisclaimer } from '@/components/ui/score'
 import { scoreBand } from '@/lib/constants'
-import { formatRelative, pluralize } from '@/lib/utils'
+import { cn, formatRelative, pluralize } from '@/lib/utils'
 import { requirePageUser } from '@/server/auth/service'
 import {
   getDashboardStats,
@@ -36,6 +35,63 @@ export default async function DashboardPage() {
   ])
 
   const isNewAccount = stats.resumeCount === 0
+  const latestResume = resumes[0] ?? null
+
+  const readinessTone =
+    stats.averageScore === null
+      ? 'text-fg'
+      : scoreBand(stats.averageScore).tone === 'success'
+        ? 'text-success-fg'
+        : scoreBand(stats.averageScore).tone === 'warning'
+          ? 'text-warning-fg'
+          : 'text-danger-fg'
+
+  /**
+   * Analyses and runs merged into one chronology.
+   *
+   * Built here rather than in the repository layer: this is a presentation
+   * decision about one screen, and the two queries are still the same two
+   * queries. Nothing about what is fetched has changed.
+   */
+  const activity = [
+    ...analyses.map((analysis) => {
+      const band = scoreBand(analysis.overallScore)
+      return {
+        key: `analysis-${analysis.id}`,
+        kindLabel: 'Analysis',
+        href: `/analysis/${analysis.id}`,
+        createdAt: analysis.createdAt,
+        label: `${analysis.report.counts.strong} strong, ${analysis.report.counts.missing} missing`,
+        trailing: (
+          <Badge
+            tone={
+              band.tone === 'success' ? 'success' : band.tone === 'warning' ? 'warning' : 'danger'
+            }
+          >
+            {analysis.overallScore} · {band.label}
+          </Badge>
+        ),
+      }
+    }),
+    ...runs.map((run) => {
+      const count = run.changeSet?.changes.length ?? 0
+      return {
+        key: `run-${run.id}`,
+        kindLabel: 'Optimized',
+        href: `/resume/${run.resumeId}?run=${run.id}`,
+        createdAt: run.createdAt,
+        label: `${count} ${pluralize(count, 'change')} proposed`,
+        trailing:
+          run.projectedScore !== null ? (
+            <Badge tone="accent">{run.projectedScore} projected</Badge>
+          ) : (
+            <Badge tone="neutral">{run.status}</Badge>
+          ),
+      }
+    }),
+  ]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 8)
 
   return (
     <>
@@ -79,199 +135,142 @@ export default async function DashboardPage() {
           />
         ) : (
           <>
-            <section aria-label="Summary">
-              {/*
-                One strip divided by rules, not four separate cards.
+            {/*
+              What to do next, before what has been done.
 
-                Four bordered boxes in a row give every number the same weight
-                and the same visual container, which is the shape that makes a
-                dashboard read as a template. Sharing one surface and separating
-                by hairline says these belong to a single readout — and the
-                readiness figure, the only one that is a judgement rather than a
-                count, is free to sit differently within it.
-              */}
-              <Card className="overflow-hidden">
-                <div className="grid grid-cols-2 divide-line lg:grid-cols-4 lg:divide-x [&>*:nth-child(-n+2)]:border-b [&>*:nth-child(-n+2)]:border-line lg:[&>*]:border-b-0 [&>*:nth-child(odd)]:border-r [&>*:nth-child(odd)]:border-line lg:[&>*]:border-r-0">
-                  <StatCard
-                    label="Resumes"
-                    value={String(stats.resumeCount)}
-                    hint={pluralize(stats.resumeCount, 'document', 'documents')}
-                    Icon={FileText}
-                  />
-                  <StatCard
-                    label="Analyses"
-                    value={String(stats.analysisCount)}
-                    hint="job descriptions compared"
-                    Icon={Gauge}
-                  />
-                  <StatCard
-                    label="Optimizations"
-                    value={String(stats.optimizationCount)}
-                    hint="runs completed"
-                    Icon={Sparkles}
-                  />
-                  <StatCard
-                    label="Average readiness"
-                    value={stats.averageScore === null ? '—' : String(stats.averageScore)}
-                    hint={
-                      stats.averageScore === null
-                        ? 'no analyses yet'
-                        : scoreBand(stats.averageScore).label.toLowerCase()
-                    }
-                    Icon={Gauge}
-                    tone={
-                      stats.averageScore === null ? undefined : scoreBand(stats.averageScore).tone
-                    }
-                  />
+              This page opened with four counts — resumes, analyses,
+              optimizations, average readiness — in four equal cells. Three of
+              them are numbers that go up and never inform a decision: knowing
+              you have uploaded six resumes does not tell you anything you would
+              act on. They led the page because they are easy to render, not
+              because anyone needed them.
+
+              What a returning user arrives wanting is the next run. So that is
+              the top of the page, with the readiness figure beside it — the one
+              number here that is a judgement rather than a tally.
+            */}
+            <section
+              aria-label="Start"
+              className="grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-[1fr_auto]"
+            >
+              <div className="bg-surface p-6 sm:p-7">
+                <h2 className="font-display text-xl font-medium tracking-tight text-fg">
+                  Optimize a resume for a role
+                </h2>
+                <p className="mt-1.5 max-w-md text-sm leading-relaxed text-fg-muted">
+                  Paste a job description and RoleFit shows you where you match before it rewrites
+                  anything.
+                </p>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <Button asChild>
+                    <Link href="/optimize">
+                      <Sparkles className="size-4" aria-hidden="true" />
+                      New optimization
+                    </Link>
+                  </Button>
+                  {latestResume ? (
+                    <Button variant="secondary" asChild>
+                      <Link href={`/resume/${latestResume.id}`}>
+                        Open {latestResume.title}
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  ) : null}
                 </div>
-              </Card>
-              <ScoreDisclaimer className="mt-3" />
+              </div>
+
+              {/*
+                Readiness in its own cell rather than in a row of four, because
+                it is the only figure on this page that is a verdict.
+              */}
+              <div className="flex flex-col justify-center bg-surface p-6 sm:min-w-52 sm:p-7">
+                <p className="text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">
+                  Average readiness
+                </p>
+                <p
+                  className={cn(
+                    'mt-2 font-display text-display-md tabular-nums',
+                    stats.averageScore === null ? 'text-fg-disabled' : readinessTone,
+                  )}
+                >
+                  {stats.averageScore === null ? '—' : stats.averageScore}
+                </p>
+                <p className="mt-1.5 text-xs text-fg-subtle">
+                  {stats.averageScore === null
+                    ? 'no analyses yet'
+                    : `${scoreBand(stats.averageScore).label.toLowerCase()} · ${stats.analysisCount} ${pluralize(stats.analysisCount, 'analysis', 'analyses')}`}
+                </p>
+              </div>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <div>
-                    <CardTitle as="h2">Recent analyses</CardTitle>
-                    <CardDescription>How your resume scored against each role.</CardDescription>
-                  </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href="/history">
-                      View all
-                      <ArrowRight className="size-3.5" aria-hidden="true" />
-                    </Link>
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {analyses.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-fg-muted">
-                      No analyses yet. Start one from the Optimize page.
-                    </p>
-                  ) : (
-                    <ul className="flex flex-col divide-y divide-line">
-                      {analyses.map((analysis) => {
-                        const band = scoreBand(analysis.overallScore)
-                        return (
-                          <li key={analysis.id}>
-                            <Link
-                              href={`/analysis/${analysis.id}`}
-                              className="flex items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                            >
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-fg">
-                                  {analysis.report.counts.strong} strong,{' '}
-                                  {analysis.report.counts.missing} missing
-                                </p>
-                                <p className="text-xs text-fg-subtle">
-                                  {formatRelative(analysis.createdAt)}
-                                </p>
-                              </div>
-                              <Badge
-                                tone={
-                                  band.tone === 'success'
-                                    ? 'success'
-                                    : band.tone === 'warning'
-                                      ? 'warning'
-                                      : 'danger'
-                                }
-                              >
-                                {analysis.overallScore} · {band.label}
-                              </Badge>
-                            </Link>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
+            <ScoreDisclaimer />
 
-              <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <div>
-                    <CardTitle as="h2">Recent optimizations</CardTitle>
-                    <CardDescription>Runs you can review and export.</CardDescription>
-                  </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href="/history">
-                      View all
-                      <ArrowRight className="size-3.5" aria-hidden="true" />
-                    </Link>
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {runs.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-fg-muted">
-                      No optimization runs yet.
-                    </p>
-                  ) : (
-                    <ul className="flex flex-col divide-y divide-line">
-                      {runs.map((run) => (
-                        <li key={run.id}>
-                          <Link
-                            href={`/resume/${run.resumeId}?run=${run.id}`}
-                            className="flex items-center justify-between gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-fg">
-                                {run.changeSet?.changes.length ?? 0}{' '}
-                                {pluralize(run.changeSet?.changes.length ?? 0, 'change')} proposed
-                              </p>
-                              <p className="text-xs text-fg-subtle">
-                                {formatRelative(run.createdAt)} · {run.provider}
-                              </p>
-                            </div>
-                            {run.projectedScore !== null ? (
-                              <Badge tone="accent">{run.projectedScore} projected</Badge>
-                            ) : (
-                              <Badge tone="neutral">{run.status}</Badge>
-                            )}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/*
+              One activity stream, not two parallel cards.
 
-            <Card>
-              <CardHeader className="flex-row items-center justify-between">
-                <div>
-                  <CardTitle as="h2">Your resumes</CardTitle>
-                  <CardDescription>Uploaded documents available to optimize.</CardDescription>
-                </div>
-                <Button variant="secondary" size="sm" asChild>
-                  <Link href="/optimize">
-                    <Upload className="size-3.5" aria-hidden="true" />
-                    Upload
+              Analyses and optimization runs were listed side by side under
+              separate headings, which asks the reader to merge two chronologies
+              in their head to answer "what was I last doing". They are steps in
+              one workflow, so they read as one list, newest first, each row
+              saying which kind of thing it was.
+            */}
+            <SectionRule title="Recent activity" action={{ href: '/history', label: 'View all' }} />
+            {activity.length === 0 ? (
+              <p className="text-sm text-fg-muted">
+                Nothing yet. Your analyses and optimization runs will appear here.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line border-b border-line">
+                {activity.map((entry) => (
+                  <li key={entry.key}>
+                    <Link
+                      href={entry.href}
+                      className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    >
+                      <div className="flex min-w-0 items-center gap-4">
+                        <span className="w-20 shrink-0 text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">
+                          {entry.kindLabel}
+                        </span>
+                        <p className="truncate text-sm text-fg">{entry.label}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-4">
+                        <span className="text-xs tabular-nums text-fg-subtle">
+                          {formatRelative(entry.createdAt)}
+                        </span>
+                        <span className="w-28 text-right">{entry.trailing}</span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/*
+              Resumes as rows, not a three-column grid of bordered tiles. A
+              resume has a name and a date; a tile forces that into a box with
+              an icon and a format pill, and gives it the weight of a feature.
+            */}
+            <SectionRule title="Your resumes" action={{ href: '/optimize', label: 'Upload' }} />
+            <ul className="divide-y divide-line border-b border-line">
+              {resumes.map((resume) => (
+                <li key={resume.id}>
+                  <Link
+                    href={`/resume/${resume.id}`}
+                    className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <FileText className="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+                      <p className="truncate text-sm text-fg">{resume.title}</p>
+                    </div>
+                    <p className="shrink-0 text-xs text-fg-subtle">
+                      {resume.sourceFormat.toUpperCase()} · {resume.profile.experience.length}{' '}
+                      {pluralize(resume.profile.experience.length, 'role')} ·{' '}
+                      {formatRelative(resume.createdAt)}
+                    </p>
                   </Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {resumes.map((resume) => (
-                    <li key={resume.id}>
-                      <Link
-                        href={`/resume/${resume.id}`}
-                        className="flex h-full flex-col gap-2 rounded-lg border border-line p-4 transition-colors hover:border-line-strong hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <FileText className="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-                          <Badge tone="neutral">{resume.sourceFormat.toUpperCase()}</Badge>
-                        </div>
-                        <p className="truncate text-sm font-medium text-fg">{resume.title}</p>
-                        <p className="text-xs text-fg-subtle">
-                          {resume.profile.experience.length}{' '}
-                          {pluralize(resume.profile.experience.length, 'role')} ·{' '}
-                          {formatRelative(resume.createdAt)}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </PageBody>
@@ -279,44 +278,33 @@ export default async function DashboardPage() {
   )
 }
 
-function StatCard({
-  label,
-  value,
-  hint,
-  Icon,
-  tone,
+/**
+ * A section boundary: a label, a rule, and at most one action.
+ *
+ * Replaces the CardHeader each of these sections used to sit inside. A card
+ * around a list of links adds a border, a shadow and 24px of padding to state
+ * a grouping that a heading and a hairline already state — and once every
+ * section on a page is a card, the page has no emphasis left to spend on the
+ * one thing that matters.
+ */
+function SectionRule({
+  title,
+  action,
 }: {
-  label: string
-  value: string
-  hint: string
-  Icon: typeof History
-  tone?: 'success' | 'warning' | 'danger'
+  title: string
+  action?: { href: string; label: string }
 }) {
-  const toneClass =
-    tone === 'success'
-      ? 'text-success-fg'
-      : tone === 'warning'
-        ? 'text-warning-fg'
-        : tone === 'danger'
-          ? 'text-danger-fg'
-          : 'text-fg'
-
   return (
-    <div className="p-5">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">{label}</p>
-        <Icon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
-      </div>
-      {/*
-        The serif carries the figure. A number is the one place a display face
-        earns its keep in an interface: it is read as a value rather than as
-        running text, and the optical sizing keeps it from looking spindly.
-        `tabular-nums` so a changing figure does not shift the row.
-      */}
-      <p className={`mt-3 font-display text-display-md leading-none tabular-nums ${toneClass}`}>
-        {value}
-      </p>
-      <p className="mt-2 text-xs text-fg-subtle">{hint}</p>
+    <div className="mt-2 flex items-baseline justify-between gap-4 border-b border-line pb-2.5">
+      <h2 className="font-display text-title font-medium tracking-tight text-fg">{title}</h2>
+      {action ? (
+        <Link
+          href={action.href}
+          className="rounded text-sm text-fg-accent transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          {action.label}
+        </Link>
+      ) : null}
     </div>
   )
 }
