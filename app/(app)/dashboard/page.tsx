@@ -47,7 +47,13 @@ export default async function DashboardPage() {
             : 'Your resumes, analyses and optimization runs.'
         }
         actions={
-          <Button asChild>
+          /*
+            Hidden from `lg` up, where the sidebar already carries this exact
+            button. Both were on screen at once: the same label, the same icon,
+            the same destination, 30cm apart. Below `lg` the sidebar is behind
+            the drawer, so here it is the only way to start a run and it stays.
+          */
+          <Button className="lg:hidden" asChild>
             <Link href="/optimize">
               <Sparkles className="size-4" aria-hidden="true" />
               New optimization

@@ -157,7 +157,7 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AppShellPr
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-5">
+      <div className="flex-1 overflow-y-auto px-3 pt-6 pb-3">
         <NavList pathname={pathname} />
       </div>
 

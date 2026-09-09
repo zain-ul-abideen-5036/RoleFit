@@ -217,6 +217,14 @@ export function EmptyState({ icon, title, description, action, className }: Empt
         // dashed rectangle reads as a drop zone, which an empty state is not,
         // and the sunken ground says "nothing here yet" without the costume.
         'flex flex-col items-center justify-center rounded-xl border border-line bg-sunken px-6 py-14 text-center',
+        // Bounded, and centred in whatever space it is given.
+        //
+        // Full-bleed, this rendered as a 1400px-wide grey slab holding one
+        // short sentence, with the measure of the copy running to 90 characters
+        // and the panel reading as an unfinished region of the page rather than
+        // a message. An empty state is a paragraph, so it gets a paragraph's
+        // width.
+        'mx-auto w-full max-w-xl',
         className,
       )}
     >

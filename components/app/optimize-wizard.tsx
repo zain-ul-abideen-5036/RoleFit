@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, FileText, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Sparkles, XCircle } from 'lucide-react'
 
 import {
   ParsedResumeSummary,
@@ -15,7 +15,7 @@ import { Stepper, type Step } from '@/components/app/stepper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldDescription, FieldLabel, Input, Textarea } from '@/components/ui/field'
-import { Alert, Badge, MatchBadge } from '@/components/ui/feedback'
+import { Alert, Badge } from '@/components/ui/feedback'
 import { ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
 import { apiGet, apiPost, toDisplayError } from '@/lib/client/api'
 import { JOB_DESCRIPTION, OPTIMIZATION_STAGES } from '@/lib/constants'
@@ -542,7 +542,13 @@ function StepAnalysis({
               {analysis.jobDescription.company ? ` at ${analysis.jobDescription.company}` : ''}
             </h2>
 
-            <dl className="mt-4 grid grid-cols-3 gap-3">
+            {/*
+              One readout divided by rules, not three bordered boxes inside a
+              bordered card. Boxes nested in boxes is the single loudest source
+              of visual noise on this screen, and the three counts are one
+              measurement of the same thing — they belong on one surface.
+            */}
+            <dl className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line">
               <SummaryStat label="Strong" value={report.counts.strong} tone="success" />
               <SummaryStat label="Partial" value={report.counts.partial} tone="warning" />
               <SummaryStat label="Missing" value={report.counts.missing} tone="danger" />
@@ -572,19 +578,25 @@ function StepAnalysis({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="flex flex-col gap-2">
+            {/*
+              A rule-separated list, and the per-row badge is gone.
+              Every row carried an identical "Missing / not verified" pill under
+              a heading that already said these are the items the resume does
+              not evidence — eight repetitions of one fact, each in its own
+              bordered box, with a stretch of dead space between the label and
+              the badge. The status is stated once, by the section.
+              The marker keeps the rows scannable without colour doing the work.
+            */}
+            <ul className="-mt-1 divide-y divide-line">
               {missingRequired.slice(0, 8).map((match) => (
-                <li
-                  key={match.requirementId}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-line bg-canvas px-3 py-2.5"
-                >
+                <li key={match.requirementId} className="flex gap-3 py-2.5">
+                  <XCircle className="mt-0.5 size-3.5 shrink-0 text-danger-fg" aria-hidden="true" />
                   <span className="min-w-0 text-sm text-fg">{match.text}</span>
-                  <MatchBadge status="missing" className="shrink-0" />
                 </li>
               ))}
             </ul>
             {missingRequired.length > 8 ? (
-              <p className="mt-3 text-xs text-fg-subtle">
+              <p className="mt-3 text-meta text-fg-subtle">
                 and {missingRequired.length - 8} more — see the full analysis.
               </p>
             ) : null}
@@ -623,9 +635,9 @@ function SummaryStat({
         : 'text-danger-fg'
 
   return (
-    <div className="rounded-lg border border-line bg-canvas px-3 py-2.5">
-      <dt className="text-xs text-fg-subtle">{label}</dt>
-      <dd className={cn('text-2xl font-bold tabular-nums', toneClass)}>{value}</dd>
+    <div className="py-3 pr-3 pl-0 first:pl-0 [&:not(:first-child)]:pl-4">
+      <dt className="text-2xs font-medium uppercase text-fg-subtle">{label}</dt>
+      <dd className={cn('mt-1 font-display text-2xl tabular-nums', toneClass)}>{value}</dd>
     </div>
   )
 }
