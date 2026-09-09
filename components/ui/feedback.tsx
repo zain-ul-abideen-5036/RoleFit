@@ -25,8 +25,17 @@ import { cn } from '@/lib/utils'
 
 /* ------------------------------------------------------------------ badge */
 
+/*
+ * `rounded-md`, not `rounded-full`.
+ *
+ * A fully round pill is the shape every component library ships, and once
+ * status, match, change and count badges are all pills, a dense screen becomes
+ * a field of lozenges with nothing distinguishing one row from another. A
+ * small radius keeps the badge reading as a label attached to its content, and
+ * it agrees with the corner language of the surfaces around it.
+ */
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+  'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap tabular-nums',
   {
     variants: {
       tone: {
@@ -109,7 +118,7 @@ export function ChangeBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium',
         classes,
         className,
       )}
@@ -122,18 +131,27 @@ export function ChangeBadge({
 
 /* ------------------------------------------------------------------ alert */
 
-const alertVariants = cva('flex gap-3 rounded-lg border p-4 text-sm', {
-  variants: {
-    tone: {
-      info: 'border-line-strong bg-sunken text-fg-muted',
-      accent: 'border-line-accent bg-accent-subtle text-fg',
-      success: 'border-success-line bg-success-bg text-success-fg',
-      warning: 'border-warning-line bg-warning-bg text-warning-fg',
-      danger: 'border-danger-line bg-danger-bg text-danger-fg',
+const alertVariants = cva(
+  [
+    'flex gap-3 rounded-lg border p-4 text-sm',
+    // An alert almost always appears in response to something the user just
+    // did, and arriving instantly is indistinguishable from having been there
+    // all along — which is how a validation message gets missed.
+    'animate-enter',
+  ].join(' '),
+  {
+    variants: {
+      tone: {
+        info: 'border-line-strong bg-sunken text-fg-muted',
+        accent: 'border-line-accent bg-accent-subtle text-fg',
+        success: 'border-success-line bg-success-bg text-success-fg',
+        warning: 'border-warning-line bg-warning-bg text-warning-fg',
+        danger: 'border-danger-line bg-danger-bg text-danger-fg',
+      },
     },
+    defaultVariants: { tone: 'info' },
   },
-  defaultVariants: { tone: 'info' },
-})
+)
 
 const ALERT_ICONS = {
   info: Info,
@@ -195,16 +213,27 @@ export function EmptyState({ icon, title, description, action, className }: Empt
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-xl border border-dashed border-line-strong bg-surface px-6 py-14 text-center',
+        // Solid hairline rather than a dashed border on a filled panel: a
+        // dashed rectangle reads as a drop zone, which an empty state is not,
+        // and the sunken ground says "nothing here yet" without the costume.
+        'flex flex-col items-center justify-center rounded-xl border border-line bg-sunken px-6 py-14 text-center',
+        // Bounded, and centred in whatever space it is given.
+        //
+        // Full-bleed, this rendered as a 1400px-wide grey slab holding one
+        // short sentence, with the measure of the copy running to 90 characters
+        // and the panel reading as an unfinished region of the page rather than
+        // a message. An empty state is a paragraph, so it gets a paragraph's
+        // width.
+        'mx-auto w-full max-w-xl',
         className,
       )}
     >
       {icon ? (
-        <div className="mb-4 flex size-11 items-center justify-center rounded-full bg-sunken text-fg-subtle">
+        <div className="mb-4 flex size-10 items-center justify-center rounded-lg border border-line bg-surface text-fg-subtle">
           {icon}
         </div>
       ) : null}
-      <p className="text-base font-semibold text-fg">{title}</p>
+      <p className="font-display text-title font-medium text-fg">{title}</p>
       <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-fg-muted">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>

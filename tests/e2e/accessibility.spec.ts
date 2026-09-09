@@ -25,7 +25,37 @@ function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10_000)}@example.test`
 }
 
+/**
+ * Waits for entrance animations to finish before measuring.
+ *
+ * axe computes contrast from the composited colour, so an element caught
+ * mid-fade is measured against a blend of itself and the surface behind it and
+ * reported as failing. That is a real measurement of a state that exists for
+ * 280ms and is not the state anyone reads the page in.
+ *
+ * Waiting on the animations themselves rather than a fixed sleep: a timeout
+ * tuned to today's duration silently stops covering anything the moment a
+ * duration changes.
+ */
+async function settle(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () =>
+      document
+        .getAnimations()
+        .filter((a) => a.playState === 'running')
+        .every((a) => {
+          const timing = a.effect?.getComputedTiming()
+          // Infinite animations (a shimmer, an indeterminate rail) never
+          // finish and must not block the scan.
+          return timing?.iterations === Infinity
+        }),
+    undefined,
+    { timeout: 5_000 },
+  )
+}
+
 async function scan(page: Page, context: string): Promise<void> {
+  await settle(page)
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()
 
   const violations = results.violations.map((violation) => ({
@@ -77,6 +107,51 @@ test.describe('public pages', () => {
     const page = await context.newPage()
     await page.goto('/')
     await scan(page, '/ (dark)')
+    await context.close()
+  })
+})
+
+/* ==========================================================================
+   Motion
+   ========================================================================== */
+
+test.describe('reduced motion', () => {
+  /**
+   * Entrance animations start at `opacity: 0`.
+   *
+   * That is fine while they run, and a disaster if anything ever stops them
+   * running: the page would render, pass every other check, and show nothing.
+   * The global `prefers-reduced-motion` block shortens durations rather than
+   * removing animations, which keeps the `both` fill mode landing on the end
+   * state — but that is a property worth holding onto rather than rediscovering
+   * from a blank screen.
+   */
+  test('content is visible, not stranded at opacity 0', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    await page.goto('/')
+
+    const heading = page.getByRole('heading', { level: 1 })
+    await expect(heading).toBeVisible()
+
+    const opacity = await heading.evaluate((el) => {
+      // Walk up: the animation is on a container, not the heading itself.
+      for (let node: HTMLElement | null = el as HTMLElement; node; node = node.parentElement) {
+        const value = Number(getComputedStyle(node).opacity)
+        if (value < 1) return value
+      }
+      return 1
+    })
+
+    expect(opacity, 'an ancestor is holding content invisible').toBe(1)
+    await context.close()
+  })
+
+  test('the landing page is still accessible with motion reduced', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    await page.goto('/')
+    await scan(page, '/ (reduced motion)')
     await context.close()
   })
 })

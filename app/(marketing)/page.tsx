@@ -61,7 +61,7 @@ function Hero() {
             Never invents experience you don&apos;t have
           </Badge>
 
-          <h1 className="font-display text-4xl font-medium leading-[1.06] tracking-tight text-fg sm:text-5xl lg:text-[3.4rem]">
+          <h1 className="font-display text-4xl font-medium leading-[1.06] tracking-tight text-fg sm:text-5xl lg:text-display-lg">
             Tailor your resume.
             <br />
             Match the role.

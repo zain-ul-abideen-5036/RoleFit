@@ -54,3 +54,6 @@ yarn-error.log*
 
 # generated e2e fixtures
 .e2e/
+
+# Local UI screenshots for design review (not part of the product).
+ui-screens/

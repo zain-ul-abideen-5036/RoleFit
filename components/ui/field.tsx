@@ -60,7 +60,7 @@ export function Field({ id, error, className, children, ...props }: FieldProps) 
           <p
             id={value.errorId}
             role="alert"
-            className="flex items-start gap-1.5 text-sm text-danger-fg"
+            className="flex animate-enter items-start gap-1.5 text-sm text-danger-fg"
           >
             <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
             <span>{message}</span>
@@ -101,12 +101,34 @@ export function FieldDescription({
 const controlClasses = [
   'w-full rounded-md border bg-surface text-fg',
   'placeholder:text-fg-disabled',
-  'transition-colors duration-150',
+  'transition-[border-color,box-shadow,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+  // A control that does not react to the pointer reads as display text. The
+  // border is the whole affordance here, so it is the thing that moves.
+  'hover:border-line-bold',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-  'disabled:cursor-not-allowed disabled:bg-sunken disabled:text-fg-disabled',
+  // Disabled is not merely dimmer: it loses the hover response too, otherwise
+  // the field keeps inviting a click it will not accept.
+  'disabled:cursor-not-allowed disabled:border-line disabled:bg-sunken disabled:text-fg-disabled',
+  'disabled:hover:border-line',
   // 16px on mobile prevents iOS Safari zooming the viewport on focus.
   'text-base sm:text-sm',
 ].join(' ')
+
+/**
+ * Border and ring for a control's validity.
+ *
+ * The ring colour is the part that was missing. `aria-invalid` already tells
+ * assistive technology the field is in error, and the file's own contract says
+ * the focus ring agrees with it — but the ring rendered the neutral accent
+ * either way, so a sighted keyboard user focusing an invalid field saw the
+ * same affirmative colour as a valid one. Two channels describing one field,
+ * disagreeing.
+ */
+function validityClasses(hasError: boolean): string {
+  return hasError
+    ? 'border-danger-line hover:border-danger-solid focus-visible:outline-ring-danger'
+    : 'border-line-strong'
+}
 
 export const Input = React.forwardRef<
   HTMLInputElement,
@@ -119,12 +141,7 @@ export const Input = React.forwardRef<
       id={id}
       aria-invalid={hasError || undefined}
       aria-describedby={cn(descriptionId, hasError && errorId)}
-      className={cn(
-        controlClasses,
-        'h-10 px-3',
-        hasError ? 'border-danger-line' : 'border-line-strong',
-        className,
-      )}
+      className={cn(controlClasses, 'h-10 px-3', validityClasses(hasError), className)}
       {...props}
     />
   )
@@ -144,7 +161,7 @@ export const Textarea = React.forwardRef<
       className={cn(
         controlClasses,
         'min-h-28 resize-y px-3 py-2 leading-relaxed',
-        hasError ? 'border-danger-line' : 'border-line-strong',
+        validityClasses(hasError),
         className,
       )}
       {...props}

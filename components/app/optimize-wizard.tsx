@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, FileText, Loader2, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Sparkles, XCircle } from 'lucide-react'
 
 import {
   ParsedResumeSummary,
@@ -15,7 +15,7 @@ import { Stepper, type Step } from '@/components/app/stepper'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldDescription, FieldLabel, Input, Textarea } from '@/components/ui/field'
-import { Alert, Badge, MatchBadge } from '@/components/ui/feedback'
+import { Alert, Badge } from '@/components/ui/feedback'
 import { ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
 import { apiGet, apiPost, toDisplayError } from '@/lib/client/api'
 import { JOB_DESCRIPTION, OPTIMIZATION_STAGES } from '@/lib/constants'
@@ -192,51 +192,64 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
         </Alert>
       ) : null}
 
-      {stepIndex === 0 ? (
-        <StepResume
-          existingResumes={existingResumes}
-          selectedResumeId={selectedResumeId}
-          uploaded={resume}
-          onSelectExisting={(id) => {
-            setSelectedResumeId(id)
-            setResume(null)
-          }}
-          onUploaded={(uploaded) => {
-            setResume(uploaded)
-            setSelectedResumeId(null)
-          }}
-          onContinue={() => setStepIndex(1)}
-        />
-      ) : null}
+      {/*
+        Keyed on the step so React remounts the subtree and the entrance
+        animation replays on every advance.
 
-      {stepIndex === 1 ? (
-        <StepJobDescription
-          jobText={jobText}
-          jobTitle={jobTitle}
-          company={company}
-          onJobText={setJobText}
-          onJobTitle={setJobTitle}
-          onCompany={setCompany}
-          onBack={() => setStepIndex(0)}
-          onSubmit={runAnalysis}
-          busy={busy}
-        />
-      ) : null}
+        Without the key, moving from step 2 to 3 swaps the contents of a node
+        that never re-enters, so the panel changes silently and the eye has
+        nothing telling it the change was the result of the button just pressed.
+        This is the one place in the flow where motion is carrying information
+        rather than decorating: it ties the press to the panel that replaced
+        the last one.
+      */}
+      <div key={stepIndex} className="animate-enter">
+        {stepIndex === 0 ? (
+          <StepResume
+            existingResumes={existingResumes}
+            selectedResumeId={selectedResumeId}
+            uploaded={resume}
+            onSelectExisting={(id) => {
+              setSelectedResumeId(id)
+              setResume(null)
+            }}
+            onUploaded={(uploaded) => {
+              setResume(uploaded)
+              setSelectedResumeId(null)
+            }}
+            onContinue={() => setStepIndex(1)}
+          />
+        ) : null}
 
-      {stepIndex === 2 ? (
-        busy || !analysis ? (
-          <ProcessingCard stage={stage} />
-        ) : (
-          <StepAnalysis
-            analysis={analysis}
-            onBack={() => setStepIndex(1)}
-            onOptimize={runOptimization}
+        {stepIndex === 1 ? (
+          <StepJobDescription
+            jobText={jobText}
+            jobTitle={jobTitle}
+            company={company}
+            onJobText={setJobText}
+            onJobTitle={setJobTitle}
+            onCompany={setCompany}
+            onBack={() => setStepIndex(0)}
+            onSubmit={runAnalysis}
             busy={busy}
           />
-        )
-      ) : null}
+        ) : null}
 
-      {stepIndex === 3 ? <ProcessingCard stage={stage} /> : null}
+        {stepIndex === 2 ? (
+          busy || !analysis ? (
+            <ProcessingCard stage={stage} />
+          ) : (
+            <StepAnalysis
+              analysis={analysis}
+              onBack={() => setStepIndex(1)}
+              onOptimize={runOptimization}
+              busy={busy}
+            />
+          )
+        ) : null}
+
+        {stepIndex === 3 ? <ProcessingCard stage={stage} /> : null}
+      </div>
     </div>
   )
 }
@@ -400,7 +413,7 @@ function StepJobDescription({
             onChange={(event) => onJobText(event.target.value)}
             rows={14}
             placeholder="Paste the full job posting here…"
-            className="min-h-64 font-mono text-[0.8125rem]"
+            className="min-h-64 font-mono text-meta"
           />
           <FieldDescription>
             <span className="tabular-nums">{length.toLocaleString('en-GB')}</span> characters.
@@ -438,12 +451,24 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
   const activeIndex = OPTIMIZATION_STAGES.findIndex((entry) => entry.key === stage)
 
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-6 py-14">
-        <Loader2 className="size-8 animate-spin text-accent" aria-hidden="true" />
+    <Card className="relative overflow-hidden">
+      {/*
+        An indeterminate rail across the top edge rather than a spinning disc
+        in the middle.
 
+        The spinner said only "something is happening", which the stage list
+        below already says, and better. A rail sits where progress belongs on a
+        panel, occupies no vertical space, and leaves the centre of the card
+        for the thing worth reading. It is also honest: the travel does not
+        pretend to encode a percentage, because the duration here is not known.
+      */}
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-sunken">
+        <span className="block h-full w-1/3 animate-indeterminate rounded-full bg-accent" />
+      </span>
+
+      <CardContent className="flex flex-col items-center gap-6 py-14">
         <div className="text-center">
-          <p className="text-lg font-semibold text-fg" aria-live="polite">
+          <p className="font-display text-xl font-medium text-fg" aria-live="polite">
             {activeIndex >= 0 ? OPTIMIZATION_STAGES[activeIndex]!.label : 'Working…'}
           </p>
           <p className="mt-1.5 text-sm text-fg-muted">
@@ -460,8 +485,9 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
               <li
                 key={entry.key}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm transition-colors',
-                  active && 'bg-accent-subtle font-medium text-fg-accent',
+                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm',
+                  'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+                  active && 'bg-sunken font-medium text-fg',
                   done && 'text-fg-subtle',
                   !active && !done && 'text-fg-disabled',
                 )}
@@ -469,7 +495,8 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
                 <span
                   className={cn(
                     'size-1.5 shrink-0 rounded-full',
-                    active ? 'bg-accent' : done ? 'bg-success-solid' : 'bg-line-bold',
+                    'transition-[background-color,transform] duration-[--duration-fast] ease-[--ease-standard]',
+                    active ? 'scale-125 bg-accent' : done ? 'bg-success-solid' : 'bg-line-bold',
                   )}
                   aria-hidden="true"
                 />
@@ -515,7 +542,13 @@ function StepAnalysis({
               {analysis.jobDescription.company ? ` at ${analysis.jobDescription.company}` : ''}
             </h2>
 
-            <dl className="mt-4 grid grid-cols-3 gap-3">
+            {/*
+              One readout divided by rules, not three bordered boxes inside a
+              bordered card. Boxes nested in boxes is the single loudest source
+              of visual noise on this screen, and the three counts are one
+              measurement of the same thing — they belong on one surface.
+            */}
+            <dl className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line">
               <SummaryStat label="Strong" value={report.counts.strong} tone="success" />
               <SummaryStat label="Partial" value={report.counts.partial} tone="warning" />
               <SummaryStat label="Missing" value={report.counts.missing} tone="danger" />
@@ -545,19 +578,25 @@ function StepAnalysis({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="flex flex-col gap-2">
+            {/*
+              A rule-separated list, and the per-row badge is gone.
+              Every row carried an identical "Missing / not verified" pill under
+              a heading that already said these are the items the resume does
+              not evidence — eight repetitions of one fact, each in its own
+              bordered box, with a stretch of dead space between the label and
+              the badge. The status is stated once, by the section.
+              The marker keeps the rows scannable without colour doing the work.
+            */}
+            <ul className="-mt-1 divide-y divide-line">
               {missingRequired.slice(0, 8).map((match) => (
-                <li
-                  key={match.requirementId}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-line bg-canvas px-3 py-2.5"
-                >
+                <li key={match.requirementId} className="flex gap-3 py-2.5">
+                  <XCircle className="mt-0.5 size-3.5 shrink-0 text-danger-fg" aria-hidden="true" />
                   <span className="min-w-0 text-sm text-fg">{match.text}</span>
-                  <MatchBadge status="missing" className="shrink-0" />
                 </li>
               ))}
             </ul>
             {missingRequired.length > 8 ? (
-              <p className="mt-3 text-xs text-fg-subtle">
+              <p className="mt-3 text-meta text-fg-subtle">
                 and {missingRequired.length - 8} more — see the full analysis.
               </p>
             ) : null}
@@ -596,9 +635,9 @@ function SummaryStat({
         : 'text-danger-fg'
 
   return (
-    <div className="rounded-lg border border-line bg-canvas px-3 py-2.5">
-      <dt className="text-xs text-fg-subtle">{label}</dt>
-      <dd className={cn('text-2xl font-bold tabular-nums', toneClass)}>{value}</dd>
+    <div className="py-3 pr-3 pl-0 first:pl-0 [&:not(:first-child)]:pl-4">
+      <dt className="text-2xs font-medium uppercase text-fg-subtle">{label}</dt>
+      <dd className={cn('mt-1 font-display text-2xl tabular-nums', toneClass)}>{value}</dd>
     </div>
   )
 }

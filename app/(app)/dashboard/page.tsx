@@ -47,7 +47,13 @@ export default async function DashboardPage() {
             : 'Your resumes, analyses and optimization runs.'
         }
         actions={
-          <Button asChild>
+          /*
+            Hidden from `lg` up, where the sidebar already carries this exact
+            button. Both were on screen at once: the same label, the same icon,
+            the same destination, 30cm apart. Below `lg` the sidebar is behind
+            the drawer, so here it is the only way to start a run and it stays.
+          */
+          <Button className="lg:hidden" asChild>
             <Link href="/optimize">
               <Sparkles className="size-4" aria-hidden="true" />
               New optimization
@@ -74,39 +80,51 @@ export default async function DashboardPage() {
         ) : (
           <>
             <section aria-label="Summary">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                  label="Resumes"
-                  value={String(stats.resumeCount)}
-                  hint={pluralize(stats.resumeCount, 'document', 'documents')}
-                  Icon={FileText}
-                />
-                <StatCard
-                  label="Analyses"
-                  value={String(stats.analysisCount)}
-                  hint="job descriptions compared"
-                  Icon={Gauge}
-                />
-                <StatCard
-                  label="Optimizations"
-                  value={String(stats.optimizationCount)}
-                  hint="runs completed"
-                  Icon={Sparkles}
-                />
-                <StatCard
-                  label="Average readiness"
-                  value={stats.averageScore === null ? '—' : String(stats.averageScore)}
-                  hint={
-                    stats.averageScore === null
-                      ? 'no analyses yet'
-                      : scoreBand(stats.averageScore).label.toLowerCase()
-                  }
-                  Icon={Gauge}
-                  tone={
-                    stats.averageScore === null ? undefined : scoreBand(stats.averageScore).tone
-                  }
-                />
-              </div>
+              {/*
+                One strip divided by rules, not four separate cards.
+
+                Four bordered boxes in a row give every number the same weight
+                and the same visual container, which is the shape that makes a
+                dashboard read as a template. Sharing one surface and separating
+                by hairline says these belong to a single readout — and the
+                readiness figure, the only one that is a judgement rather than a
+                count, is free to sit differently within it.
+              */}
+              <Card className="overflow-hidden">
+                <div className="grid grid-cols-2 divide-line lg:grid-cols-4 lg:divide-x [&>*:nth-child(-n+2)]:border-b [&>*:nth-child(-n+2)]:border-line lg:[&>*]:border-b-0 [&>*:nth-child(odd)]:border-r [&>*:nth-child(odd)]:border-line lg:[&>*]:border-r-0">
+                  <StatCard
+                    label="Resumes"
+                    value={String(stats.resumeCount)}
+                    hint={pluralize(stats.resumeCount, 'document', 'documents')}
+                    Icon={FileText}
+                  />
+                  <StatCard
+                    label="Analyses"
+                    value={String(stats.analysisCount)}
+                    hint="job descriptions compared"
+                    Icon={Gauge}
+                  />
+                  <StatCard
+                    label="Optimizations"
+                    value={String(stats.optimizationCount)}
+                    hint="runs completed"
+                    Icon={Sparkles}
+                  />
+                  <StatCard
+                    label="Average readiness"
+                    value={stats.averageScore === null ? '—' : String(stats.averageScore)}
+                    hint={
+                      stats.averageScore === null
+                        ? 'no analyses yet'
+                        : scoreBand(stats.averageScore).label.toLowerCase()
+                    }
+                    Icon={Gauge}
+                    tone={
+                      stats.averageScore === null ? undefined : scoreBand(stats.averageScore).tone
+                    }
+                  />
+                </div>
+              </Card>
               <ScoreDisclaimer className="mt-3" />
             </section>
 
@@ -284,15 +302,21 @@ function StatCard({
           : 'text-fg'
 
   return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-fg-subtle">{label}</p>
-          <Icon className="size-4 text-fg-subtle" aria-hidden="true" />
-        </div>
-        <p className={`mt-3 text-3xl font-bold tabular-nums ${toneClass}`}>{value}</p>
-        <p className="mt-1 text-xs text-fg-subtle">{hint}</p>
-      </CardContent>
-    </Card>
+    <div className="p-5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">{label}</p>
+        <Icon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+      </div>
+      {/*
+        The serif carries the figure. A number is the one place a display face
+        earns its keep in an interface: it is read as a value rather than as
+        running text, and the optical sizing keeps it from looking spindly.
+        `tabular-nums` so a changing figure does not shift the row.
+      */}
+      <p className={`mt-3 font-display text-display-md leading-none tabular-nums ${toneClass}`}>
+        {value}
+      </p>
+      <p className="mt-2 text-xs text-fg-subtle">{hint}</p>
+    </div>
   )
 }

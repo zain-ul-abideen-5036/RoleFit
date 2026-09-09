@@ -1,5 +1,43 @@
 import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { extendTailwindMerge } from 'tailwind-merge'
+
+/**
+ * The project's font-size steps, declared to tailwind-merge.
+ *
+ * tailwind-merge resolves conflicts by class group, and it knows only the
+ * stock scale. Faced with `text-title` it cannot tell a custom font-size from a
+ * custom text colour, guesses colour, and then treats it as conflicting with a
+ * real colour — silently dropping whichever came first.
+ *
+ * That is not hypothetical. Migrating the arbitrary sizes to named tokens
+ * turned `text-on-cta text-body-lg` on the marketing call-to-action into
+ * `text-body-lg` alone: white on plum became near-black on plum, 2.16:1, and
+ * the button stayed exactly the right size and shape while becoming unreadable.
+ * The reverse happened wherever a colour came second — `text-title ... text-fg`
+ * kept the colour and lost the size.
+ *
+ * `text-[0.9375rem]` never had this problem: an arbitrary value carrying `rem`
+ * is unambiguously a length. The ambiguity arrives with the name, so the names
+ * have to be registered.
+ */
+const FONT_SIZES = [
+  '3xs',
+  '2xs',
+  'meta',
+  'body-lg',
+  'title',
+  'display-sm',
+  'display-md',
+  'display-lg',
+] as const
+
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [{ text: [...FONT_SIZES] }],
+    },
+  },
+})
 
 /** Merges class names, letting later Tailwind utilities win over earlier ones. */
 export function cn(...inputs: ClassValue[]): string {

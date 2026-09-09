@@ -43,15 +43,24 @@ export function LogoMark({ variant = 'brand', title, className, ...props }: Logo
       {...props}
     >
       {title ? <title>{title}</title> : null}
+      {/*
+        Geometry is untouched — the seam is the identity. Only the fills moved,
+        from two hardcoded hex values to semantic tokens.
+
+        `fill-brand` resolves to the mark's own blue — #2457e6 in light,
+        signal-400 in dark, which is what it shipped with. It is a separate
+        token from `fg-accent` on purpose: that one is tuned for link text
+        against body copy, and the mark should not move when it is retuned.
+      */}
       <path
         d={UPPER_PATH}
         transform={`translate(${-SEAM} ${-SEAM})`}
-        className={isMono ? 'fill-current opacity-55' : 'fill-[#2457e6] dark:fill-[#5d8dfd]'}
+        className={isMono ? 'fill-current opacity-55' : 'fill-brand'}
       />
       <path
         d={LOWER_PATH}
         transform={`translate(${SEAM} ${SEAM})`}
-        className={isMono ? 'fill-current' : 'fill-[#14161e] dark:fill-[#f4f6fa]'}
+        className={isMono ? 'fill-current' : 'fill-fg'}
       />
     </svg>
   )
@@ -75,9 +84,7 @@ export function Logo({ variant = 'brand', markOnly = false, className, markClass
         {...(markOnly ? { title: PRODUCT.name } : {})}
       />
       {markOnly ? null : (
-        <span className="text-[1.0625rem] font-bold tracking-[-0.03em] text-fg">
-          {PRODUCT.name}
-        </span>
+        <span className="text-title font-bold tracking-[-0.03em] text-fg">{PRODUCT.name}</span>
       )}
     </span>
   )

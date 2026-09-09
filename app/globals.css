@@ -5,22 +5,28 @@
    Layer 1: primitives  ->  Layer 2: semantic tokens  ->  Layer 3: components
    Never hard-code a colour, radius or shadow in a component. Use a token.
 
-   The direction: a monochrome instrument with one earned accent.
+   The direction: blue, white and near-black, held in strong contrast.
 
-   Most products of this kind paint a brand colour on the primary button and
-   call that identity. RoleFit does not, because the only thing on these
-   screens worth colouring is the verdict on someone's resume. Actions are
-   near-black on warm stone; colour is spent on score, status and diff, where
-   it carries meaning. A page with a lot of colour on it is a page telling the
-   user something, not a page decorated.
+   Three colours carry the whole product. Blue is the brand — the mark, links,
+   focus, selection, the score arc. White and near-black carry everything
+   structural. Nothing else appears except the four semantic hues, and those
+   only where they state something: green for met, amber for partial, red for
+   missing.
 
-   The ground is warm rather than the cool grey these interfaces default to.
-   Cool grey reads clinical, and this product is read by people applying for
-   work, which is not a clinical situation.
+   The primary action is near-black rather than blue. That is deliberate and it
+   is the one thing about this palette that looks like a mistake until you use
+   the product: the only thing on these screens worth the eye's first stop is
+   the verdict on someone's resume. A blue button on every panel competes with
+   that verdict and wins, which is the wrong way round. Keeping actions neutral
+   leaves blue meaning something when it does appear.
 
-   Plum is the accent: links, focus, selection, the score arc. It is the one
-   hue that collides with none of the semantics it has to sit beside — green
-   for met, amber for partial, red for missing.
+   Neutrals are cool. Paired with this blue a warm grey reads as a second,
+   muddier hue rather than as a neutral, and the crispness of blue on cool grey
+   is most of what makes the contrast feel deliberate rather than default.
+
+   No violet, no lavender, no orange. An earlier revision used plum for the
+   accent and violet for `info`; both are gone, along with the orange CTA
+   colour that was left unused.
    ========================================================================== */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -37,53 +43,41 @@
     var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
     monospace;
 
-  /* --------------------------------------------------- primitive: plum   */
-  /* The accent. Spent on links, focus, selection and the score arc, and on
-     nothing else. Deliberately not blue: blue is what every tool in this
-     category reaches for, and it is also the hue a reader is most likely to
-     mistake for a disabled state once it sits next to real status colour. */
-  --color-plum-50: #fbf5fa;
-  --color-plum-100: #f6e9f3;
-  --color-plum-200: #ecd4e8;
-  --color-plum-300: #dcb2d5;
-  --color-plum-400: #c684bb;
-  --color-plum-500: #ad5f9f;
-  /* 5.31:1 on the canvas — clears AA for normal text as a link colour. */
-  --color-plum-600: #8f4483;
-  --color-plum-700: #75366b;
-  --color-plum-800: #5f2d57;
-  --color-plum-900: #4c2646;
-  --color-plum-950: #2d132a;
+  /* -------------------------------------------------- primitive: signal  */
+  /* Brand blue. Precision, trust, alignment — and the colour this product
+     was recognised by before a redesign swapped it for plum. Restored to the
+     exact original ramp rather than a new blue, because the identity was not
+     the problem. */
+  --color-signal-50: #eff4ff;
+  --color-signal-100: #dbe6ff;
+  --color-signal-200: #bed3ff;
+  --color-signal-300: #91b6ff;
+  --color-signal-400: #5d8dfd;
+  --color-signal-500: #3865f8;
+  --color-signal-600: #2457e6;
+  --color-signal-700: #1a3fc4;
+  --color-signal-800: #1c379f;
+  --color-signal-900: #1d347e;
+  --color-signal-950: #16224d;
 
   /* ----------------------------------------------------- primitive: ink   */
-  /* Warm neutral. Body text, surfaces, borders — and, unusually, the primary
-     action, which is near-black rather than a brand colour. A warm grey has a
-     trace of red in it; the cool greys this replaced read as hardware. */
-  --color-ink-50: #faf9f7;
-  --color-ink-100: #f2f0ec;
-  --color-ink-200: #e6e2db;
-  --color-ink-300: #d2ccc1;
-  --color-ink-400: #a49c8e;
-  /* 5.44:1 on white, 5.13:1 on the canvas — AA for normal text. */
-  --color-ink-500: #6f6759;
-  --color-ink-600: #5d564a;
-  --color-ink-700: #4a443b;
-  --color-ink-800: #3a352e;
-  --color-ink-900: #272420;
-  --color-ink-950: #17150f;
-
-  /* ---------------------------------------------------- primitive: ember  */
-  /* Accent. Reserved for marketing CTAs and high-emphasis moments only. */
-  --color-ember-50: #fff5ed;
-  --color-ember-100: #ffe8d4;
-  --color-ember-200: #ffcda8;
-  --color-ember-300: #ffaa70;
-  --color-ember-400: #fe7b37;
-  --color-ember-500: #fc5a11;
-  --color-ember-600: #e2560f;
-  --color-ember-700: #b53107;
-  --color-ember-800: #90280e;
-  --color-ember-900: #74240f;
+  /* Cool neutral. Body text, surfaces, borders — and the primary action,
+     which is near-black rather than the brand blue, so that blue stays
+     available for state and emphasis instead of being spent on every button.
+     Cool rather than warm: paired with the blue, a warm grey reads as a
+     second, muddier hue. */
+  --color-ink-50: #f7f8fa;
+  --color-ink-100: #eef0f4;
+  --color-ink-200: #dee1e9;
+  --color-ink-300: #c4cad7;
+  --color-ink-400: #949db1;
+  /* 5.40:1 on white, 5.08:1 on the canvas — AA for normal text. */
+  --color-ink-500: #616a82;
+  --color-ink-600: #576079;
+  --color-ink-700: #474e62;
+  --color-ink-800: #3d4253;
+  --color-ink-900: #2a2e3b;
+  --color-ink-950: #14161e;
 
   /* ------------------------------------------------- primitive: semantic  */
   --color-verdant-50: #ecfdf3;
@@ -110,14 +104,6 @@
   --color-crimson-700: #b42318;
   --color-crimson-900: #7a271a;
 
-  --color-orchid-50: #f5f3ff;
-  --color-orchid-100: #ede9fe;
-  --color-orchid-200: #ddd6fe;
-  --color-orchid-500: #8b5cf6;
-  --color-orchid-600: #7c3aed;
-  --color-orchid-700: #6d28d9;
-  --color-orchid-900: #4c1d95;
-
   /* ------------------------------------------------------ radius / shape  */
   /* Tightened by roughly a third. Generous corner radius is the single
      strongest period marker in an interface, and a soft 18px card is what
@@ -134,33 +120,97 @@
   --spacing: 0.25rem;
 
   /* ------------------------------------------------------------ shadows   */
-  /* Nearly gone, and warm-tinted where they remain. Separation on these
+  /* Nearly gone, and cool-tinted where they remain. Separation on these
      screens is carried by a hairline border and by the canvas being a shade
      darker than the card. A drop shadow under every panel is the other half
      of what dates an interface, and it stops meaning anything once every
      surface has one — so these are reserved for surfaces that genuinely
      float: menus, popovers, the odd sticky bar. */
-  --shadow-xs: 0 1px 1px 0 rgb(39 36 32 / 0.03);
-  --shadow-sm: 0 1px 2px 0 rgb(39 36 32 / 0.05);
-  --shadow-md: 0 2px 6px -2px rgb(39 36 32 / 0.07), 0 1px 2px -1px rgb(39 36 32 / 0.04);
-  --shadow-lg: 0 8px 20px -6px rgb(39 36 32 / 0.1), 0 2px 6px -2px rgb(39 36 32 / 0.05);
-  --shadow-xl: 0 16px 32px -8px rgb(39 36 32 / 0.12), 0 4px 10px -4px rgb(39 36 32 / 0.05);
+  --shadow-xs: 0 1px 1px 0 rgb(42 46 59 / 0.03);
+  --shadow-sm: 0 1px 2px 0 rgb(42 46 59 / 0.05);
+  --shadow-md: 0 2px 6px -2px rgb(42 46 59 / 0.07), 0 1px 2px -1px rgb(42 46 59 / 0.04);
+  --shadow-lg: 0 8px 20px -6px rgb(42 46 59 / 0.1), 0 2px 6px -2px rgb(42 46 59 / 0.05);
+  --shadow-xl: 0 16px 32px -8px rgb(42 46 59 / 0.12), 0 4px 10px -4px rgb(42 46 59 / 0.05);
 
   /* ------------------------------------------------------------- motion   */
-  /* Motion dial 3/10 - subtle. Motion clarifies state, never entertains. */
+  /* Motion clarifies state; it never entertains. The test for any animation
+     here is whether removing it would lose information — which direction a
+     panel came from, that a press registered, that a value changed. If not,
+     it does not belong.
+     Every value below is short. Interface motion that a user notices as
+     motion is too slow: the perception of quality comes from things landing
+     immediately and settling precisely, not from watching them travel. */
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  /* The workhorse: fast out, slow in. Standard for a reason — it reads as a
+     physical object decelerating into place rather than a value lerping. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Three durations, and only three. A design system with nine of these ends
+     up with each component picking one at random. */
+  --duration-instant: 90ms;
+  --duration-fast: 160ms;
+  --duration-settle: 280ms;
 
   /* ---------------------------------------------------------- typography  */
+  /* Tailwind's default steps cover running text. These are the gaps the
+     product kept reaching into `text-[...]` for — ten arbitrary sizes across
+     the components, one of which was 0.6875rem written out longhand next to
+     the `2xs` token that already held exactly that value.
+     Named by role rather than by size, so a call site says what it is setting
+     and two places needing the same thing cannot drift a sixteenth of a rem
+     apart. */
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 0.875rem;
+  --text-3xs--letter-spacing: 0.06em;
+
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
   --text-2xs--letter-spacing: 0.02em;
 
+  /* Dense secondary information: metadata rows, table-ish listings. */
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.125rem;
+
+  /* Slightly above body, for a control that carries weight. */
+  --text-body-lg: 0.9375rem;
+  --text-body-lg--line-height: 1.375rem;
+
+  /* Section and card headings — the most-used of the set. */
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.5rem;
+  --text-title--letter-spacing: -0.011em;
+
+  /* Display steps. Negative tracking scales with size: the same letter-spacing
+     that looks right at 17px reads as gappy at 54px. */
+  --text-display-sm: 1.75rem;
+  --text-display-sm--line-height: 2.125rem;
+  --text-display-sm--letter-spacing: -0.02em;
+
+  --text-display-md: 2rem;
+  --text-display-md--line-height: 1;
+  --text-display-md--letter-spacing: -0.022em;
+
+  --text-display-lg: 3.4rem;
+  --text-display-lg--line-height: 1.04;
+  --text-display-lg--letter-spacing: -0.028em;
+
   /* --------------------------------------------------------- animations   */
-  --animate-fade-in: fade-in 0.24s var(--ease-out-quad) both;
+  --animate-fade-in: fade-in var(--duration-settle) var(--ease-standard) both;
   --animate-rise: rise 0.34s var(--ease-out-expo) both;
   --animate-shimmer: shimmer 1.6s linear infinite;
+  /* Content arriving. The travel is 6px, not the 12px of `rise`: a page of
+     panels each sliding a centimetre is a page that looks busy. */
+  --animate-enter: enter var(--duration-settle) var(--ease-standard) both;
+  /* A panel that came from an edge, so the direction carries the meaning. */
+  --animate-slide-from-left: slide-from-left var(--duration-settle) var(--ease-standard) both;
+  /* A value that changed under the user rather than because of them. */
+  --animate-pulse-once: pulse-once 1s var(--ease-standard) 1;
+  /* Work of unknown duration. Deliberately not a percentage: the travel here
+     encodes activity only, and a bar that fills to 90% and waits is a lie the
+     user catches every time. */
+  --animate-indeterminate: indeterminate 1.5s var(--ease-standard) infinite;
 }
 
 /* ==========================================================================
@@ -220,6 +270,16 @@
   --color-info-fg: var(--content-info);
 
   --color-ring: var(--focus-ring);
+  /* The ring an invalid control focuses with. `aria-invalid` already tells
+     assistive tech the field is in error; a ring that stays the neutral accent
+     tells a sighted keyboard user the opposite, and the two should not
+     disagree about the same field. */
+  --color-ring-danger: var(--focus-ring-danger);
+  /* The mark's own blue, held apart from the UI accent. `fg-accent` is tuned
+     for link text against body copy; the logo is a brand constant and should
+     not shift when that is retuned. This is the exact value the mark shipped
+     with originally. */
+  --color-brand: var(--brand-mark);
 
   --color-diff-added-bg: var(--diff-added-bg);
   --color-diff-added-line: var(--diff-added-border);
@@ -255,6 +315,47 @@
   }
 }
 
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse-once {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: var(--surface-accent-subtle);
+  }
+}
+
+@keyframes indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
 @keyframes shimmer {
   from {
     background-position: 200% 0;
@@ -283,26 +384,26 @@
   --content-tertiary: var(--color-ink-500);
   --content-disabled: var(--color-ink-400);
   --content-inverse: #ffffff;
-  --content-accent: var(--color-plum-700);
+  --content-accent: var(--color-signal-700);
 
   --border-subtle: var(--color-ink-200);
   --border-default: var(--color-ink-300);
   --border-strong: var(--color-ink-400);
-  --border-accent: var(--color-plum-600);
+  --border-accent: var(--color-signal-600);
 
   /* The primary action is near-black, not a brand colour. Colour on these
      screens belongs to the verdict on the resume; a blue button competes with
      it for the same attention and wins, which is the wrong way round. */
   --surface-accent: var(--color-ink-950);
   --surface-accent-hover: var(--color-ink-800);
-  --surface-accent-subtle: var(--color-plum-50);
+  --surface-accent-subtle: var(--color-signal-50);
   --content-on-accent: #ffffff;
 
   /* The one place the accent is spent on a filled surface: the single
      highest-intent action on a marketing page. Using it twice on one screen
      is a bug rather than a style choice. */
-  --surface-cta: var(--color-plum-700);
-  --surface-cta-hover: var(--color-plum-800);
+  --surface-cta: var(--color-signal-700);
+  --surface-cta-hover: var(--color-signal-800);
   --content-on-cta: #ffffff;
 
   --surface-success: var(--color-verdant-50);
@@ -320,11 +421,14 @@
   --content-danger: var(--color-crimson-700);
   --surface-danger-solid: var(--color-crimson-600);
 
-  --surface-info: var(--color-orchid-50);
-  --border-info: var(--color-orchid-200);
-  --content-info: var(--color-orchid-700);
+  --surface-info: var(--color-signal-50);
+  --border-info: var(--color-signal-200);
+  --content-info: var(--color-signal-700);
 
-  --focus-ring: var(--color-plum-600);
+  --focus-ring: var(--color-signal-600);
+  --focus-ring-danger: var(--color-crimson-600);
+
+  --brand-mark: var(--color-signal-600);
 
   /* Diff semantics - always paired with an icon or label, never colour alone */
   --diff-added-bg: var(--color-verdant-50);
@@ -333,12 +437,12 @@
   --diff-removed-bg: var(--color-crimson-50);
   --diff-removed-border: var(--color-crimson-200);
   --diff-removed-content: var(--color-crimson-900);
-  --diff-modified-bg: var(--color-plum-50);
-  --diff-modified-border: var(--color-plum-200);
-  --diff-modified-content: var(--color-plum-900);
-  --diff-reordered-bg: var(--color-orchid-50);
-  --diff-reordered-border: var(--color-orchid-200);
-  --diff-reordered-content: var(--color-orchid-900);
+  --diff-modified-bg: var(--color-signal-50);
+  --diff-modified-border: var(--color-signal-200);
+  --diff-modified-content: var(--color-signal-900);
+  --diff-reordered-bg: var(--color-ink-100);
+  --diff-reordered-border: var(--color-ink-300);
+  --diff-reordered-content: var(--color-ink-800);
 }
 
 /* ==========================================================================
@@ -361,25 +465,25 @@
   --content-tertiary: #8b93a7;
   --content-disabled: #5b6274;
   --content-inverse: var(--color-ink-950);
-  --content-accent: var(--color-plum-300);
+  --content-accent: var(--color-signal-300);
 
   --border-subtle: #262b38;
   --border-default: #333949;
   --border-strong: #454c60;
-  --border-accent: var(--color-plum-500);
+  --border-accent: var(--color-signal-500);
 
   /* Inverted, same idea: the primary action is the highest-contrast neutral
      available rather than a hue. */
   --surface-accent: var(--color-ink-100);
   --surface-accent-hover: #ffffff;
-  --surface-accent-subtle: color-mix(in oklab, var(--color-plum-500) 14%, #12151d);
+  --surface-accent-subtle: color-mix(in oklab, var(--color-signal-500) 14%, #12151d);
   /* Dark, not white: the accent surface is now the near-white neutral, so the
      inherited #ffffff here would have been white on white. */
   --content-on-accent: var(--color-ink-950);
 
-  --surface-cta: var(--color-plum-300);
-  --surface-cta-hover: var(--color-plum-200);
-  --content-on-cta: var(--color-plum-950);
+  --surface-cta: var(--color-signal-300);
+  --surface-cta-hover: var(--color-signal-200);
+  --content-on-cta: var(--color-signal-950);
 
   --surface-success: color-mix(in oklab, var(--color-verdant-500) 14%, #12151d);
   --border-success: color-mix(in oklab, var(--color-verdant-500) 32%, #12151d);
@@ -396,11 +500,14 @@
   --content-danger: var(--color-crimson-200);
   --surface-danger-solid: var(--color-crimson-500);
 
-  --surface-info: color-mix(in oklab, var(--color-orchid-500) 14%, #12151d);
-  --border-info: color-mix(in oklab, var(--color-orchid-500) 32%, #12151d);
-  --content-info: var(--color-orchid-200);
+  --surface-info: color-mix(in oklab, var(--color-signal-500) 14%, #12151d);
+  --border-info: color-mix(in oklab, var(--color-signal-500) 32%, #12151d);
+  --content-info: var(--color-signal-200);
 
-  --focus-ring: var(--color-plum-400);
+  --focus-ring: var(--color-signal-400);
+  --focus-ring-danger: var(--color-crimson-400);
+
+  --brand-mark: var(--color-signal-400);
 
   --diff-added-bg: color-mix(in oklab, var(--color-verdant-500) 12%, #12151d);
   --diff-added-border: color-mix(in oklab, var(--color-verdant-500) 30%, #12151d);
@@ -408,12 +515,12 @@
   --diff-removed-bg: color-mix(in oklab, var(--color-crimson-500) 12%, #12151d);
   --diff-removed-border: color-mix(in oklab, var(--color-crimson-500) 30%, #12151d);
   --diff-removed-content: var(--color-crimson-200);
-  --diff-modified-bg: color-mix(in oklab, var(--color-plum-500) 12%, #12151d);
-  --diff-modified-border: color-mix(in oklab, var(--color-plum-500) 30%, #12151d);
-  --diff-modified-content: var(--color-plum-200);
-  --diff-reordered-bg: color-mix(in oklab, var(--color-orchid-500) 12%, #12151d);
-  --diff-reordered-border: color-mix(in oklab, var(--color-orchid-500) 30%, #12151d);
-  --diff-reordered-content: var(--color-orchid-200);
+  --diff-modified-bg: color-mix(in oklab, var(--color-signal-500) 12%, #12151d);
+  --diff-modified-border: color-mix(in oklab, var(--color-signal-500) 30%, #12151d);
+  --diff-modified-content: var(--color-signal-200);
+  --diff-reordered-bg: color-mix(in oklab, var(--color-ink-500) 12%, #12151d);
+  --diff-reordered-border: color-mix(in oklab, var(--color-ink-500) 30%, #12151d);
+  --diff-reordered-content: var(--color-ink-200);
 
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.4);

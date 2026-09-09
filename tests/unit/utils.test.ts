@@ -187,3 +187,55 @@ describe('pluralize', () => {
     expect(pluralize(1, 'match', 'matches')).toBe('match')
   })
 })
+
+describe('cn keeps size and colour apart', () => {
+  /**
+   * tailwind-merge resolves conflicts by class group and ships knowing only the
+   * stock scale. A custom `text-*` step is ambiguous to it — font-size or text
+   * colour — and its guess is colour, so it treats the step as conflicting with
+   * a real colour and drops one of them.
+   *
+   * This shipped. The marketing call-to-action rendered `text-body-lg` with
+   * `text-on-cta` silently removed: near-black on plum at 2.16:1, correct size,
+   * correct shape, unreadable. axe caught it; nothing else would have.
+   */
+
+  const SIZES = [
+    'text-3xs',
+    'text-2xs',
+    'text-meta',
+    'text-body-lg',
+    'text-title',
+    'text-display-sm',
+    'text-display-md',
+    'text-display-lg',
+  ] as const
+
+  it.each(SIZES)('%s survives alongside a colour that follows it', (size) => {
+    const result = cn(size, 'text-fg')
+    expect(result).toContain(size)
+    expect(result).toContain('text-fg')
+  })
+
+  it.each(SIZES)('%s does not evict a colour that precedes it', (size) => {
+    // The exact direction that broke the call-to-action: colour first, size
+    // second, colour silently dropped.
+    const result = cn('text-on-cta', size)
+    expect(result).toContain('text-on-cta')
+    expect(result).toContain(size)
+  })
+
+  it('still lets one size override another', () => {
+    // The registration must not cost the deduplication it exists for.
+    expect(cn('text-title', 'text-display-md')).toBe('text-display-md')
+  })
+
+  it('still lets one colour override another', () => {
+    expect(cn('text-fg', 'text-on-cta')).toBe('text-on-cta')
+  })
+
+  it('keeps the stock scale working', () => {
+    expect(cn('text-sm', 'text-fg')).toBe('text-sm text-fg')
+    expect(cn('text-sm', 'text-lg')).toBe('text-lg')
+  })
+})
