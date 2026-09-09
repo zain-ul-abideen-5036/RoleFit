@@ -31,7 +31,7 @@ export interface ScoreRingProps {
 }
 
 const SIZES = {
-  sm: { box: 64, stroke: 6, value: 'text-lg', band: 'text-[0.625rem]' },
+  sm: { box: 64, stroke: 6, value: 'text-lg', band: 'text-3xs' },
   md: { box: 96, stroke: 8, value: 'text-2xl', band: 'text-xs' },
   lg: { box: 132, stroke: 9, value: 'text-4xl', band: 'text-sm' },
 } as const

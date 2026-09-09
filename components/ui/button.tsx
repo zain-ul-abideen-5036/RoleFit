@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 const buttonVariants = cva(
   [
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md',
-    'font-medium tracking-[-0.006em]',
+    'font-medium',
     'transition-[background-color,box-shadow,transform,border-color,color]',
     'duration-[--duration-fast] ease-[--ease-standard]',
     // The press: 1.5% down, and back on release. Small enough to feel like
@@ -54,7 +54,7 @@ const buttonVariants = cva(
       size: {
         sm: 'h-8 px-3 text-sm',
         md: 'h-10 px-4 text-sm',
-        lg: 'h-11 px-6 text-[0.9375rem]',
+        lg: 'h-11 px-6 text-body-lg',
         icon: 'size-10',
         'icon-sm': 'size-8',
       },

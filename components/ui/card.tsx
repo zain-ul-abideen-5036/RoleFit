@@ -66,7 +66,7 @@ export const CardTitle = React.forwardRef<
   return (
     <Component
       ref={ref}
-      className={cn('font-display text-[1.0625rem] font-medium tracking-tight text-fg', className)}
+      className={cn('font-display text-title font-medium tracking-tight text-fg', className)}
       {...props}
     />
   )

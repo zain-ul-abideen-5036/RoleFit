@@ -192,51 +192,64 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
         </Alert>
       ) : null}
 
-      {stepIndex === 0 ? (
-        <StepResume
-          existingResumes={existingResumes}
-          selectedResumeId={selectedResumeId}
-          uploaded={resume}
-          onSelectExisting={(id) => {
-            setSelectedResumeId(id)
-            setResume(null)
-          }}
-          onUploaded={(uploaded) => {
-            setResume(uploaded)
-            setSelectedResumeId(null)
-          }}
-          onContinue={() => setStepIndex(1)}
-        />
-      ) : null}
+      {/*
+        Keyed on the step so React remounts the subtree and the entrance
+        animation replays on every advance.
 
-      {stepIndex === 1 ? (
-        <StepJobDescription
-          jobText={jobText}
-          jobTitle={jobTitle}
-          company={company}
-          onJobText={setJobText}
-          onJobTitle={setJobTitle}
-          onCompany={setCompany}
-          onBack={() => setStepIndex(0)}
-          onSubmit={runAnalysis}
-          busy={busy}
-        />
-      ) : null}
+        Without the key, moving from step 2 to 3 swaps the contents of a node
+        that never re-enters, so the panel changes silently and the eye has
+        nothing telling it the change was the result of the button just pressed.
+        This is the one place in the flow where motion is carrying information
+        rather than decorating: it ties the press to the panel that replaced
+        the last one.
+      */}
+      <div key={stepIndex} className="animate-enter">
+        {stepIndex === 0 ? (
+          <StepResume
+            existingResumes={existingResumes}
+            selectedResumeId={selectedResumeId}
+            uploaded={resume}
+            onSelectExisting={(id) => {
+              setSelectedResumeId(id)
+              setResume(null)
+            }}
+            onUploaded={(uploaded) => {
+              setResume(uploaded)
+              setSelectedResumeId(null)
+            }}
+            onContinue={() => setStepIndex(1)}
+          />
+        ) : null}
 
-      {stepIndex === 2 ? (
-        busy || !analysis ? (
-          <ProcessingCard stage={stage} />
-        ) : (
-          <StepAnalysis
-            analysis={analysis}
-            onBack={() => setStepIndex(1)}
-            onOptimize={runOptimization}
+        {stepIndex === 1 ? (
+          <StepJobDescription
+            jobText={jobText}
+            jobTitle={jobTitle}
+            company={company}
+            onJobText={setJobText}
+            onJobTitle={setJobTitle}
+            onCompany={setCompany}
+            onBack={() => setStepIndex(0)}
+            onSubmit={runAnalysis}
             busy={busy}
           />
-        )
-      ) : null}
+        ) : null}
 
-      {stepIndex === 3 ? <ProcessingCard stage={stage} /> : null}
+        {stepIndex === 2 ? (
+          busy || !analysis ? (
+            <ProcessingCard stage={stage} />
+          ) : (
+            <StepAnalysis
+              analysis={analysis}
+              onBack={() => setStepIndex(1)}
+              onOptimize={runOptimization}
+              busy={busy}
+            />
+          )
+        ) : null}
+
+        {stepIndex === 3 ? <ProcessingCard stage={stage} /> : null}
+      </div>
     </div>
   )
 }
@@ -400,7 +413,7 @@ function StepJobDescription({
             onChange={(event) => onJobText(event.target.value)}
             rows={14}
             placeholder="Paste the full job posting here…"
-            className="min-h-64 font-mono text-[0.8125rem]"
+            className="min-h-64 font-mono text-meta"
           />
           <FieldDescription>
             <span className="tabular-nums">{length.toLocaleString('en-GB')}</span> characters.

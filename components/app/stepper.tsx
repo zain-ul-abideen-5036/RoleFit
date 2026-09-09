@@ -37,10 +37,18 @@ export function Stepper({
           Step {Math.min(currentIndex + 1, steps.length)} of {steps.length}
         </p>
         <p className="mt-1 text-base font-semibold text-fg">{current?.label}</p>
+        {/*
+          scaleX rather than width. Animating width is a layout property, so
+          every frame re-runs layout for the subtree; a transform is handed to
+          the compositor and costs nothing. Same movement on screen, and it
+          stays smooth on the low-end phone this mobile branch exists for.
+        */}
         <div className="mt-3 h-1 overflow-hidden rounded-full bg-sunken">
           <div
-            className="h-full rounded-full bg-accent transition-[width] duration-300"
-            style={{ width: `${((currentIndex + 1) / steps.length) * 100}%` }}
+            className="h-full origin-left rounded-full bg-accent transition-transform duration-[--duration-settle] ease-[--ease-standard]"
+            style={{
+              transform: `scaleX(${Math.min(currentIndex + 1, steps.length) / steps.length})`,
+            }}
           />
         </div>
       </div>

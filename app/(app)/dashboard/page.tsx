@@ -298,9 +298,7 @@ function StatCard({
   return (
     <div className="p-5">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-fg-subtle">
-          {label}
-        </p>
+        <p className="text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">{label}</p>
         <Icon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
       </div>
       {/*
@@ -309,7 +307,7 @@ function StatCard({
         running text, and the optical sizing keeps it from looking spindly.
         `tabular-nums` so a changing figure does not shift the row.
       */}
-      <p className={`mt-3 font-display text-[2rem] leading-none tabular-nums ${toneClass}`}>
+      <p className={`mt-3 font-display text-display-md leading-none tabular-nums ${toneClass}`}>
         {value}
       </p>
       <p className="mt-2 text-xs text-fg-subtle">{hint}</p>

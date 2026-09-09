@@ -168,9 +168,47 @@
   --duration-settle: 280ms;
 
   /* ---------------------------------------------------------- typography  */
+  /* Tailwind's default steps cover running text. These are the gaps the
+     product kept reaching into `text-[...]` for — ten arbitrary sizes across
+     the components, one of which was 0.6875rem written out longhand next to
+     the `2xs` token that already held exactly that value.
+     Named by role rather than by size, so a call site says what it is setting
+     and two places needing the same thing cannot drift a sixteenth of a rem
+     apart. */
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 0.875rem;
+  --text-3xs--letter-spacing: 0.06em;
+
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
   --text-2xs--letter-spacing: 0.02em;
+
+  /* Dense secondary information: metadata rows, table-ish listings. */
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.125rem;
+
+  /* Slightly above body, for a control that carries weight. */
+  --text-body-lg: 0.9375rem;
+  --text-body-lg--line-height: 1.375rem;
+
+  /* Section and card headings — the most-used of the set. */
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.5rem;
+  --text-title--letter-spacing: -0.011em;
+
+  /* Display steps. Negative tracking scales with size: the same letter-spacing
+     that looks right at 17px reads as gappy at 54px. */
+  --text-display-sm: 1.75rem;
+  --text-display-sm--line-height: 2.125rem;
+  --text-display-sm--letter-spacing: -0.02em;
+
+  --text-display-md: 2rem;
+  --text-display-md--line-height: 1;
+  --text-display-md--letter-spacing: -0.022em;
+
+  --text-display-lg: 3.4rem;
+  --text-display-lg--line-height: 1.04;
+  --text-display-lg--letter-spacing: -0.028em;
 
   /* --------------------------------------------------------- animations   */
   --animate-fade-in: fade-in var(--duration-settle) var(--ease-standard) both;
@@ -246,6 +284,11 @@
   --color-info-fg: var(--content-info);
 
   --color-ring: var(--focus-ring);
+  /* The ring an invalid control focuses with. `aria-invalid` already tells
+     assistive tech the field is in error; a ring that stays the neutral accent
+     tells a sighted keyboard user the opposite, and the two should not
+     disagree about the same field. */
+  --color-ring-danger: var(--focus-ring-danger);
 
   --color-diff-added-bg: var(--diff-added-bg);
   --color-diff-added-line: var(--diff-added-border);
@@ -392,6 +435,7 @@
   --content-info: var(--color-orchid-700);
 
   --focus-ring: var(--color-plum-600);
+  --focus-ring-danger: var(--color-crimson-600);
 
   /* Diff semantics - always paired with an icon or label, never colour alone */
   --diff-added-bg: var(--color-verdant-50);
@@ -468,6 +512,7 @@
   --content-info: var(--color-orchid-200);
 
   --focus-ring: var(--color-plum-400);
+  --focus-ring-danger: var(--color-crimson-400);
 
   --diff-added-bg: color-mix(in oklab, var(--color-verdant-500) 12%, #12151d);
   --diff-added-border: color-mix(in oklab, var(--color-verdant-500) 30%, #12151d);

@@ -84,9 +84,7 @@ export function Logo({ variant = 'brand', markOnly = false, className, markClass
         {...(markOnly ? { title: PRODUCT.name } : {})}
       />
       {markOnly ? null : (
-        <span className="text-[1.0625rem] font-bold tracking-[-0.03em] text-fg">
-          {PRODUCT.name}
-        </span>
+        <span className="text-title font-bold tracking-[-0.03em] text-fg">{PRODUCT.name}</span>
       )}
     </span>
   )

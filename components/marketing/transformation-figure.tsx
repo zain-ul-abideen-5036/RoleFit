@@ -100,7 +100,7 @@ export function TransformationFigure({ className }: { className?: string }) {
             {['Evidence-checked', 'Single column', 'Selectable text'].map((chip) => (
               <span
                 key={chip}
-                className="rounded-full border border-success-line bg-success-bg px-2 py-0.5 text-[0.625rem] font-medium text-success-fg"
+                className="rounded-full border border-success-line bg-success-bg px-2 py-0.5 text-3xs font-medium text-success-fg"
               >
                 {chip}
               </span>
