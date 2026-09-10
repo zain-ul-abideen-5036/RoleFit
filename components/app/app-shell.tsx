@@ -31,12 +31,34 @@ import { cn } from '@/lib/utils'
  * users behind it is a common and avoidable failure.
  */
 
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { href: '/optimize', label: 'Optimize', Icon: Sparkles },
-  { href: '/history', label: 'History', Icon: History },
-  { href: '/settings', label: 'Settings', Icon: Settings },
+/**
+ * Navigation, grouped.
+ *
+ * Four destinations in a full-height 16rem column left most of the sidebar
+ * empty, and an empty column reads as an unfinished one. Two labelled groups
+ * give the space structure instead of filler: the three screens that are the
+ * job, then the one that is not.
+ *
+ * Deliberately not solved by inventing a widget to fill the gap. Recent-items
+ * lists and usage meters in a sidebar are things to maintain forever in
+ * exchange for occupying pixels.
+ */
+const NAV_GROUPS = [
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+      { href: '/optimize', label: 'Optimize', Icon: Sparkles },
+      { href: '/history', label: 'History', Icon: History },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [{ href: '/settings', label: 'Settings', Icon: Settings }],
+  },
 ]
+
+type NavItem = (typeof NAV_GROUPS)[number]['items'][number]
 
 export interface AppShellProps {
   user: { email: string; displayName: string | null }
@@ -76,32 +98,44 @@ export function AppShell({ user, children }: AppShellProps) {
 
 function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
-    <nav className="flex flex-col gap-1" aria-label="Main">
-      {NAV_ITEMS.map(({ href, label, Icon }) => {
-        // `/resume/...` and `/analysis/...` belong to the Optimize flow.
-        const active =
-          pathname === href ||
-          (href === '/optimize' &&
-            (pathname.startsWith('/optimize') ||
-              pathname.startsWith('/analysis') ||
-              pathname.startsWith('/resume')))
+    <nav className="flex flex-col gap-7" aria-label="Main">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.label}>
+          <p className="mb-1.5 px-4 text-2xs font-medium uppercase tracking-[0.09em] text-fg-subtle">
+            {group.label}
+          </p>
+          <div className="flex flex-col gap-0.5">{group.items.map(renderItem)}</div>
+        </div>
+      ))}
+    </nav>
+  )
 
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'group relative flex items-center gap-3 rounded-md py-2.5 pl-4 pr-3 text-sm',
-              'transition-[color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-              active
-                ? 'font-medium text-fg'
-                : 'font-normal text-fg-muted hover:bg-sunken hover:text-fg',
-            )}
-          >
-            {/*
+  function renderItem({ href, label, Icon }: NavItem) {
+    {
+      // `/resume/...` and `/analysis/...` belong to the Optimize flow.
+      const active =
+        pathname === href ||
+        (href === '/optimize' &&
+          (pathname.startsWith('/optimize') ||
+            pathname.startsWith('/analysis') ||
+            pathname.startsWith('/resume')))
+
+      return (
+        <Link
+          key={href}
+          href={href}
+          onClick={onNavigate}
+          aria-current={active ? 'page' : undefined}
+          className={cn(
+            'group relative flex items-center gap-3 rounded-md py-2.5 pl-4 pr-3 text-sm',
+            'transition-[color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+            active
+              ? 'font-medium text-fg'
+              : 'font-normal text-fg-muted hover:bg-sunken hover:text-fg',
+          )}
+        >
+          {/*
               A rail, not a filled pill.
 
               The pill is the default every dashboard template ships with, and
@@ -113,33 +147,36 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
               Weight carries the state as well as colour does, so the cue
               survives being desaturated.
             */}
-            <span
-              aria-hidden="true"
-              className={cn(
-                'absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-accent',
-                'origin-center transition-transform duration-[--duration-fast] ease-[--ease-standard]',
-                active ? 'scale-y-100' : 'scale-y-0 group-hover:scale-y-50',
-              )}
-            />
-            <Icon
-              className={cn(
-                'size-4.5 shrink-0 transition-colors duration-[--duration-fast]',
-                active ? 'text-fg' : 'text-fg-subtle group-hover:text-fg-muted',
-              )}
-              aria-hidden="true"
-            />
-            {label}
-          </Link>
-        )
-      })}
-    </nav>
-  )
+          <span
+            aria-hidden="true"
+            className={cn(
+              'absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-accent',
+              'origin-center transition-transform duration-[--duration-fast] ease-[--ease-standard]',
+              active ? 'scale-y-100' : 'scale-y-0 group-hover:scale-y-50',
+            )}
+          />
+          <Icon
+            className={cn(
+              'size-4.5 shrink-0 transition-colors duration-[--duration-fast]',
+              active ? 'text-fg' : 'text-fg-subtle group-hover:text-fg-muted',
+            )}
+            aria-hidden="true"
+          />
+          {label}
+        </Link>
+      )
+    }
+  }
 }
 
 function DesktopSidebar({ pathname, user }: { pathname: string; user: AppShellProps['user'] }) {
   return (
     <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
-      <div className="px-5 py-5">
+      {/*
+        The logo sits on the same rule as the page header opposite it, so the
+        two align rather than the brand floating above a taller band.
+      */}
+      <div className="flex h-[4.75rem] shrink-0 items-center border-b border-line px-5">
         <Link
           href="/dashboard"
           className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
@@ -148,8 +185,14 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AppShellPr
         </Link>
       </div>
 
-      <div className="px-3">
-        <Button fullWidth asChild>
+      {/*
+        The primary action leads the column, but as a full-width row rather
+        than a heavy black slab under the wordmark. It was competing with the
+        logo for the first thing the eye landed on, and the logo should win
+        that.
+      */}
+      <div className="px-3 pt-4">
+        <Button fullWidth size="sm" className="h-9 justify-start px-4" asChild>
           <Link href="/optimize">
             <Sparkles className="size-4" aria-hidden="true" />
             New optimization
@@ -157,7 +200,7 @@ function DesktopSidebar({ pathname, user }: { pathname: string; user: AppShellPr
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pt-6 pb-3">
+      <div className="flex-1 overflow-y-auto px-3 pt-7 pb-3">
         <NavList pathname={pathname} />
       </div>
 
@@ -400,7 +443,12 @@ export function PageHeader({
 }) {
   return (
     <div className="border-b border-line bg-surface">
-      <div className="mx-auto w-full max-w-6xl animate-enter px-5 py-6 sm:px-8 sm:py-8">
+      {/*
+        py-5 rather than py-8. The band was 8rem tall on a page whose heading is
+        one line, so the first real content started a third of the way down the
+        viewport. A title needs air around it, not a room of its own.
+      */}
+      <div className="mx-auto w-full max-w-6xl animate-enter px-5 py-5 sm:px-8">
         {breadcrumb ? (
           <Link
             href={breadcrumb.href}
@@ -413,9 +461,7 @@ export function PageHeader({
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="font-display text-2xl font-medium tracking-tight text-fg sm:text-display-sm">
-              {title}
-            </h1>
+            <h1 className="font-display text-2xl font-medium tracking-tight text-fg">{title}</h1>
             {description ? (
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fg-muted">{description}</p>
             ) : null}

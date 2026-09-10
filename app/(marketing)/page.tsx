@@ -1,26 +1,15 @@
 import Link from 'next/link'
 
-import {
-  ArrowRight,
-  CheckCircle2,
-  FileDown,
-  FileSearch,
-  GitCompare,
-  ListChecks,
-  Lock,
-  ScanLine,
-  ShieldCheck,
-  SlidersHorizontal,
-  Target,
-  XCircle,
-} from 'lucide-react'
+import { ArrowRight, CheckCircle2, GitCompare, ScanLine, ShieldCheck, XCircle } from 'lucide-react'
 
+import { RoleRotator } from '@/components/marketing/role-rotator'
 import { TransformationFigure } from '@/components/marketing/transformation-figure'
 import { Badge } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScoreRing, ScoreDisclaimer } from '@/components/ui/score'
 import { PRODUCT } from '@/lib/constants'
+import { cn } from '@/lib/utils'
 
 /**
  * Landing page.
@@ -53,7 +42,10 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="border-b border-line bg-surface">
+    <section className="relative isolate overflow-hidden border-b border-line bg-surface">
+      {/* Ground for the headline. Decorative, so it is hidden from the tree. */}
+      <div aria-hidden="true" className="hero-graticule absolute inset-0 -z-10" />
+
       <div className="container-page grid gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16 lg:py-24">
         <div>
           <Badge tone="accent" className="mb-5">
@@ -62,11 +54,24 @@ function Hero() {
           </Badge>
 
           <h1 className="font-display text-4xl font-medium leading-[1.06] tracking-tight text-fg sm:text-5xl lg:text-display-lg">
-            Tailor your resume.
-            <br />
-            Match the role.
-            <br />
-            <span className="text-fg-accent">Get hired.</span>
+            {/*
+              One stable sentence for assistive technology. The visible
+              headline cycles a job title, and an `h1` whose text changes every
+              few seconds is announced again each time and reads as a different
+              heading. Screen readers get the sentence; the eye gets the
+              rotation.
+            */}
+            <span className="sr-only">
+              Tailor your resume for the role you are applying to, and get hired.
+            </span>
+
+            <span aria-hidden="true">
+              Tailor your resume
+              <br />
+              for a <RoleRotator />
+              <br />
+              and get hired.
+            </span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-fg-muted">
@@ -113,27 +118,22 @@ function Hero() {
 
 const STEPS = [
   {
-    Icon: FileSearch,
     title: 'Upload your resume',
     body: 'PDF or DOCX. It is parsed into structured sections — roles, bullets, skills, education — so every later step can point at exactly where something came from.',
   },
   {
-    Icon: Target,
     title: 'Add the job description',
     body: 'Requirements, responsibilities and keywords are extracted from the posting, and separated into what is required and what is merely preferred.',
   },
   {
-    Icon: ListChecks,
     title: 'See where you actually match',
     body: 'Each requirement is matched against evidence in your resume. Anything your resume cannot support is reported as a gap — not quietly filled in.',
   },
   {
-    Icon: SlidersHorizontal,
     title: 'Review every change',
     body: 'Rewrites are proposed with the original text alongside and a reason for each. Accept, edit or reject them individually. Minor tidy-ups start accepted so you are not clicking through trivia, and every one can be undone.',
   },
   {
-    Icon: FileDown,
     title: 'Export and apply',
     body: 'Download a single-column, ATS-friendly PDF or DOCX with selectable text — checked automatically before it reaches you.',
   },
@@ -149,23 +149,38 @@ function HowItWorks() {
           description="No black box. Every score, match and rewrite traces back to something in your own resume."
         />
 
-        <ol className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/*
+          A numbered sequence, not a grid of cards.
+
+          Five steps in a three-column grid reads as five unrelated features:
+          the eye goes left-to-right, wraps, and step 4 lands underneath step 1
+          with nothing saying which came first. A vertical list with a rule
+          between each row keeps the one property that matters about a
+          process — its order — and the number does the work an icon in a
+          tinted square was doing badly.
+
+          Two columns on wide screens, because five short rows in one column at
+          1440px is a ribbon of text down the left edge.
+        */}
+        <ol className="mt-12 grid gap-x-16 sm:grid-cols-2">
           {STEPS.map((step, index) => (
-            <li key={step.title}>
-              <Card className="h-full">
-                <CardHeader>
-                  <div className="mb-1 flex items-center gap-3">
-                    <span className="flex size-9 items-center justify-center rounded-lg bg-accent-subtle text-fg-accent">
-                      <step.Icon className="size-4.5" aria-hidden="true" />
-                    </span>
-                    <span className="text-xs font-semibold tabular-nums text-fg-subtle">
-                      Step {index + 1}
-                    </span>
-                  </div>
-                  <CardTitle>{step.title}</CardTitle>
-                  <CardDescription>{step.body}</CardDescription>
-                </CardHeader>
-              </Card>
+            <li key={step.title} className="flex gap-5 border-t border-line py-6 last:pb-0 sm:py-7">
+              {/*
+                `fg-subtle`, not `fg-disabled`. The number is aria-hidden
+                because the ordered list already conveys sequence to a screen
+                reader — but it is still visible text, so it still has to be
+                legible, and disabled grey measured 2.7:1 against the page.
+              */}
+              <span
+                aria-hidden="true"
+                className="shrink-0 font-display text-2xl leading-none tabular-nums text-fg-subtle"
+              >
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-display text-title font-medium text-fg">{step.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{step.body}</p>
+              </div>
             </li>
           ))}
         </ol>
@@ -443,32 +458,26 @@ function AtsSection() {
 
 const FEATURES = [
   {
-    Icon: GitCompare,
     title: 'Change-by-change review',
     body: 'Every rewrite shows the original, the proposal, and why. Accept, edit or reject each one.',
   },
   {
-    Icon: ListChecks,
     title: 'Honest gap reporting',
     body: 'Requirements you cannot evidence are listed plainly, so you know what to work on next.',
   },
   {
-    Icon: FileDown,
     title: 'Documents worth sending',
     body: 'PDF and DOCX generated from one layout, verified after generation by reading the text back out.',
   },
   {
-    Icon: Lock,
     title: 'Private by default',
     body: 'Resume content is never written to logs. Delete your account and everything goes with it.',
   },
   {
-    Icon: ScanLine,
     title: 'Version history',
     body: 'Your original is kept untouched as version 1. Every export is snapshotted alongside it.',
   },
   {
-    Icon: ShieldCheck,
     title: 'Injection resistant',
     body: 'Uploaded documents are treated as data, never instructions — including ones that try to talk to the model.',
   },
@@ -484,19 +493,24 @@ function Features() {
           description="The unglamorous parts — verification, privacy, reversibility — are the parts that matter here."
         />
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/*
+          Six bordered boxes in three columns was the most generic arrangement
+          on the page, and the icons were decoration: a tinted square holding a
+          shield or a lock, repeated six times, telling the reader nothing the
+          heading beside it did not already say.
+
+          A hairline-divided list instead. Same six facts, a third of the
+          visual weight, and the section stops competing with the product
+          screenshots it sits between.
+        */}
+        <dl className="mt-12 grid gap-x-16 border-t border-line sm:grid-cols-2">
           {FEATURES.map((feature) => (
-            <Card key={feature.title} className="h-full">
-              <CardHeader>
-                <span className="mb-1 flex size-9 items-center justify-center rounded-lg bg-sunken text-fg-muted">
-                  <feature.Icon className="size-4.5" aria-hidden="true" />
-                </span>
-                <CardTitle>{feature.title}</CardTitle>
-                <CardDescription>{feature.body}</CardDescription>
-              </CardHeader>
-            </Card>
+            <div key={feature.title} className="border-b border-line py-6">
+              <dt className="font-display text-title font-medium text-fg">{feature.title}</dt>
+              <dd className="mt-1.5 text-sm leading-relaxed text-fg-muted">{feature.body}</dd>
+            </div>
           ))}
-        </div>
+        </dl>
       </div>
     </section>
   )
@@ -669,7 +683,7 @@ function FinalCta() {
   return (
     <section className="bg-surface">
       <div className="container-page py-16 text-center lg:py-24">
-        <h2 className="mx-auto max-w-2xl font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
+        <h2 className="mx-auto max-w-2xl text-balance font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
           Send a resume that answers the job you&apos;re applying for
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-fg-muted">
@@ -695,21 +709,41 @@ function FinalCta() {
    Shared
    ========================================================================== */
 
+/**
+ * Section heading.
+ *
+ * Left-aligned by default, which is the change that matters. Every section on
+ * this page opened with a centred eyebrow over a centred title over a centred
+ * paragraph, and four of them then dropped into a card grid — so the page had
+ * one rhythm repeated eight times and no way to tell the reader which section
+ * was the important one. A reader scanning a centred column has to find the
+ * start of every line; a left-aligned one has a single edge to run down.
+ *
+ * `centered` is still available and used exactly once, on the closing call to
+ * action, where centring marks the end of the argument rather than being the
+ * house style.
+ */
 function SectionHeading({
   eyebrow,
   title,
   description,
+  centered = false,
 }: {
   eyebrow: string
   title: string
   description?: string
+  centered?: boolean
 }) {
   return (
-    <div className="mx-auto max-w-2xl text-center">
-      <p className="text-xs font-semibold uppercase tracking-wider text-fg-accent">{eyebrow}</p>
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-fg sm:text-4xl">{title}</h2>
+    <div className={cn('max-w-2xl', centered && 'mx-auto text-center')}>
+      <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-fg-accent">{eyebrow}</p>
+      {/* `text-balance` so a two-line heading breaks evenly instead of
+          stranding one word on the second line. */}
+      <h2 className="mt-3 text-balance font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
+        {title}
+      </h2>
       {description ? (
-        <p className="mt-4 text-base leading-relaxed text-fg-muted">{description}</p>
+        <p className="mt-4 text-pretty text-base leading-relaxed text-fg-muted">{description}</p>
       ) : null}
     </div>
   )
