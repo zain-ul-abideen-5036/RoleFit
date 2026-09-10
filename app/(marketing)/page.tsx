@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 import Link from 'next/link'
 
 import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react'
@@ -174,37 +176,61 @@ function HowItWorks() {
       />
 
       {/*
-        A numbered sequence, not a grid of cards.
+        A set index: a numeral gutter, a title column, and the explanation.
 
-        Five steps in a three-column grid reads as five unrelated features: the
-        eye goes left-to-right, wraps, and step 4 lands underneath step 1 with
-        nothing saying which came first. A vertical list with a rule between
-        each row keeps the one property that matters about a process — its
-        order — and the number does the work an icon in a tinted square was
-        doing badly.
+        Two columns was the wrong shape for five items. It left an empty cell
+        beside the last step — a hole the eye reads as missing content — and it
+        broke the one property that matters about a process, since the reader
+        goes left-to-right, wraps, and finds step 4 underneath step 1 with
+        nothing saying which came first.
 
-        Two columns on wide screens, because five short rows in one column at
-        1440px is a ribbon of text down the left edge.
+        One row per step instead, using the full width in three parts so it
+        does not become the ribbon of text down the left edge that drove the
+        two-column version in the first place. Numerals are right-aligned in a
+        fixed gutter so 01 through 05 stack on a common edge, which is what
+        makes a numbered list read as a set rather than as five paragraphs that
+        happen to start with digits.
       */}
-      <ol className="mt-10 grid gap-x-14 sm:grid-cols-2">
+      <ol className="mt-10 border-t border-line">
         {STEPS.map((step, index) => (
-          <li key={step.title} className="flex gap-5 border-t border-line py-6">
+          <li
+            key={step.title}
+            className={cn(
+              'grid items-baseline gap-x-6 gap-y-1.5 border-b border-line py-5',
+              // Base: numeral gutter, then the title above the body.
+              'grid-cols-[2rem_minmax(0,1fr)]',
+              // From `sm`: the body moves alongside the title.
+              // 17rem, not 14: at 14 the longest title wrapped to two lines
+              // while its neighbours stayed on one, which put a kink in the
+              // rhythm of an otherwise even list.
+              'sm:grid-cols-[2.5rem_minmax(0,17rem)_minmax(0,1fr)] sm:gap-x-8 sm:py-6',
+            )}
+          >
             {/*
-              `fg-subtle`, not `fg-disabled`. The number is aria-hidden because
-              the ordered list already conveys sequence to a screen reader —
-              but it is still visible text, so it still has to be legible, and
-              disabled grey measured 2.7:1 against the page.
+              `fg-subtle`, not `fg-disabled`. The numeral is aria-hidden
+              because the ordered list already conveys sequence to a screen
+              reader — but it is still visible text, so it still has to be
+              legible, and disabled grey measured 2.7:1 against the page.
             */}
             <span
               aria-hidden="true"
-              className="shrink-0 text-display-xs font-semibold leading-none tabular-nums text-fg-subtle"
+              className="col-start-1 row-start-1 text-right text-title font-semibold tabular-nums text-fg-subtle"
             >
               {String(index + 1).padStart(2, '0')}
             </span>
-            <div className="min-w-0">
-              <h3 className="text-title font-semibold text-fg">{step.title}</h3>
-              <p className="mt-1.5 text-meta leading-relaxed text-fg-muted">{step.body}</p>
-            </div>
+            <h3 className="col-start-2 row-start-1 text-title font-semibold text-fg">
+              {step.title}
+            </h3>
+            {/*
+              `measure-wide` caps this at 72 characters. The row runs the full
+              container so its rule does, but the prose inside it must not:
+              unconstrained, the body ran to about 136 characters a line at
+              1440px, which is twice the measure at which a reader reliably
+              finds the start of the next one.
+            */}
+            <p className="col-start-2 row-start-2 measure-wide text-meta leading-relaxed text-fg-muted sm:col-start-3 sm:row-start-1">
+              {step.body}
+            </p>
           </li>
         ))}
       </ol>
@@ -351,28 +377,60 @@ function BeforeAfter() {
       />
 
       {/*
-        One bordered table of examples rather than three cards each containing
-        two boxes. That arrangement put six bordered rectangles and three
-        shadowed containers on screen to show three sentences.
+        A comparison ledger: two tinted columns, headed once.
+
+        The previous arrangement was three rows of two rounded tinted boxes,
+        which stamped BEFORE and AFTER onto the screen six times to convey a
+        distinction the reader had taken in by the second row. Six boxes also
+        gave the two sides equal visual weight, so the layout argued nothing —
+        where the whole point of the section is that the right-hand column is
+        the improvement.
+
+        So the labels are declared once as column headers, the tint runs the
+        full height of each column rather than being packaged into boxes, and
+        the emphasis is asymmetric: the original recedes to muted, the rewrite
+        is set in the foreground colour at medium weight. The layout makes the
+        argument the copy is making.
+
+        One grid rather than a grid per row, so a column cannot drift out of
+        alignment with its own header, and each note can span both.
       */}
       <Panel flush className="mt-10">
-        <ul className="divide-y divide-line">
+        <div className="grid md:grid-cols-2">
+          {/*
+            Headers, once — and only where the columns are actually side by
+            side. Below `md` the pair stacks, so each cell labels itself
+            instead; a column header above a stacked list labels nothing.
+          */}
+          <div className="hidden border-b border-line bg-diff-removed-bg px-4 py-2.5 md:block md:border-r">
+            <p className="eyebrow text-diff-removed-fg">Before — your own words</p>
+          </div>
+          <div className="hidden border-b border-line bg-diff-added-bg px-4 py-2.5 md:block">
+            <p className="eyebrow text-diff-added-fg">After — rewritten, nothing added</p>
+          </div>
+
           {EXAMPLES.map((example) => (
-            <li key={example.before} className="px-4 py-4 sm:px-5">
-              <div className="grid gap-2.5 md:grid-cols-2">
-                <div className="rounded-lg border border-diff-removed-line bg-diff-removed-bg p-3">
-                  <p className="eyebrow text-diff-removed-fg">Before</p>
-                  <p className="mt-1.5 text-meta leading-relaxed text-fg">{example.before}</p>
-                </div>
-                <div className="rounded-lg border border-diff-added-line bg-diff-added-bg p-3">
-                  <p className="eyebrow text-diff-added-fg">After</p>
-                  <p className="mt-1.5 text-meta leading-relaxed text-fg">{example.after}</p>
-                </div>
+            <React.Fragment key={example.before}>
+              <div className="bg-diff-removed-bg px-4 py-4 md:border-r md:border-line">
+                <p className="eyebrow mb-1.5 text-diff-removed-fg md:hidden">Before</p>
+                <p className="text-meta leading-relaxed text-fg-muted">{example.before}</p>
               </div>
-              <p className="mt-2.5 text-2xs leading-relaxed text-fg-subtle">{example.note}</p>
-            </li>
+              <div className="bg-diff-added-bg px-4 py-4">
+                <p className="eyebrow mb-1.5 text-diff-added-fg md:hidden">After</p>
+                <p className="text-meta font-medium leading-relaxed text-fg">{example.after}</p>
+              </div>
+              {/*
+                The note is evidence for the row above it, so it sits on the
+                panel ground under both columns rather than inside either — and
+                it carries the rule that separates one example from the next,
+                which is one hairline per example instead of three.
+              */}
+              <p className="border-b border-line px-4 py-2.5 text-2xs leading-relaxed text-fg-subtle last:border-b-0 md:col-span-2">
+                {example.note}
+              </p>
+            </React.Fragment>
           ))}
-        </ul>
+        </div>
       </Panel>
     </Section>
   )
