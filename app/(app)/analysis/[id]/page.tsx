@@ -2,16 +2,15 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { AlertTriangle, ArrowRight, CheckCircle2, Info, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
-import { PageBody, PageHeader } from '@/components/app/app-shell'
+import { AnalysisDetail } from '@/components/app/analysis-detail'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, Badge, MatchBadge } from '@/components/ui/feedback'
+import { Badge } from '@/components/ui/feedback'
+import { PageBody, PageHeader, Panel, PanelHeader, Stack } from '@/components/ui/layout'
 import { ScoreBreakdown, ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
-import { PRODUCT } from '@/lib/constants'
+import { scoreBand } from '@/lib/constants'
 import { AppError } from '@/lib/errors'
-import type { AnalysisReport, RequirementMatch } from '@/lib/domain/types'
 import { pluralize } from '@/lib/utils'
 import { requirePageUser } from '@/server/auth/service'
 import { requireAnalysis, requireJobDescription, requireResume } from '@/server/repositories'
@@ -43,11 +42,8 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
   }
 
   const { report } = analysis
-  const matches = report.requirementMatches
-
-  const missing = matches.filter((match) => match.status === 'missing')
-  const strong = matches.filter((match) => match.status === 'strong')
-  const partial = matches.filter((match) => match.status === 'partial')
+  const band = scoreBand(report.overallScore)
+  const tone = band.tone === 'success' ? 'success' : band.tone === 'warning' ? 'warning' : 'danger'
 
   return (
     <>
@@ -58,10 +54,18 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
             ? `${jobDescription.company} · analysed against “${resume.title}”`
             : `Analysed against “${resume.title}”`
         }
-        breadcrumb={{ href: '/history', label: 'All analyses' }}
+        breadcrumbs={[
+          { href: '/history', label: 'History' },
+          { href: `/analysis/${analysis.id}`, label: 'Analysis' },
+        ]}
+        meta={
+          <Badge tone={tone}>
+            {report.overallScore} · {band.label}
+          </Badge>
+        }
         actions={
           <Button asChild>
-            <Link href="/optimize">
+            <Link href={`/optimize?resume=${analysis.resumeId}`}>
               <Sparkles className="size-4" aria-hidden="true" />
               Optimize this resume
             </Link>
@@ -69,166 +73,71 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
         }
       />
 
-      <PageBody className="flex flex-col gap-6">
-        {/* ------------------------------------------------------- score */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_1fr]">
-          <Card>
-            <CardContent className="flex flex-col items-center gap-5 p-6">
+      <PageBody>
+        <Stack gap="lg">
+          {/*
+            The verdict band.
+
+            One row: the figure, the three tallies it decomposes into, and the
+            seven weighted dimensions it was computed from. This was two
+            separate cards, each with its own heading and padding, with the
+            tallies boxed individually inside the left one — boxes inside a box
+            inside a card, to state one measurement.
+          */}
+          {/*
+            `items-start`, so the verdict panel is its natural height rather
+            than stretched to match the breakdown beside it. Stretched, it left
+            a 170px void under the disclaimer that read as missing content.
+          */}
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)] lg:gap-5">
+            <Panel className="flex flex-col items-center gap-5">
               <ScoreRing score={report.overallScore} size="lg" caption="ATS Readiness estimate" />
-              <div className="grid w-full grid-cols-3 gap-2">
+
+              {/*
+                One readout divided by rules, not three bordered tiles. The
+                three counts are one measurement of the same thing, so they
+                belong on one surface.
+              */}
+              <dl className="grid w-full grid-cols-3 divide-x divide-line border-y border-line">
                 <Tally label="Strong" value={report.counts.strong} tone="success" />
                 <Tally label="Partial" value={report.counts.partial} tone="warning" />
                 <Tally label="Missing" value={report.counts.missing} tone="danger" />
+              </dl>
+
+              {/*
+                Left-aligned, not centred. Centred prose in a 19rem column
+                rags over five lines and makes the reader hunt for the start of
+                each one — which is the opposite of what a short explanatory
+                note is for.
+              */}
+              {report.counts.requiredMissing > 0 ? (
+                <p className="w-full text-2xs leading-relaxed text-fg-muted">
+                  <span className="font-medium text-warning-fg">
+                    {report.counts.requiredMissing} of the missing{' '}
+                    {pluralize(report.counts.requiredMissing, 'item')}{' '}
+                    {report.counts.requiredMissing === 1 ? 'is' : 'are'} stated as required.
+                  </span>{' '}
+                  They will not be written in.
+                </p>
+              ) : null}
+
+              <ScoreDisclaimer className="w-full border-t border-line pt-4 text-2xs" />
+            </Panel>
+
+            <Panel flush>
+              <PanelHeader
+                title="Score breakdown"
+                description="Seven weighted dimensions, heaviest first. Every point traces back to something you can change."
+              />
+              <div className="px-4 py-4 sm:px-5">
+                <ScoreBreakdown dimensions={report.dimensions} />
               </div>
-              <ScoreDisclaimer className="text-center" />
-            </CardContent>
-          </Card>
+            </Panel>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle as="h2">Score breakdown</CardTitle>
-              <CardDescription>
-                Seven weighted dimensions. Every point traces back to something you can change.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScoreBreakdown dimensions={report.dimensions} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* --------------------------------------------- missing / gaps */}
-        {missing.length > 0 ? (
-          <Card className="border-danger-line">
-            <CardHeader>
-              <CardTitle as="h2">
-                {missing.length} {pluralize(missing.length, 'requirement')} your resume does not
-                evidence
-              </CardTitle>
-              <CardDescription>
-                These will never be written into your resume. They are shown so you know where the
-                gap is, and can address it honestly.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RequirementList matches={missing} suggestions={report.gapSuggestions} />
-            </CardContent>
-          </Card>
-        ) : (
-          <Alert tone="success" title="Every extracted requirement is evidenced">
-            Your resume supports each requirement this posting states.
-          </Alert>
-        )}
-
-        {/* -------------------------------------------------- strong ---- */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle as="h2">Strong matches</CardTitle>
-              <CardDescription>
-                Requirements clearly demonstrated by your experience.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {strong.length === 0 ? (
-                <p className="py-4 text-sm text-fg-muted">No strong matches were found.</p>
-              ) : (
-                <RequirementList matches={strong.slice(0, 12)} showEvidence />
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle as="h2">Partial evidence</CardTitle>
-              <CardDescription>
-                Related experience, but not a clear demonstration of the requirement.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {partial.length === 0 ? (
-                <p className="py-4 text-sm text-fg-muted">Nothing partially matched.</p>
-              ) : (
-                <RequirementList matches={partial.slice(0, 12)} showEvidence />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ------------------------------------------------- keywords ---- */}
-        <Card>
-          <CardHeader>
-            <CardTitle as="h2">Keyword coverage</CardTitle>
-            <CardDescription>
-              Terms from the posting, and whether they appear in your resume. Use the posting&apos;s
-              wording only where you genuinely have the experience.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="flex flex-wrap gap-2">
-              {report.keywordCoverage.map((entry) => (
-                <li key={entry.keyword}>
-                  <Badge tone={entry.present ? 'success' : 'neutral'}>
-                    {entry.present ? (
-                      <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                    ) : (
-                      <AlertTriangle className="size-3.5" aria-hidden="true" />
-                    )}
-                    {entry.keyword}
-                    <span className="sr-only">
-                      {entry.present ? ' — present in your resume' : ' — not found'}
-                    </span>
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* ------------------------------------------ recommendations ---- */}
-        {report.recommendations.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle as="h2">Recommendations</CardTitle>
-              <CardDescription>Ordered by how much each would move your score.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="flex flex-col gap-3">
-                {report.recommendations.map((recommendation) => (
-                  <li
-                    key={recommendation.id}
-                    className="flex gap-3 rounded-lg border border-line bg-canvas p-4"
-                  >
-                    <span className="mt-0.5 shrink-0">
-                      {recommendation.severity === 'critical' ? (
-                        <AlertTriangle className="size-4 text-danger-fg" aria-hidden="true" />
-                      ) : recommendation.severity === 'important' ? (
-                        <AlertTriangle className="size-4 text-warning-fg" aria-hidden="true" />
-                      ) : (
-                        <Info className="size-4 text-fg-subtle" aria-hidden="true" />
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-fg">{recommendation.title}</p>
-                      <p className="mt-1 text-sm leading-relaxed text-fg-muted">
-                        {recommendation.detail}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <div className="flex justify-end">
-          <Button size="lg" asChild>
-            <Link href="/optimize">
-              Optimize this resume
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </Button>
-        </div>
+          {/* ------------------------------------------------ requirements */}
+          <AnalysisDetail report={report} />
+        </Stack>
       </PageBody>
     </>
   )
@@ -251,83 +160,9 @@ function Tally({
         : 'text-danger-fg'
 
   return (
-    <div className="rounded-lg border border-line bg-canvas px-2 py-2 text-center">
-      <p className="text-xs text-fg-subtle">{label}</p>
-      <p className={`text-xl font-bold tabular-nums ${toneClass}`}>{value}</p>
+    <div className="px-2 py-2.5 text-center">
+      <dt className="eyebrow text-fg-subtle">{label}</dt>
+      <dd className={`mt-0.5 text-display-xs font-semibold tabular-nums ${toneClass}`}>{value}</dd>
     </div>
-  )
-}
-
-function RequirementList({
-  matches,
-  showEvidence = false,
-  suggestions = [],
-}: {
-  matches: readonly RequirementMatch[]
-  showEvidence?: boolean
-  /**
-   * Advisory nearest-span hints, keyed by requirement. Empty unless an
-   * embedding provider is configured.
-   */
-  suggestions?: AnalysisReport['gapSuggestions']
-}) {
-  const byRequirement = new Map(suggestions.map((entry) => [entry.requirementId, entry]))
-
-  return (
-    <ul className="flex flex-col gap-2.5">
-      {matches.map((match) => (
-        <li
-          key={match.requirementId}
-          className="rounded-lg border border-line bg-canvas px-3.5 py-3"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="min-w-0 flex-1 text-sm text-fg">{match.text}</p>
-            <div className="flex shrink-0 items-center gap-2">
-              {match.priority === 'required' ? (
-                <Badge tone="neutral">Required</Badge>
-              ) : (
-                <Badge tone="neutral">Preferred</Badge>
-              )}
-              <MatchBadge status={match.status} />
-            </div>
-          </div>
-
-          {showEvidence && match.evidence.length > 0 ? (
-            <blockquote className="mt-2.5 border-l-2 border-line-accent pl-3 text-xs leading-relaxed text-fg-muted">
-              <span className="font-medium text-fg-subtle">
-                From your {match.evidence[0]!.section}:{' '}
-              </span>
-              {match.evidence[0]!.excerpt}
-            </blockquote>
-          ) : null}
-
-          {/*
-            Deliberately not framed as a match. It is still a gap; this is the
-            nearest thing already on the resume, offered so the person can
-            decide whether it is the same thing. Only they can.
-          */}
-          {(() => {
-            const suggestion = byRequirement.get(match.requirementId)
-            if (!suggestion) return null
-
-            return (
-              <div className="mt-2.5 rounded-md border border-dashed border-line-strong px-3 py-2">
-                <p className="text-xs font-medium text-fg-subtle">
-                  Closest thing already on your resume
-                </p>
-                <blockquote className="mt-1 text-xs leading-relaxed text-fg-muted">
-                  <span className="text-fg-subtle">From your {suggestion.section}: </span>
-                  {suggestion.excerpt}
-                </blockquote>
-                <p className="mt-1.5 text-[11px] text-fg-subtle">
-                  Not counted as a match. If it is the same thing, say so in your own words —{' '}
-                  {PRODUCT.name} will not claim it for you.
-                </p>
-              </div>
-            )
-          })()}
-        </li>
-      ))}
-    </ul>
   )
 }

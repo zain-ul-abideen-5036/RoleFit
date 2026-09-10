@@ -33,7 +33,12 @@ export function ResumeDocument({
   return (
     <section
       className={cn(
-        'overflow-hidden rounded-xl border bg-surface',
+        'overflow-hidden border bg-surface',
+        // The paper variant is a sheet of A4, not a UI panel: square-ish
+        // corners and a real shadow, because it is standing in for a physical
+        // object. Everywhere else in this product a shadow would be
+        // decoration; here it is the thing that says "document".
+        paper ? 'rounded-sm shadow-lg' : 'rounded-xl',
         highlighted ? 'border-success-line' : 'border-line',
         className,
       )}
@@ -41,7 +46,7 @@ export function ResumeDocument({
     >
       {title ? (
         <header className="no-print border-b border-line px-4 py-2.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">{title}</h2>
+          <h2 className="eyebrow text-fg-subtle">{title}</h2>
         </header>
       ) : null}
 

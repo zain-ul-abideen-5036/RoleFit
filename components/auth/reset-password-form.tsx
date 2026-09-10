@@ -54,12 +54,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
   if (!token) {
     return (
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-fg">That link is incomplete</h1>
-        <p className="mt-2 text-sm text-fg-muted">
+        <h1 className="text-display-sm font-semibold text-fg">That link is incomplete</h1>
+        <p className="mt-2 text-meta leading-relaxed text-fg-muted">
           The reset link is missing its token. Email clients sometimes break long links across lines
           — copying the whole thing into the address bar usually fixes it.
         </p>
-        <p className="mt-6 text-sm text-fg-muted">
+        <p className="mt-6 text-meta leading-relaxed text-fg-muted">
           <Link
             href="/forgot-password"
             className="font-medium text-fg-accent underline underline-offset-4 hover:text-fg"
@@ -73,8 +73,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-fg">Choose a new password</h1>
-      <p className="mt-2 text-sm text-fg-muted">
+      <h1 className="text-display-sm font-semibold text-fg">Choose a new password</h1>
+      <p className="mt-2 text-meta leading-relaxed text-fg-muted">
         Setting a new password signs you out everywhere else.
       </p>
 
@@ -111,7 +111,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-md text-fg-subtle transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="focus-ring absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-md text-fg-subtle transition-colors hover:text-fg"
             >
               {showPassword ? (
                 <EyeOff className="size-4" aria-hidden="true" />

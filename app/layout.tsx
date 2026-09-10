@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, IBM_Plex_Mono, Instrument_Sans } from 'next/font/google'
+import { IBM_Plex_Mono, Instrument_Sans, Instrument_Serif } from 'next/font/google'
 
 import { ThemeScript } from '@/components/theme/theme-script'
 import { publicAppUrl, publicAppUrlObject } from '@/lib/config/public-url'
@@ -16,12 +16,19 @@ import './globals.css'
  */
 
 /**
- * Three faces, each doing one job.
+ * Three faces, each doing one job, with a boundary each does not cross.
  *
- * A grotesque for the interface, a serif for display, and a monospace for
- * quoted source text. The third is not decoration: evidence from a resume is
- * shown verbatim, and a monospace face is what tells the reader they are
- * looking at the document rather than at our prose about it.
+ *   sans     every interface surface, and all body copy
+ *   serif    marketing and auth headlines only — never product chrome
+ *   mono     text quoted from a document, and machine identifiers
+ *
+ * The monospace is not decoration: evidence from a resume is shown verbatim,
+ * and a monospace face is what tells the reader they are looking at the
+ * document rather than at our prose about it.
+ *
+ * Instrument Sans and Instrument Serif are one design programme rather than
+ * two faces that happen to sit together, which is what keeps the pairing from
+ * reading as two arbitrary picks off a font host.
  */
 
 const sans = Instrument_Sans({
@@ -33,18 +40,23 @@ const sans = Instrument_Sans({
 })
 
 /**
- * Display only — headings and the score. Optical sizing is what makes a
- * serif work at interface sizes; without it the same face set at 14px looks
- * spindly and at 48px looks heavy.
+ * Display only, and only on the persuasive surface: the landing headlines, the
+ * auth panel, the policy page titles.
+ *
+ * Deliberately absent from the authenticated product. The previous revision
+ * set dashboard panel headings and score figures in a soft, wonky serif, and
+ * a serif on a data panel reads boutique-editorial where this product needs
+ * to read as an instrument. One face carries the whole application.
+ *
+ * A single weight, because this is a display face used at display sizes. A
+ * 400-weight serif set at 56px with tight negative tracking is authoritative;
+ * the same face bolded is just heavier.
  */
-const display = Fraunces({
+const display = Instrument_Serif({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-fraunces',
-  // No `weight` here on purpose: next/font rejects `axes` alongside a fixed
-  // weight list, and the whole point of this face is the variable axes. The
-  // full weight range comes with the variable file.
-  axes: ['SOFT', 'WONK', 'opsz'],
+  variable: '--font-instrument-serif',
+  weight: '400',
 })
 
 const mono = IBM_Plex_Mono({
@@ -115,10 +127,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeScript />
       </head>
       <body className="min-h-dvh antialiased">
-        {/* First tab stop on every page. */}
+        {/*
+          First tab stop on every page.
+
+          `z-[--z-toast]` rather than a bare z-50: the skip link has to clear
+          every other layer including an open dialog, and picking a number by
+          hand is how it ends up behind the drawer it exists to skip past.
+        */}
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[--z-toast] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-on-accent focus:shadow-lg"
         >
           Skip to content
         </a>

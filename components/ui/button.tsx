@@ -45,8 +45,8 @@ const buttonVariants = cva(
         /** Marketing CTAs only — the accent is reserved for conversion moments. */
         cta: 'bg-cta text-on-cta shadow-sm hover:bg-cta-hover hover:shadow-md active:shadow-xs',
         secondary:
-          'border border-line-strong bg-surface text-fg shadow-xs hover:border-line-bold hover:bg-sunken active:shadow-none',
-        ghost: 'text-fg-muted hover:bg-sunken hover:text-fg',
+          'border border-line-strong bg-surface text-fg shadow-xs hover:border-line-bold hover:bg-hover active:shadow-none',
+        ghost: 'text-fg-muted hover:bg-hover hover:text-fg',
         danger: 'bg-danger-solid text-white shadow-xs hover:brightness-95 active:shadow-none',
         // Not a button shape at all, so it opts out of the press.
         link: 'text-fg-accent underline-offset-4 hover:underline active:scale-100',

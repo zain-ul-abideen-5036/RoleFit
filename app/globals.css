@@ -3,15 +3,21 @@
 /* ==========================================================================
    RoleFit Design System
    Layer 1: primitives  ->  Layer 2: semantic tokens  ->  Layer 3: components
-   Never hard-code a colour, radius or shadow in a component. Use a token.
+   Never hard-code a colour, radius, shadow, z-index or measure in a component.
+   Use a token.
 
-   The direction: blue, white and near-black, held in strong contrast.
+   ---------------------------------------------------------------------------
+   The direction: an instrument, not a brochure.
 
-   Three colours carry the whole product. Blue is the brand — the mark, links,
-   focus, selection, the score arc. White and near-black carry everything
-   structural. Nothing else appears except the four semantic hues, and those
-   only where they state something: green for met, amber for partial, red for
-   missing.
+   RoleFit measures one document against another and reports a verdict. So the
+   interface is built like a measuring device: hairlines instead of shadows, a
+   canvas one shade off the card instead of elevation, tabular figures, and
+   colour spent only where it states something.
+
+   Three colours carry the whole product. Blue is the identity — the mark,
+   links, focus, selection. White and near-black carry everything structural.
+   Nothing else appears except the three verdict hues, and those only where
+   they are the verdict: green for met, amber for partial, red for missing.
 
    The primary action is near-black rather than blue. That is deliberate and it
    is the one thing about this palette that looks like a mistake until you use
@@ -24,30 +30,40 @@
    muddier hue rather than as a neutral, and the crispness of blue on cool grey
    is most of what makes the contrast feel deliberate rather than default.
 
-   No violet, no lavender, no orange. An earlier revision used plum for the
-   accent and violet for `info`; both are gone, along with the orange CTA
-   colour that was left unused.
+   No violet, no lavender, no orange, no gradient, no glass.
    ========================================================================== */
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* ---------------------------------------------------------------- fonts */
+  /*
+   * Three faces, each with one job and a boundary it does not cross.
+   *
+   *   sans     every interface surface, and all body copy
+   *   display  marketing and auth headlines only — never product chrome
+   *   mono     text quoted from a document, and machine identifiers
+   *
+   * The display face is confined to the persuasive surface on purpose. A
+   * serif on a dashboard panel heading reads boutique-editorial; the same
+   * serif on a landing headline reads authored. The authenticated product is
+   * an instrument and is set entirely in the grotesque.
+   *
+   * Instrument Sans and Instrument Serif are one design programme rather than
+   * two fonts that happen to sit together, which is what stops the pairing
+   * reading as two arbitrary picks off a font host.
+   */
   --font-sans:
     var(--font-instrument-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
-  /* Display only. Never body text: a serif at 14px over a long page is harder
-     to read, and the contrast with the grotesque is what gives it its force. */
-  --font-display: var(--font-fraunces), ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-display:
+    var(--font-instrument-serif), ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono:
     var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
     monospace;
 
   /* -------------------------------------------------- primitive: signal  */
-  /* Brand blue. Precision, trust, alignment — and the colour this product
-     was recognised by before a redesign swapped it for plum. Restored to the
-     exact original ramp rather than a new blue, because the identity was not
-     the problem. */
+  /* Brand blue. Precision, trust, alignment. */
   --color-signal-50: #eff4ff;
   --color-signal-100: #dbe6ff;
   --color-signal-200: #bed3ff;
@@ -61,11 +77,7 @@
   --color-signal-950: #16224d;
 
   /* ----------------------------------------------------- primitive: ink   */
-  /* Cool neutral. Body text, surfaces, borders — and the primary action,
-     which is near-black rather than the brand blue, so that blue stays
-     available for state and emphasis instead of being spent on every button.
-     Cool rather than warm: paired with the blue, a warm grey reads as a
-     second, muddier hue. */
+  /* Cool neutral. Body text, surfaces, borders — and the primary action. */
   --color-ink-50: #f7f8fa;
   --color-ink-100: #eef0f4;
   --color-ink-200: #dee1e9;
@@ -99,15 +111,16 @@
   --color-crimson-50: #fef3f2;
   --color-crimson-100: #fee4e2;
   --color-crimson-200: #fecdca;
+  --color-crimson-400: #f97066;
   --color-crimson-500: #f04438;
   --color-crimson-600: #d92d20;
   --color-crimson-700: #b42318;
   --color-crimson-900: #7a271a;
 
   /* ------------------------------------------------------ radius / shape  */
-  /* Tightened by roughly a third. Generous corner radius is the single
-     strongest period marker in an interface, and a soft 18px card is what
-     makes a 2021 product look like a 2021 product. An instrument has edges. */
+  /* An instrument has edges. Generous corner radius is the single strongest
+     period marker in an interface, and a soft 18px card is what makes a 2021
+     product look like a 2021 product. */
   --radius-xs: 0.125rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.3125rem;
@@ -116,7 +129,7 @@
   --radius-2xl: 0.75rem;
 
   /* ------------------------------------------------------------ spacing   */
-  /* Density 6/10 - standard product density on a 4px base. */
+  /* Dense product density on a 4px base. */
   --spacing: 0.25rem;
 
   /* ------------------------------------------------------------ shadows   */
@@ -125,7 +138,7 @@
      darker than the card. A drop shadow under every panel is the other half
      of what dates an interface, and it stops meaning anything once every
      surface has one — so these are reserved for surfaces that genuinely
-     float: menus, popovers, the odd sticky bar. */
+     float: menus, popovers, dialogs, the odd sticky bar. */
   --shadow-xs: 0 1px 1px 0 rgb(42 46 59 / 0.03);
   --shadow-sm: 0 1px 2px 0 rgb(42 46 59 / 0.05);
   --shadow-md: 0 2px 6px -2px rgb(42 46 59 / 0.07), 0 1px 2px -1px rgb(42 46 59 / 0.04);
@@ -153,14 +166,62 @@
   --duration-fast: 160ms;
   --duration-settle: 280ms;
 
+  /* ------------------------------------------------------------- z-index  */
+  /*
+   * A named stack, because the alternative is what this product had: z-30 on
+   * the mobile header, z-40 on the marketing header and z-50 on the drawer,
+   * chosen independently, with nothing recording that the drawer has to clear
+   * both headers and that a popover inside the drawer has to clear the drawer.
+   * Layering is a global property and it belongs in one list.
+   */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 20;
+  --z-header: 30;
+  --z-drawer: 40;
+  --z-overlay: 50;
+  --z-popover: 60;
+  --z-toast: 70;
+
+  /* ------------------------------------------------------------- layout   */
+  /*
+   * Page width as a token rather than a per-page `max-w-6xl`. Three pages had
+   * picked three different widths, which is why the product's left edge moved
+   * as you navigated it.
+   *
+   *   content  the working width of an app screen
+   *   wide     marketing sections and full-bleed data tables
+   *   prose    a column of running text — policy pages, long descriptions
+   */
+  --container-content: 78rem;
+  --container-wide: 84rem;
+  --container-prose: 42rem;
+
+  /* Measures. Copy set wider than ~72 characters loses the reader's place on
+     the return sweep, and every one of these was previously a `max-w-*`
+     guessed at the call site. */
+  --measure-tight: 34ch;
+  --measure-base: 62ch;
+  --measure-wide: 72ch;
+
+  /* Chrome. The sidebar has three states and the header aligns with the top
+     of whichever one is showing, so both are tokens. */
+  --sidebar-width: 15.5rem;
+  --sidebar-rail: 3.75rem;
+  --header-height: 3.5rem;
+
   /* ---------------------------------------------------------- typography  */
-  /* Tailwind's default steps cover running text. These are the gaps the
-     product kept reaching into `text-[...]` for — ten arbitrary sizes across
-     the components, one of which was 0.6875rem written out longhand next to
-     the `2xs` token that already held exactly that value.
-     Named by role rather than by size, so a call site says what it is setting
-     and two places needing the same thing cannot drift a sixteenth of a rem
-     apart. */
+  /*
+   * A named ladder, not a pile of sizes.
+   *
+   * Named by role rather than by measurement, so a call site says what it is
+   * setting and two places needing the same thing cannot drift a sixteenth of
+   * a rem apart. Negative tracking scales with size throughout: the same
+   * letter-spacing that looks right at 17px reads as gappy at 56px.
+   */
+
+  /* Micro-labels. `eyebrow` is the uppercase section marker, which appeared
+     about fifteen times with hand-written tracking at each site. */
   --text-3xs: 0.625rem;
   --text-3xs--line-height: 0.875rem;
   --text-3xs--letter-spacing: 0.06em;
@@ -169,7 +230,12 @@
   --text-2xs--line-height: 1rem;
   --text-2xs--letter-spacing: 0.02em;
 
-  /* Dense secondary information: metadata rows, table-ish listings. */
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.085em;
+  --text-eyebrow--font-weight: 550;
+
+  /* Dense secondary information: metadata rows, table cells. */
   --text-meta: 0.8125rem;
   --text-meta--line-height: 1.125rem;
 
@@ -177,40 +243,82 @@
   --text-body-lg: 0.9375rem;
   --text-body-lg--line-height: 1.375rem;
 
-  /* Section and card headings — the most-used of the set. */
+  /* Panel and card headings — the most-used of the set. */
   --text-title: 1.0625rem;
   --text-title--line-height: 1.5rem;
   --text-title--letter-spacing: -0.011em;
 
-  /* Display steps. Negative tracking scales with size: the same letter-spacing
-     that looks right at 17px reads as gappy at 54px. */
-  --text-display-sm: 1.75rem;
-  --text-display-sm--line-height: 2.125rem;
-  --text-display-sm--letter-spacing: -0.02em;
+  /* Display steps. xs and sm carry the product; md and up are marketing. */
+  --text-display-xs: 1.25rem;
+  --text-display-xs--line-height: 1.75rem;
+  --text-display-xs--letter-spacing: -0.015em;
 
-  --text-display-md: 2rem;
-  --text-display-md--line-height: 1;
+  --text-display-sm: 1.5rem;
+  --text-display-sm--line-height: 1.875rem;
+  --text-display-sm--letter-spacing: -0.019em;
+
+  --text-display-md: 1.875rem;
+  --text-display-md--line-height: 2.25rem;
   --text-display-md--letter-spacing: -0.022em;
 
-  --text-display-lg: 3.4rem;
-  --text-display-lg--line-height: 1.04;
-  --text-display-lg--letter-spacing: -0.028em;
+  --text-display-lg: 2.5rem;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.024em;
+
+  --text-display-xl: 3.5rem;
+  --text-display-xl--line-height: 1.04;
+  --text-display-xl--letter-spacing: -0.028em;
+
+  /*
+   * Serif display steps, held separately from the grotesque ones.
+   *
+   * A serif needs looser tracking than a grotesque at the same size: the
+   * serifs themselves already close the gaps between letters, so the negative
+   * tracking that makes Instrument Sans look precise at 56px makes Instrument
+   * Serif look jammed. Setting the marketing headlines in the serif with the
+   * `display-*` steps' -0.024em produced exactly that.
+   *
+   * Separate steps rather than a `tracking-*` override at each call site,
+   * because both would be utilities setting `letter-spacing` and their emitted
+   * order is not something Tailwind promises. One utility, one value, no
+   * cascade to reason about.
+   */
+  --text-serif-xs: 1.75rem;
+  --text-serif-xs--line-height: 1.15;
+  --text-serif-xs--letter-spacing: -0.008em;
+
+  --text-serif-sm: 2rem;
+  --text-serif-sm--line-height: 1.08;
+  --text-serif-sm--letter-spacing: -0.01em;
+
+  --text-serif-md: 2.5rem;
+  --text-serif-md--line-height: 1.06;
+  --text-serif-md--letter-spacing: -0.014em;
+
+  --text-serif-lg: 3.5rem;
+  --text-serif-lg--line-height: 1.02;
+  --text-serif-lg--letter-spacing: -0.018em;
 
   /* --------------------------------------------------------- animations   */
   --animate-fade-in: fade-in var(--duration-settle) var(--ease-standard) both;
-  --animate-rise: rise 0.34s var(--ease-out-expo) both;
   --animate-shimmer: shimmer 1.6s linear infinite;
-  /* Content arriving. The travel is 6px, not the 12px of `rise`: a page of
-     panels each sliding a centimetre is a page that looks busy. */
+  /* Content arriving. The travel is 6px: a page of panels each sliding a
+     centimetre is a page that looks busy. */
   --animate-enter: enter var(--duration-settle) var(--ease-standard) both;
   /* A panel that came from an edge, so the direction carries the meaning. */
   --animate-slide-from-left: slide-from-left var(--duration-settle) var(--ease-standard) both;
-  /* A value that changed under the user rather than because of them. */
-  --animate-pulse-once: pulse-once 1s var(--ease-standard) 1;
   /* Work of unknown duration. Deliberately not a percentage: the travel here
      encodes activity only, and a bar that fills to 90% and waits is a lie the
      user catches every time. */
   --animate-indeterminate: indeterminate 1.5s var(--ease-standard) infinite;
+  /* Overlay surfaces. Paired open/close, because a dialog that fades in over
+     280ms and vanishes instantly reads as a crash rather than a dismissal —
+     and exits are faster than entrances on purpose: the user has already
+     decided, so the interface should get out of the way. */
+  --animate-overlay-in: fade-in var(--duration-fast) var(--ease-standard) both;
+  --animate-overlay-out: fade-out var(--duration-instant) var(--ease-standard) both;
+  --animate-panel-in: panel-in var(--duration-settle) var(--ease-out-expo) both;
+  --animate-panel-out: panel-out var(--duration-fast) var(--ease-standard) both;
 }
 
 /* ==========================================================================
@@ -228,6 +336,17 @@
   --color-sunken: var(--surface-sunken);
   --color-overlay: var(--surface-overlay);
   --color-inverse: var(--surface-inverse);
+  /*
+   * Interaction surfaces, held apart from `sunken`.
+   *
+   * `sunken` is a *ground* — the recess a well or a track sits in. Hover is a
+   * *response*. One token was doing both jobs, and in dark mode it broke
+   * outright: sunken and canvas resolved to the same value, so every
+   * `hover:bg-sunken` row on the canvas highlighted to exactly the colour it
+   * already was. Three tokens, three jobs.
+   */
+  --color-hover: var(--surface-hover);
+  --color-selected: var(--surface-selected);
 
   --color-fg: var(--content-primary);
   --color-fg-muted: var(--content-secondary);
@@ -277,8 +396,7 @@
   --color-ring-danger: var(--focus-ring-danger);
   /* The mark's own blue, held apart from the UI accent. `fg-accent` is tuned
      for link text against body copy; the logo is a brand constant and should
-     not shift when that is retuned. This is the exact value the mark shipped
-     with originally. */
+     not shift when that is retuned. */
   --color-brand: var(--brand-mark);
 
   --color-diff-added-bg: var(--diff-added-bg);
@@ -295,6 +413,10 @@
   --color-diff-reordered-fg: var(--diff-reordered-content);
 }
 
+/* ==========================================================================
+   Keyframes
+   ========================================================================== */
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -304,14 +426,12 @@
   }
 }
 
-@keyframes rise {
+@keyframes fade-out {
   from {
-    opacity: 0;
-    transform: translateY(12px);
+    opacity: 1;
   }
   to {
-    opacity: 1;
-    transform: none;
+    opacity: 0;
   }
 }
 
@@ -337,13 +457,28 @@
   }
 }
 
-@keyframes pulse-once {
-  0%,
-  100% {
-    background-color: transparent;
+/* A dialog rises very slightly and settles. The scale is 0.98, not 0.9: a
+   panel that grows a tenth of its size reads as a zoom effect, where a
+   sliver of travel reads as the thing arriving. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
   }
-  30% {
-    background-color: var(--surface-accent-subtle);
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes panel-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(2px) scale(0.99);
   }
 }
 
@@ -376,6 +511,8 @@
   --surface-base: #ffffff;
   --surface-raised: #ffffff;
   --surface-sunken: var(--color-ink-100);
+  --surface-hover: var(--color-ink-100);
+  --surface-selected: var(--color-signal-50);
   --surface-overlay: #ffffff;
   --surface-inverse: var(--color-ink-950);
 
@@ -447,7 +584,11 @@
 
 /* ==========================================================================
    Layer 2 - semantic surface tokens (dark)
-   Dark is opt-in, never the default (anti-pattern per design review).
+   Dark is opt-in and follows the system by default, never forced.
+
+   The four surfaces are genuinely four values here. They used to be three,
+   with sunken aliased to canvas, which meant a hover on a canvas-backed row
+   resolved to the row's own colour and did nothing at all.
    ========================================================================== */
 
 .dark {
@@ -456,7 +597,9 @@
   --surface-canvas: #0b0d13;
   --surface-base: #12151d;
   --surface-raised: #191d27;
-  --surface-sunken: #0b0d13;
+  --surface-sunken: #1b1f2a;
+  --surface-hover: #1e222d;
+  --surface-selected: color-mix(in oklab, var(--color-signal-500) 16%, #12151d);
   --surface-overlay: #191d27;
   --surface-inverse: var(--color-ink-50);
 
@@ -477,8 +620,8 @@
   --surface-accent: var(--color-ink-100);
   --surface-accent-hover: #ffffff;
   --surface-accent-subtle: color-mix(in oklab, var(--color-signal-500) 14%, #12151d);
-  /* Dark, not white: the accent surface is now the near-white neutral, so the
-     inherited #ffffff here would have been white on white. */
+  /* Dark, not white: the accent surface is the near-white neutral here, so an
+     inherited #ffffff would have been white on white. */
   --content-on-accent: var(--color-ink-950);
 
   --surface-cta: var(--color-signal-300);
@@ -550,6 +693,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /*
+     * Contextual alternates and kerning on; proportional oldstyle figures off.
+     * Lining figures are what a data table needs — a resume score sitting
+     * next to a date in oldstyle numerals reads as two different systems.
+     */
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1,
+      'calt' 1;
   }
 
   /* Visible, consistent focus for keyboard users only. Never removed. */
@@ -572,7 +724,7 @@
   h6 {
     text-wrap: balance;
     letter-spacing: -0.02em;
-    font-weight: 650;
+    font-weight: 600;
   }
 
   p {
@@ -588,6 +740,20 @@
     color: inherit;
   }
 
+  /*
+   * Every figure in the product is tabular by default.
+   *
+   * A column of scores where 1 is narrower than 8 does not line up, and a
+   * count that changes width as it increments makes the row twitch. This was
+   * being fixed one `tabular-nums` at a time at about thirty call sites, which
+   * is thirty chances to forget.
+   */
+  table,
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
   [hidden] {
     display: none !important;
   }
@@ -597,11 +763,109 @@
    Utilities
    ========================================================================== */
 
+/*
+ * Page containers.
+ *
+ * Three widths, one for each kind of page, so the product's left edge stops
+ * moving as you navigate between screens that each guessed their own
+ * `max-w-*`. Gutters step up with the viewport rather than staying at 20px on
+ * a 1920px display.
+ */
+@utility container-app {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--container-content);
+  padding-inline: 1rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}
+
 @utility container-page {
   width: 100%;
   margin-inline: auto;
+  max-width: var(--container-wide);
   padding-inline: 1.25rem;
-  max-width: 80rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 2rem;
+  }
+
+  @media (width >= 64rem) {
+    padding-inline: 2.5rem;
+  }
+}
+
+@utility container-prose {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--container-prose);
+  padding-inline: 1.25rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 2rem;
+  }
+}
+
+/*
+ * The focus ring, as one utility.
+ *
+ * This exact three-class incantation appeared at roughly forty call sites,
+ * written out longhand each time, which is forty opportunities for one of
+ * them to be missing an offset or the wrong colour. A focus ring is the one
+ * thing in an interface that must be identical everywhere, because a keyboard
+ * user learns its shape once.
+ */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Inset variant, for a control flush against the edge of its container —
+   a 2px outset ring there is clipped by the parent's overflow. */
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+  }
+}
+
+/*
+ * The uppercase micro-label above a section or beside a figure.
+ *
+ * Type only — deliberately no colour. Seven of these need a tone other than
+ * the default (the diff labels, the marketing eyebrows, the one on the dark
+ * auth panel), and a utility that sets `color` would leave those seven relying
+ * on the emitted order of `.eyebrow` against `.text-fg-accent` in the
+ * utilities layer, which Tailwind does not promise. A typographic utility sets
+ * type; the call site says what colour it is.
+ */
+@utility eyebrow {
+  font-size: var(--text-eyebrow);
+  line-height: var(--text-eyebrow--line-height);
+  letter-spacing: var(--text-eyebrow--letter-spacing);
+  font-weight: 550;
+  text-transform: uppercase;
+}
+
+/* Running text that should not exceed a comfortable measure. */
+@utility measure {
+  max-width: var(--measure-base);
+}
+
+@utility measure-tight {
+  max-width: var(--measure-tight);
+}
+
+@utility measure-wide {
+  max-width: var(--measure-wide);
 }
 
 @utility skeleton {
@@ -621,9 +885,9 @@
  *
  * The depth device from the reference heroes, reinterpreted. Those float five
  * blurred gradient lozenges in indigo, rose, violet, amber and cyan behind the
- * headline, each on a 12-second infinite loop. That is the exact treatment this
- * product spent two rounds removing: five hues it does not own, gradients it
- * does not use, and continuous animation behind text.
+ * headline, each on a 12-second infinite loop. That is the exact treatment
+ * this product spent two rounds removing: five hues it does not own, gradients
+ * it does not use, and continuous animation behind text.
  *
  * What the reference is actually doing is giving the headline a ground so it
  * does not float on flat white. A ruled grid does that, and it means something
@@ -636,11 +900,19 @@
   background-image:
     linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
     linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
-  background-size: 4rem 4rem;
-  /* Faded out toward the bottom and the right so the grid reads as ground
-     behind the type rather than as a table the page sits in. */
-  mask-image: radial-gradient(115% 90% at 12% 8%, #000 0%, transparent 72%);
-  opacity: 0.7;
+  background-size: 4.5rem 4.5rem;
+  /*
+   * Faded out in every direction from a point behind the headline, so the grid
+   * reads as ground behind the type rather than as a table the page sits in.
+   *
+   * The focus was at `8% 0%` — the very top-left corner — which put the
+   * grid at full strength along the top edge of the section, where it met the
+   * header rule and read as the first row of a table. Moving it down to 26%
+   * puts the strongest part behind the headline, which is the only place it
+   * was ever meant to be doing anything.
+   */
+  mask-image: radial-gradient(105% 80% at 10% 26%, #000 0%, transparent 72%);
+  opacity: 0.5;
 }
 
 /* Print: the resume preview must print as a clean document. */

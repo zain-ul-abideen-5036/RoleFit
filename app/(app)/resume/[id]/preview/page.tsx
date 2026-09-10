@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { ExportBar } from '@/components/app/export-bar'
 import { ResumeDocument } from '@/components/app/resume-document'
+import { PageBody, PageHeader, Stack } from '@/components/ui/layout'
 import { AppError } from '@/lib/errors'
 import { requirePageUser } from '@/server/auth/service'
 import { latestRunForResume, requireOptimizationRun, requireResume } from '@/server/repositories'
@@ -64,16 +64,22 @@ export default async function PreviewPage({
               ? 'Your resume with the changes you accepted. This is exactly what will be exported.'
               : 'Your resume as uploaded and parsed.'
           }
-          breadcrumb={{ href: `/resume/${resume.id}`, label: 'Back to review' }}
+          breadcrumbs={[
+            { href: '/dashboard', label: 'Dashboard' },
+            { href: `/resume/${resume.id}`, label: resume.title },
+            { href: `/resume/${resume.id}/preview`, label: 'Preview' },
+          ]}
         />
       </div>
 
-      <PageBody className="flex flex-col gap-6">
-        <div className="no-print">
-          <ExportBar resumeId={resume.id} runId={run?.status === 'succeeded' ? run.id : null} />
-        </div>
+      <PageBody>
+        <Stack gap="md">
+          <div className="no-print">
+            <ExportBar resumeId={resume.id} runId={run?.status === 'succeeded' ? run.id : null} />
+          </div>
 
-        <ResumeDocument profile={profile} paper />
+          <ResumeDocument profile={profile} paper />
+        </Stack>
       </PageBody>
     </>
   )

@@ -1,13 +1,12 @@
 import Link from 'next/link'
 
-import { ArrowRight, CheckCircle2, GitCompare, ScanLine, ShieldCheck, XCircle } from 'lucide-react'
+import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react'
 
 import { RoleRotator } from '@/components/marketing/role-rotator'
 import { TransformationFigure } from '@/components/marketing/transformation-figure'
-import { Badge } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScoreRing, ScoreDisclaimer } from '@/components/ui/score'
+import { Panel } from '@/components/ui/layout'
+import { ScoreBar, ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
 import { PRODUCT } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
@@ -18,6 +17,12 @@ import { cn } from '@/lib/utils'
  * that actually differentiate it (it will not fabricate; the score is
  * explainable). Anti-fabrication is given a full section rather than a bullet,
  * because it is the reason to trust the product with a job application.
+ *
+ * Every section is bounded by a hairline and alternates between the canvas and
+ * the surface colour. That alternation is the only rhythm device on the page —
+ * there are no tinted section backgrounds, no gradients, and no cards used
+ * decoratively. A page whose sections are distinguished by eight different
+ * treatments has no way left to tell the reader which one matters.
  */
 
 export default function HomePage() {
@@ -40,20 +45,43 @@ export default function HomePage() {
    Hero
    ========================================================================== */
 
+const HERO_FACTS = [
+  'PDF and DOCX in and out',
+  'Explainable readiness score',
+  'You review every change',
+]
+
 function Hero() {
   return (
     <section className="relative isolate overflow-hidden border-b border-line bg-surface">
       {/* Ground for the headline. Decorative, so it is hidden from the tree. */}
       <div aria-hidden="true" className="hero-graticule absolute inset-0 -z-10" />
 
-      <div className="container-page grid gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16 lg:py-24">
-        <div>
-          <Badge tone="accent" className="mb-5">
+      <div className="container-page grid gap-10 py-14 lg:grid-cols-[1.05fr_minmax(0,1fr)] lg:items-center lg:gap-16 lg:py-24">
+        <div className="min-w-0">
+          {/*
+            A hairline chip, not a filled badge. The claim is the most
+            important sentence on the page and it does not need a tinted
+            lozenge to be noticed — it needs to not look like a promotional
+            sticker, because it is a statement about what the product refuses
+            to do.
+          */}
+          <p className="inline-flex items-center gap-2 rounded-md border border-line-accent px-2.5 py-1 text-2xs font-medium text-fg-accent">
             <ShieldCheck className="size-3.5" aria-hidden="true" />
             Never invents experience you don&apos;t have
-          </Badge>
+          </p>
 
-          <h1 className="font-display text-4xl font-medium leading-[1.06] tracking-tight text-fg sm:text-5xl lg:text-display-lg">
+          {/*
+            32px at the base step, not 44.
+
+            The rotating role is `whitespace-nowrap` inside an inline grid, so
+            it wraps to its own line as a unit rather than breaking mid-word —
+            which is what keeps it from overflowing. But it cannot wrap out of
+            being *wider than the container*, and "Backend Engineer" set at
+            44px is wider than a 320px viewport's content box. The base step is
+            sized so the longest role fits the narrowest supported screen.
+          */}
+          <h1 className="mt-5 font-display text-serif-sm text-fg sm:text-serif-md lg:text-serif-lg">
             {/*
               One stable sentence for assistive technology. The visible
               headline cycles a job title, and an `h1` whose text changes every
@@ -74,13 +102,13 @@ function Hero() {
             </span>
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-fg-muted">
+          <p className="mt-6 measure text-body-lg leading-relaxed text-fg-muted sm:text-lg">
             {PRODUCT.name} reads your resume and a job description, shows you exactly where you
             match and where you don&apos;t, and rewrites the parts you already have to speak the
             employer&apos;s language.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
             <Button size="lg" variant="cta" asChild>
               <Link href="/signup">
                 Optimize my resume
@@ -92,14 +120,10 @@ function Hero() {
             </Button>
           </div>
 
-          <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2.5 text-sm text-fg-muted">
-            {[
-              'PDF and DOCX in and out',
-              'Explainable readiness score',
-              'You review every change',
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-success-solid" aria-hidden="true" />
+          <ul className="mt-8 flex flex-col gap-2 border-t border-line pt-6 sm:flex-row sm:flex-wrap sm:gap-x-7">
+            {HERO_FACTS.map((item) => (
+              <li key={item} className="flex items-center gap-2 text-meta text-fg-muted">
+                <Check className="size-3.5 shrink-0 text-success-solid" aria-hidden="true" />
                 {item}
               </li>
             ))}
@@ -141,51 +165,49 @@ const STEPS = [
 
 function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-20 border-b border-line">
-      <div className="container-page py-16 lg:py-24">
-        <SectionHeading
-          eyebrow="How it works"
-          title="Five steps, and you stay in control of all of them"
-          description="No black box. Every score, match and rewrite traces back to something in your own resume."
-        />
+    <Section id="how-it-works">
+      <SectionHeading
+        eyebrow="How it works"
+        title="Five steps, and you stay in control of all of them"
+        description="No black box. Every score, match and rewrite traces back to something in your own resume."
+      />
 
-        {/*
-          A numbered sequence, not a grid of cards.
+      {/*
+        A numbered sequence, not a grid of cards.
 
-          Five steps in a three-column grid reads as five unrelated features:
-          the eye goes left-to-right, wraps, and step 4 lands underneath step 1
-          with nothing saying which came first. A vertical list with a rule
-          between each row keeps the one property that matters about a
-          process — its order — and the number does the work an icon in a
-          tinted square was doing badly.
+        Five steps in a three-column grid reads as five unrelated features: the
+        eye goes left-to-right, wraps, and step 4 lands underneath step 1 with
+        nothing saying which came first. A vertical list with a rule between
+        each row keeps the one property that matters about a process — its
+        order — and the number does the work an icon in a tinted square was
+        doing badly.
 
-          Two columns on wide screens, because five short rows in one column at
-          1440px is a ribbon of text down the left edge.
-        */}
-        <ol className="mt-12 grid gap-x-16 sm:grid-cols-2">
-          {STEPS.map((step, index) => (
-            <li key={step.title} className="flex gap-5 border-t border-line py-6 last:pb-0 sm:py-7">
-              {/*
-                `fg-subtle`, not `fg-disabled`. The number is aria-hidden
-                because the ordered list already conveys sequence to a screen
-                reader — but it is still visible text, so it still has to be
-                legible, and disabled grey measured 2.7:1 against the page.
-              */}
-              <span
-                aria-hidden="true"
-                className="shrink-0 font-display text-2xl leading-none tabular-nums text-fg-subtle"
-              >
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <div className="min-w-0">
-                <h3 className="font-display text-title font-medium text-fg">{step.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{step.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
+        Two columns on wide screens, because five short rows in one column at
+        1440px is a ribbon of text down the left edge.
+      */}
+      <ol className="mt-10 grid gap-x-14 sm:grid-cols-2">
+        {STEPS.map((step, index) => (
+          <li key={step.title} className="flex gap-5 border-t border-line py-6">
+            {/*
+              `fg-subtle`, not `fg-disabled`. The number is aria-hidden because
+              the ordered list already conveys sequence to a screen reader —
+              but it is still visible text, so it still has to be legible, and
+              disabled grey measured 2.7:1 against the page.
+            */}
+            <span
+              aria-hidden="true"
+              className="shrink-0 text-display-xs font-semibold leading-none tabular-nums text-fg-subtle"
+            >
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-title font-semibold text-fg">{step.title}</h3>
+              <p className="mt-1.5 text-meta leading-relaxed text-fg-muted">{step.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </Section>
   )
 }
 
@@ -195,19 +217,15 @@ function HowItWorks() {
 
 function AntiFabrication() {
   return (
-    <section id="evidence" className="scroll-mt-20 border-b border-line bg-surface">
-      <div className="container-page grid gap-12 py-16 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-24">
-        <div>
-          <Badge tone="success" className="mb-5">
-            <ShieldCheck className="size-3.5" aria-hidden="true" />
-            The difference that matters
-          </Badge>
-
-          <h2 className="font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
+    <Section id="evidence" tone="surface">
+      <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-16">
+        <div className="min-w-0">
+          <p className="eyebrow text-fg-accent">The difference that matters</p>
+          <h2 className="mt-3 text-balance font-display text-serif-xs text-fg sm:text-serif-md">
             It will not put a skill on your resume that you don&apos;t have
           </h2>
 
-          <div className="mt-6 flex flex-col gap-4 text-base leading-relaxed text-fg-muted">
+          <div className="mt-6 flex flex-col gap-4 measure text-body-lg leading-relaxed text-fg-muted">
             <p>
               Most AI resume tools will happily add whatever the posting asks for. That is not
               optimization — it is writing a claim you have to defend in an interview, or explain to
@@ -226,14 +244,15 @@ function AntiFabrication() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle as="h3">A worked example</CardTitle>
-            <CardDescription>
+        <Panel flush className="min-w-0">
+          <div className="border-b border-line px-4 py-3.5 sm:px-5">
+            <h3 className="text-title font-semibold text-fg">A worked example</h3>
+            <p className="mt-1 text-meta leading-relaxed text-fg-muted">
               The posting asks for AWS. The resume shows Python, Docker and PostgreSQL.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2.5 px-4 py-4 sm:px-5">
             <ComparisonRow
               tone="bad"
               label="What most tools do"
@@ -244,21 +263,19 @@ function AntiFabrication() {
               label={`What ${PRODUCT.name} does`}
               text="Reports AWS as Missing / not verified, leaves it off the resume, and strengthens the Docker and PostgreSQL evidence you actually have."
             />
+          </div>
 
-            <div className="mt-2 rounded-lg border border-line bg-sunken p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">
-                Also never invented
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-fg-muted">
-                Metrics, years of experience, employers, job titles, degrees, certifications, team
-                sizes, or a bigger role than your resume describes. &ldquo;Helped migrate&rdquo;
-                never becomes &ldquo;led the migration&rdquo;.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="border-t border-line bg-sunken px-4 py-3.5 sm:px-5">
+            <p className="eyebrow text-fg-subtle">Also never invented</p>
+            <p className="mt-1.5 text-meta leading-relaxed text-fg-muted">
+              Metrics, years of experience, employers, job titles, degrees, certifications, team
+              sizes, or a bigger role than your resume describes. &ldquo;Helped migrate&rdquo; never
+              becomes &ldquo;led the migration&rdquo;.
+            </p>
+          </div>
+        </Panel>
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -272,31 +289,29 @@ function ComparisonRow({
   text: string
 }) {
   const good = tone === 'good'
-  const Icon = good ? CheckCircle2 : XCircle
+  const Icon = good ? Check : X
 
   return (
     <div
-      className={
-        good
-          ? 'flex gap-3 rounded-lg border border-success-line bg-success-bg p-4'
-          : 'flex gap-3 rounded-lg border border-danger-line bg-danger-bg p-4'
-      }
+      className={cn(
+        'flex gap-3 rounded-lg border p-3.5',
+        good ? 'border-success-line bg-success-bg' : 'border-danger-line bg-danger-bg',
+      )}
     >
-      <Icon
-        className={
-          good ? 'mt-0.5 size-4 shrink-0 text-success-fg' : 'mt-0.5 size-4 shrink-0 text-danger-fg'
-        }
+      <span
+        className={cn(
+          'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full',
+          good ? 'bg-success-solid/15 text-success-solid' : 'bg-danger-solid/15 text-danger-solid',
+        )}
         aria-hidden="true"
-      />
-      <div>
-        <p
-          className={
-            good ? 'text-sm font-semibold text-success-fg' : 'text-sm font-semibold text-danger-fg'
-          }
-        >
+      >
+        <Icon className="size-2.5" />
+      </span>
+      <div className="min-w-0">
+        <p className={cn('text-meta font-semibold', good ? 'text-success-fg' : 'text-danger-fg')}>
           {label}
         </p>
-        <p className="mt-1 text-sm leading-relaxed text-fg-muted">{text}</p>
+        <p className="mt-1 text-meta leading-relaxed text-fg-muted">{text}</p>
       </div>
     </div>
   )
@@ -327,41 +342,38 @@ const EXAMPLES = [
 
 function BeforeAfter() {
   return (
-    <section className="border-b border-line">
-      <div className="container-page py-16 lg:py-24">
-        <SectionHeading
-          eyebrow="Before and after"
-          title="Stronger writing, identical facts"
-          description="Bullets are rewritten for clarity and relevance using only what your resume already says."
-        />
+    <Section>
+      <SectionHeading
+        eyebrow="Before and after"
+        title="Stronger writing, identical facts"
+        description="Bullets are rewritten for clarity and relevance using only what your resume already says."
+      />
 
-        <div className="mt-12 flex flex-col gap-4">
+      {/*
+        One bordered table of examples rather than three cards each containing
+        two boxes. That arrangement put six bordered rectangles and three
+        shadowed containers on screen to show three sentences.
+      */}
+      <Panel flush className="mt-10">
+        <ul className="divide-y divide-line">
           {EXAMPLES.map((example) => (
-            <Card key={example.before}>
-              <CardContent className="grid gap-4 p-5 sm:p-6 md:grid-cols-2">
-                <div className="rounded-lg border border-diff-removed-line bg-diff-removed-bg p-4">
-                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-diff-removed-fg">
-                    <GitCompare className="size-3.5" aria-hidden="true" />
-                    Before
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-fg">{example.before}</p>
+            <li key={example.before} className="px-4 py-4 sm:px-5">
+              <div className="grid gap-2.5 md:grid-cols-2">
+                <div className="rounded-lg border border-diff-removed-line bg-diff-removed-bg p-3">
+                  <p className="eyebrow text-diff-removed-fg">Before</p>
+                  <p className="mt-1.5 text-meta leading-relaxed text-fg">{example.before}</p>
                 </div>
-                <div className="rounded-lg border border-diff-added-line bg-diff-added-bg p-4">
-                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-diff-added-fg">
-                    <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                    After
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-fg">{example.after}</p>
+                <div className="rounded-lg border border-diff-added-line bg-diff-added-bg p-3">
+                  <p className="eyebrow text-diff-added-fg">After</p>
+                  <p className="mt-1.5 text-meta leading-relaxed text-fg">{example.after}</p>
                 </div>
-                <p className="text-xs leading-relaxed text-fg-subtle md:col-span-2">
-                  {example.note}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="mt-2.5 text-2xs leading-relaxed text-fg-subtle">{example.note}</p>
+            </li>
           ))}
-        </div>
-      </div>
-    </section>
+        </ul>
+      </Panel>
+    </Section>
   )
 }
 
@@ -378,69 +390,62 @@ const ATS_CHECKS = [
   'Consistent dates and readable bullet lengths',
 ]
 
+const ATS_DIMENSIONS = [
+  { label: 'Skill alignment', value: 88 },
+  { label: 'Keyword alignment', value: 74 },
+  { label: 'Formatting compatibility', value: 100 },
+]
+
 function AtsSection() {
   return (
-    <section id="ats" className="scroll-mt-20 border-b border-line bg-surface">
-      <div className="container-page grid gap-12 py-16 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16 lg:py-24">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-6 p-8">
+    <Section id="ats" tone="surface">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_1.1fr] lg:items-center lg:gap-16">
+        <Panel className="min-w-0">
+          <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
             <ScoreRing score={82} size="lg" caption="ATS Readiness estimate" />
-            <div className="w-full">
-              {[
-                { label: 'Skill alignment', value: 88 },
-                { label: 'Keyword alignment', value: 74 },
-                { label: 'Formatting compatibility', value: 100 },
-              ].map((row) => (
-                <div key={row.label} className="mb-4 last:mb-0">
-                  <div className="mb-1.5 flex items-baseline justify-between">
-                    <span className="text-sm text-fg-muted">{row.label}</span>
-                    <span className="text-sm font-semibold tabular-nums text-fg">{row.value}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-sunken">
-                    <div
-                      className="h-full rounded-full bg-accent"
-                      style={{ width: `${row.value}%` }}
-                    />
-                  </div>
-                </div>
+            {/*
+              The product's own `ScoreBar`, not a marketing imitation of one.
+
+              Two reasons. It cannot drift from what the app actually renders,
+              which is the whole claim this section is making. And the
+              hand-rolled version used a `<dl>` whose `<dt>`/`<dd>` sat two
+              levels below it inside a flex wrapper — which is invalid, since a
+              definition list may only wrap its groups in a single `<div>`.
+            */}
+            <div className="min-w-0 flex-1 space-y-3.5">
+              {ATS_DIMENSIONS.map((row) => (
+                <ScoreBar key={row.label} label={row.label} score={row.value} />
               ))}
             </div>
-            <ScoreDisclaimer className="text-center" />
-          </CardContent>
-        </Card>
+          </div>
+          <ScoreDisclaimer className="mt-5 border-t border-line pt-4 text-2xs" />
+        </Panel>
 
-        <div>
-          <Badge tone="accent" className="mb-5">
-            <ScanLine className="size-3.5" aria-hidden="true" />
-            ATS readiness
-          </Badge>
-
-          <h2 className="font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
+        <div className="min-w-0">
+          <p className="eyebrow text-fg-accent">ATS readiness</p>
+          <h2 className="mt-3 text-balance font-display text-serif-xs text-fg sm:text-serif-md">
             A score you can act on, with the maths shown
           </h2>
 
-          <p className="mt-5 text-base leading-relaxed text-fg-muted">
+          <p className="mt-5 measure text-body-lg leading-relaxed text-fg-muted">
             Seven weighted dimensions, computed deterministically from your resume and the posting —
             no model decides your number, so it is reproducible and every point is attributable to
             something you can change.
           </p>
 
-          <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-7 grid gap-2.5 sm:grid-cols-2">
             {ATS_CHECKS.map((check) => (
               <li
                 key={check}
-                className="flex items-start gap-2.5 text-sm leading-relaxed text-fg-muted"
+                className="flex items-start gap-2.5 text-meta leading-relaxed text-fg-muted"
               >
-                <CheckCircle2
-                  className="mt-0.5 size-4 shrink-0 text-success-solid"
-                  aria-hidden="true"
-                />
+                <Check className="mt-0.5 size-3.5 shrink-0 text-success-solid" aria-hidden="true" />
                 {check}
               </li>
             ))}
           </ul>
 
-          <p className="mt-8 rounded-lg border border-line bg-canvas p-4 text-sm leading-relaxed text-fg-muted">
+          <p className="mt-7 border-l-2 border-line-accent pl-4 text-meta leading-relaxed text-fg-muted">
             <strong className="font-semibold text-fg">To be clear:</strong> no tool can promise a
             specific result in a specific employer&apos;s ATS — none of them publish how they score.
             What we can promise is that your resume follows the conventions those systems depend on,
@@ -448,7 +453,7 @@ function AtsSection() {
           </p>
         </div>
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -485,34 +490,32 @@ const FEATURES = [
 
 function Features() {
   return (
-    <section className="border-b border-line">
-      <div className="container-page py-16 lg:py-24">
-        <SectionHeading
-          eyebrow="Features"
-          title="Built like a tool you would trust with a job application"
-          description="The unglamorous parts — verification, privacy, reversibility — are the parts that matter here."
-        />
+    <Section>
+      <SectionHeading
+        eyebrow="Features"
+        title="Built like a tool you would trust with a job application"
+        description="The unglamorous parts — verification, privacy, reversibility — are the parts that matter here."
+      />
 
-        {/*
-          Six bordered boxes in three columns was the most generic arrangement
-          on the page, and the icons were decoration: a tinted square holding a
-          shield or a lock, repeated six times, telling the reader nothing the
-          heading beside it did not already say.
+      {/*
+        Six bordered boxes in three columns was the most generic arrangement on
+        the page, and the icons were decoration: a tinted square holding a
+        shield or a lock, repeated six times, telling the reader nothing the
+        heading beside it did not already say.
 
-          A hairline-divided list instead. Same six facts, a third of the
-          visual weight, and the section stops competing with the product
-          screenshots it sits between.
-        */}
-        <dl className="mt-12 grid gap-x-16 border-t border-line sm:grid-cols-2">
-          {FEATURES.map((feature) => (
-            <div key={feature.title} className="border-b border-line py-6">
-              <dt className="font-display text-title font-medium text-fg">{feature.title}</dt>
-              <dd className="mt-1.5 text-sm leading-relaxed text-fg-muted">{feature.body}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
+        A hairline-divided list instead. Same six facts, a third of the visual
+        weight, and the section stops competing with the product readouts it
+        sits between.
+      */}
+      <dl className="mt-10 grid gap-x-14 border-t border-line sm:grid-cols-2">
+        {FEATURES.map((feature) => (
+          <div key={feature.title} className="border-b border-line py-5">
+            <dt className="text-title font-semibold text-fg">{feature.title}</dt>
+            <dd className="mt-1.5 text-meta leading-relaxed text-fg-muted">{feature.body}</dd>
+          </div>
+        ))}
+      </dl>
+    </Section>
   )
 }
 
@@ -524,7 +527,7 @@ const PLANS = [
   {
     name: 'Free',
     price: 'Free',
-    cadence: 'while in development',
+    cadence: 'while the product is in development',
     description: 'Everything in the product today, with reasonable usage limits.',
     features: [
       'Unlimited resume uploads',
@@ -534,12 +537,12 @@ const PLANS = [
       'Version history',
     ],
     cta: 'Get started',
-    highlighted: true,
+    available: true,
   },
   {
     name: 'Pro',
     price: 'Not yet available',
-    cadence: 'planned',
+    cadence: 'on the roadmap',
     description: 'Higher limits and the workflow features on the roadmap.',
     features: [
       'Everything in Free',
@@ -549,64 +552,90 @@ const PLANS = [
       'Priority processing',
     ],
     cta: 'Not yet available',
-    highlighted: false,
+    available: false,
   },
 ]
 
 function Pricing() {
   return (
-    <section id="pricing" className="scroll-mt-20 border-b border-line bg-surface">
-      <div className="container-page py-16 lg:py-24">
-        <SectionHeading
-          eyebrow="Pricing"
-          title="Free while the product is in development"
-          description="No card required. Paid plans are not available yet, and nothing here is charged for."
-        />
+    <Section id="pricing" tone="surface">
+      <SectionHeading
+        eyebrow="Pricing"
+        title="Free while the product is in development"
+        description="No card required. Paid plans are not available yet, and nothing here is charged for."
+      />
 
-        <div className="mx-auto mt-12 grid max-w-3xl gap-5 md:grid-cols-2">
-          {PLANS.map((plan) => (
-            <Card
-              key={plan.name}
-              className={plan.highlighted ? 'border-line-accent ring-1 ring-accent/20' : undefined}
-            >
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle as="h3">{plan.name}</CardTitle>
-                  {plan.highlighted ? <Badge tone="accent">Available now</Badge> : null}
-                </div>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-fg">{plan.price}</p>
-                <p className="text-xs text-fg-subtle">{plan.cadence}</p>
-                <CardDescription className="mt-2">{plan.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="flex flex-col gap-2.5">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm text-fg-muted">
-                      <CheckCircle2
-                        className="mt-0.5 size-4 shrink-0 text-success-solid"
-                        aria-hidden="true"
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6">
-                  {plan.highlighted ? (
-                    <Button fullWidth asChild>
-                      <Link href="/signup">{plan.cta}</Link>
-                    </Button>
-                  ) : (
-                    <Button fullWidth variant="secondary" disabled>
-                      {plan.cta}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/*
+        max-w-4xl, not 3xl. Two 380px cards against a left-aligned heading on a
+        1440px page left half the section empty and read as an unfinished row;
+        at 56rem the pair balances the heading above it without either card
+        growing wider than a pricing card should be.
+      */}
+      <div className="mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
+        {PLANS.map((plan) => (
+          <Panel
+            key={plan.name}
+            flush
+            className={cn(
+              'flex min-w-0 flex-col',
+              // The available plan gets a stronger edge, not a coloured
+              // background or a "Most popular" ribbon. There are two plans and
+              // one of them cannot be bought; a ribbon would be theatre.
+              //
+              // The unavailable one is *not* dimmed with opacity. Fading a
+              // whole panel fades its text too: at 90% the metadata line
+              // measured under 4.5:1 against the surface. Unavailability is
+              // stated by the price, the cadence and a disabled control —
+              // three places, none of which cost anyone legibility.
+              plan.available && 'border-line-accent',
+            )}
+          >
+            <div className="border-b border-line px-4 py-4 sm:px-5">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-title font-semibold text-fg">{plan.name}</h3>
+                {plan.available ? (
+                  <span className="text-2xs font-medium text-fg-accent">Available now</span>
+                ) : null}
+              </div>
+              <p
+                className={cn(
+                  'mt-2 font-semibold text-fg',
+                  plan.available ? 'text-display-sm' : 'text-title',
+                )}
+              >
+                {plan.price}
+              </p>
+              <p className="mt-0.5 text-2xs text-fg-subtle">{plan.cadence}</p>
+              <p className="mt-2.5 text-meta leading-relaxed text-fg-muted">{plan.description}</p>
+            </div>
+
+            <ul className="flex flex-1 flex-col gap-2 px-4 py-4 sm:px-5">
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex items-start gap-2.5 text-meta text-fg-muted">
+                  <Check
+                    className="mt-0.5 size-3.5 shrink-0 text-success-solid"
+                    aria-hidden="true"
+                  />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <div className="border-t border-line px-4 py-4 sm:px-5">
+              {plan.available ? (
+                <Button fullWidth asChild>
+                  <Link href="/signup">{plan.cta}</Link>
+                </Button>
+              ) : (
+                <Button fullWidth variant="secondary" disabled>
+                  {plan.cta}
+                </Button>
+              )}
+            </div>
+          </Panel>
+        ))}
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -647,31 +676,43 @@ const FAQS = [
 
 function Faq() {
   return (
-    <section id="faq" className="scroll-mt-20 border-b border-line">
-      <div className="container-page py-16 lg:py-24">
-        <SectionHeading
-          eyebrow="FAQ"
-          title="Questions worth asking before you trust a tool with this"
-        />
+    <Section id="faq">
+      <SectionHeading
+        eyebrow="FAQ"
+        title="Questions worth asking before you trust a tool with this"
+      />
 
-        <div className="mx-auto mt-12 max-w-3xl divide-y divide-line border-y border-line">
-          {FAQS.map((item) => (
-            <details key={item.q} className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-                {item.q}
-                <span
-                  aria-hidden="true"
-                  className="flex size-6 shrink-0 items-center justify-center rounded-full border border-line text-fg-subtle transition-transform group-open:rotate-45"
-                >
-                  +
-                </span>
-              </summary>
-              <p className="pb-5 pr-10 text-sm leading-relaxed text-fg-muted">{item.a}</p>
-            </details>
-          ))}
-        </div>
+      {/*
+        Native `<details>`, not a JavaScript accordion. It is keyboard
+        operable, findable by the browser's own in-page search — which an
+        accordion built from divs is not — and it works before hydration.
+      */}
+      <div className="mt-10 max-w-3xl divide-y divide-line border-y border-line">
+        {FAQS.map((item) => (
+          <details key={item.q} className="group">
+            <summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-left text-body-lg font-medium text-fg transition-colors hover:text-fg-accent">
+              {item.q}
+              <span
+                aria-hidden="true"
+                className="relative flex size-5 shrink-0 items-center justify-center text-fg-subtle"
+              >
+                {/*
+                  A plus that becomes a minus: two rules, one of which rotates
+                  away. A rotating chevron reads as "expand downward", which is
+                  ambiguous in a stack; plus-to-minus is unambiguous about
+                  which state it is in.
+                */}
+                <span className="absolute h-px w-3 bg-current" />
+                <span className="absolute h-3 w-px bg-current transition-transform duration-[--duration-fast] ease-[--ease-standard] group-open:rotate-90 group-open:opacity-0" />
+              </span>
+            </summary>
+            <p className="measure-wide pb-5 pr-8 text-meta leading-relaxed text-fg-muted">
+              {item.a}
+            </p>
+          </details>
+        ))}
       </div>
-    </section>
+    </Section>
   )
 }
 
@@ -682,23 +723,25 @@ function Faq() {
 function FinalCta() {
   return (
     <section className="bg-surface">
-      <div className="container-page py-16 text-center lg:py-24">
-        <h2 className="mx-auto max-w-2xl text-balance font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
-          Send a resume that answers the job you&apos;re applying for
-        </h2>
-        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-fg-muted">
-          Upload what you have. See where you stand. Decide what changes.
-        </p>
-        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button size="lg" variant="cta" asChild>
-            <Link href="/signup">
-              Create a free account
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </Button>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
+      <div className="container-page py-16 lg:py-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-balance font-display text-serif-xs text-fg sm:text-serif-md">
+            Send a resume that answers the job you&apos;re applying for
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-body-lg leading-relaxed text-fg-muted">
+            Upload what you have. See where you stand. Decide what changes.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-2.5 sm:flex-row">
+            <Button size="lg" variant="cta" asChild>
+              <Link href="/signup">
+                Create a free account
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/login">Sign in</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
@@ -710,40 +753,69 @@ function FinalCta() {
    ========================================================================== */
 
 /**
+ * A landing-page section.
+ *
+ * One component decides the vertical rhythm, the container and the closing
+ * rule for all eight of them, so the page's cadence is a single decision
+ * rather than eight `py-16 lg:py-24 border-b border-line` strings that were
+ * already three variants apart.
+ */
+function Section({
+  id,
+  tone = 'canvas',
+  children,
+}: {
+  id?: string
+  tone?: 'canvas' | 'surface'
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      id={id}
+      className={cn(
+        'border-b border-line',
+        tone === 'surface' && 'bg-surface',
+        // Clears the sticky header when a nav link jumps here.
+        id && 'scroll-mt-16',
+      )}
+    >
+      <div className="container-page py-14 lg:py-22">{children}</div>
+    </section>
+  )
+}
+
+/**
  * Section heading.
  *
- * Left-aligned by default, which is the change that matters. Every section on
- * this page opened with a centred eyebrow over a centred title over a centred
- * paragraph, and four of them then dropped into a card grid — so the page had
- * one rhythm repeated eight times and no way to tell the reader which section
- * was the important one. A reader scanning a centred column has to find the
- * start of every line; a left-aligned one has a single edge to run down.
+ * Left-aligned. Every section on this page once opened with a centred eyebrow
+ * over a centred title over a centred paragraph, and four of them then dropped
+ * into a card grid — so the page had one rhythm repeated eight times and no way
+ * to tell the reader which section was the important one. A reader scanning a
+ * centred column has to find the start of every line; a left-aligned one has a
+ * single edge to run down.
  *
- * `centered` is still available and used exactly once, on the closing call to
- * action, where centring marks the end of the argument rather than being the
- * house style.
+ * Centring survives in exactly one place, the closing call to action, where it
+ * marks the end of the argument rather than being the house style.
  */
 function SectionHeading({
   eyebrow,
   title,
   description,
-  centered = false,
 }: {
   eyebrow: string
   title: string
   description?: string
-  centered?: boolean
 }) {
   return (
-    <div className={cn('max-w-2xl', centered && 'mx-auto text-center')}>
-      <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-fg-accent">{eyebrow}</p>
+    <div className="max-w-2xl">
+      <p className="eyebrow text-fg-accent">{eyebrow}</p>
       {/* `text-balance` so a two-line heading breaks evenly instead of
           stranding one word on the second line. */}
-      <h2 className="mt-3 text-balance font-display text-3xl font-medium tracking-tight text-fg sm:text-4xl">
+      <h2 className="mt-3 text-balance font-display text-serif-xs text-fg sm:text-serif-md">
         {title}
       </h2>
       {description ? (
-        <p className="mt-4 text-pretty text-base leading-relaxed text-fg-muted">{description}</p>
+        <p className="mt-4 text-pretty text-body-lg leading-relaxed text-fg-muted">{description}</p>
       ) : null}
     </div>
   )

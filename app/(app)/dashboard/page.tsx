@@ -3,17 +3,31 @@ import Link from 'next/link'
 
 import { ArrowRight, FileText, Sparkles, Upload } from 'lucide-react'
 
-import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { Button } from '@/components/ui/button'
 import { Badge, EmptyState } from '@/components/ui/feedback'
+import { PageBody, PageHeader, Panel, Section, SectionLink, Stack } from '@/components/ui/layout'
+import { InfoTip, TooltipProvider } from '@/components/ui/menu'
 import { ScoreDisclaimer } from '@/components/ui/score'
+import { Stat, StatDelta, StatRow } from '@/components/ui/stat'
+import {
+  ResponsiveTable,
+  Table,
+  TableBody,
+  TableCard,
+  TableCards,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TableRowLink,
+} from '@/components/ui/table'
 import { scoreBand } from '@/lib/constants'
-import { cn, formatRelative, pluralize } from '@/lib/utils'
+import { formatRelative, pluralize } from '@/lib/utils'
 import { requirePageUser } from '@/server/auth/service'
 import {
   getDashboardStats,
-  listAnalyses,
-  listOptimizationRuns,
+  listAnalysesWithContext,
+  listOptimizationRunsWithContext,
   listResumes,
 } from '@/server/repositories'
 
@@ -24,101 +38,114 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
+/** Maps a score band's tone onto the tokens the presentation components take. */
+function bandTone(score: number): 'success' | 'warning' | 'danger' {
+  const { tone } = scoreBand(score)
+  return tone === 'success' ? 'success' : tone === 'warning' ? 'warning' : 'danger'
+}
+
 export default async function DashboardPage() {
   const user = await requirePageUser()
 
   const [stats, resumes, analyses, runs] = await Promise.all([
     getDashboardStats(user.userId),
-    listResumes(user.userId, 5),
-    listAnalyses(user.userId, 5),
-    listOptimizationRuns(user.userId, 5),
+    listResumes(user.userId, 6),
+    listAnalysesWithContext(user.userId, 6),
+    listOptimizationRunsWithContext(user.userId, 6),
   ])
 
   const isNewAccount = stats.resumeCount === 0
   const latestResume = resumes[0] ?? null
 
-  const readinessTone =
-    stats.averageScore === null
-      ? 'text-fg'
-      : scoreBand(stats.averageScore).tone === 'success'
-        ? 'text-success-fg'
-        : scoreBand(stats.averageScore).tone === 'warning'
-          ? 'text-warning-fg'
-          : 'text-danger-fg'
+  /*
+   * The three figures this page leads with.
+   *
+   * It used to lead with four counts — resumes, analyses, optimizations,
+   * average readiness — in four equal cells. Three of those are numbers that
+   * go up and never inform a decision: knowing you have uploaded six resumes
+   * does not tell you anything you would act on. They led the page because
+   * they were the easiest thing to render.
+   *
+   * Every figure below is either a verdict or a thing to do next. The tallies
+   * moved to Settings, under "what is stored on this account", which is the
+   * one place they answer a real question.
+   */
+  const latest = analyses[0] ?? null
+  const previous = analyses[1] ?? null
+  const latestRun = runs.find((run) => run.status === 'succeeded' && run.projectedScore !== null)
+
+  const readinessDelta = latest && previous ? latest.overallScore - previous.overallScore : null
+  const requiredGaps = latest?.report.counts.requiredMissing ?? 0
+  const projectedGain = latestRun?.projectedScore
+    ? latestRun.projectedScore - latestRun.baselineScore
+    : null
 
   /**
    * Analyses and runs merged into one chronology.
    *
-   * Built here rather than in the repository layer: this is a presentation
-   * decision about one screen, and the two queries are still the same two
-   * queries. Nothing about what is fetched has changed.
+   * They were listed side by side under separate headings, which asks the
+   * reader to merge two chronologies in their head to answer "what was I last
+   * doing". They are consecutive steps in one workflow, so they read as one
+   * list, newest first, each row saying which kind of thing it was — and,
+   * now, which role it was for.
    */
   const activity = [
-    ...analyses.map((analysis) => {
-      const band = scoreBand(analysis.overallScore)
-      return {
-        key: `analysis-${analysis.id}`,
-        kindLabel: 'Analysis',
-        href: `/analysis/${analysis.id}`,
-        createdAt: analysis.createdAt,
-        label: `${analysis.report.counts.strong} strong, ${analysis.report.counts.missing} missing`,
-        trailing: (
-          <Badge
-            tone={
-              band.tone === 'success' ? 'success' : band.tone === 'warning' ? 'warning' : 'danger'
-            }
-          >
-            {analysis.overallScore} · {band.label}
-          </Badge>
-        ),
-      }
-    }),
-    ...runs.map((run) => {
-      const count = run.changeSet?.changes.length ?? 0
-      return {
-        key: `run-${run.id}`,
-        kindLabel: 'Optimized',
-        href: `/resume/${run.resumeId}?run=${run.id}`,
-        createdAt: run.createdAt,
-        label: `${count} ${pluralize(count, 'change')} proposed`,
-        trailing:
-          run.projectedScore !== null ? (
-            <Badge tone="accent">{run.projectedScore} projected</Badge>
-          ) : (
-            <Badge tone="neutral">{run.status}</Badge>
-          ),
-      }
-    }),
+    ...analyses.map((analysis) => ({
+      key: `analysis-${analysis.id}`,
+      kind: 'Analysis' as const,
+      href: `/analysis/${analysis.id}`,
+      createdAt: analysis.createdAt,
+      role: analysis.jobTitle,
+      company: analysis.company,
+      resumeTitle: analysis.resumeTitle,
+      detail: `${analysis.report.counts.strong} strong · ${analysis.report.counts.missing} missing`,
+      score: analysis.overallScore,
+      scoreLabel: `${analysis.overallScore} · ${scoreBand(analysis.overallScore).label}`,
+      tone: bandTone(analysis.overallScore),
+    })),
+    ...runs.map((run) => ({
+      key: `run-${run.id}`,
+      kind: 'Optimization' as const,
+      href: `/resume/${run.resumeId}?run=${run.id}`,
+      createdAt: run.createdAt,
+      role: run.jobTitle,
+      company: run.company,
+      resumeTitle: run.resumeTitle,
+      detail: `${run.changeCount} ${pluralize(run.changeCount, 'change')} proposed`,
+      score: run.projectedScore,
+      scoreLabel: run.projectedScore !== null ? `${run.projectedScore} projected` : run.status,
+      tone:
+        run.projectedScore !== null
+          ? bandTone(run.projectedScore)
+          : run.status === 'failed'
+            ? ('danger' as const)
+            : ('neutral' as const),
+    })),
   ]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 8)
 
   return (
-    <>
+    <TooltipProvider>
       <PageHeader
         title="Dashboard"
         description={
           isNewAccount
             ? 'Upload a resume and a job description to see where you stand.'
-            : 'Your resumes, analyses and optimization runs.'
+            : 'Where your applications stand, and what to do next.'
         }
-        actions={
-          /*
-            Hidden from `lg` up, where the sidebar already carries this exact
-            button. Both were on screen at once: the same label, the same icon,
-            the same destination, 30cm apart. Below `lg` the sidebar is behind
-            the drawer, so here it is the only way to start a run and it stays.
-          */
-          <Button className="lg:hidden" asChild>
-            <Link href="/optimize">
-              <Sparkles className="size-4" aria-hidden="true" />
-              New optimization
-            </Link>
-          </Button>
-        }
+        /*
+          No header action.
+
+          The sidebar carries "New optimization" from `md` up, and the panel
+          immediately below this header carries it at every width — as does the
+          empty state, on a new account. A header button would be the third
+          copy of one destination on one screen, which is the same duplication
+          this header used to have with the sidebar at desktop widths.
+        */
       />
 
-      <PageBody className="flex flex-col gap-6">
+      <PageBody>
         {isNewAccount ? (
           <EmptyState
             icon={<Upload className="size-5" />}
@@ -134,177 +161,294 @@ export default async function DashboardPage() {
             }
           />
         ) : (
-          <>
-            {/*
-              What to do next, before what has been done.
-
-              This page opened with four counts — resumes, analyses,
-              optimizations, average readiness — in four equal cells. Three of
-              them are numbers that go up and never inform a decision: knowing
-              you have uploaded six resumes does not tell you anything you would
-              act on. They led the page because they are easy to render, not
-              because anyone needed them.
-
-              What a returning user arrives wanting is the next run. So that is
-              the top of the page, with the readiness figure beside it — the one
-              number here that is a judgement rather than a tally.
-            */}
-            <section
-              aria-label="Start"
-              className="grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-[1fr_auto]"
-            >
-              <div className="bg-surface p-6 sm:p-7">
-                <h2 className="font-display text-xl font-medium tracking-tight text-fg">
-                  Optimize a resume for a role
-                </h2>
-                <p className="mt-1.5 max-w-md text-sm leading-relaxed text-fg-muted">
+          <Stack gap="lg">
+            {/* ------------------------------------------------- continue */}
+            <Panel className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-title font-semibold text-fg">Optimize a resume for a role</h2>
+                <p className="mt-1 measure text-meta leading-relaxed text-fg-muted">
                   Paste a job description and RoleFit shows you where you match before it rewrites
                   anything.
                 </p>
-                <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <Button asChild>
-                    <Link href="/optimize">
-                      <Sparkles className="size-4" aria-hidden="true" />
-                      New optimization
+              </div>
+              {/*
+                Full width when stacked, natural width when in a row. Two
+                content-width buttons stacked on a phone are two different
+                widths, which reads as an accident rather than a pair.
+              */}
+              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                <Button className="w-full sm:w-auto" asChild>
+                  <Link href="/optimize">
+                    <Sparkles className="size-4" aria-hidden="true" />
+                    New optimization
+                  </Link>
+                </Button>
+                {latestResume ? (
+                  <Button variant="secondary" className="w-full sm:w-auto" asChild>
+                    <Link href={`/resume/${latestResume.id}`}>
+                      <span className="max-w-56 truncate">Open {latestResume.title}</span>
                     </Link>
                   </Button>
-                  {latestResume ? (
-                    <Button variant="secondary" asChild>
-                      <Link href={`/resume/${latestResume.id}`}>
-                        Open {latestResume.title}
-                        <ArrowRight className="size-4" aria-hidden="true" />
+                ) : null}
+              </div>
+            </Panel>
+
+            {/* -------------------------------------------------- figures */}
+            <div>
+              <StatRow columns={3}>
+                <Stat
+                  label="Latest readiness"
+                  value={latest ? latest.overallScore : '—'}
+                  tone={latest ? bandTone(latest.overallScore) : 'muted'}
+                  annotation={
+                    <InfoTip label="What the readiness estimate measures">
+                      An estimate of ATS compatibility from your most recent analysis, computed
+                      deterministically from formatting and job-description alignment. Not a score
+                      any real ATS produces.
+                    </InfoTip>
+                  }
+                  detail={
+                    latest ? (
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span>{scoreBand(latest.overallScore).label.toLowerCase()}</span>
+                        {readinessDelta !== null ? (
+                          <StatDelta value={readinessDelta} suffix="vs previous" />
+                        ) : null}
+                      </span>
+                    ) : (
+                      'no analyses yet'
+                    )
+                  }
+                />
+                <Stat
+                  label="Required gaps"
+                  value={latest ? requiredGaps : '—'}
+                  tone={!latest ? 'muted' : requiredGaps === 0 ? 'success' : 'warning'}
+                  annotation={
+                    <InfoTip label="What a required gap means">
+                      Requirements the posting states as required that your resume does not
+                      evidence. RoleFit will not write these in — they are listed so you know where
+                      the gap is.
+                    </InfoTip>
+                  }
+                  detail={
+                    latest ? (
+                      <Link
+                        href={`/analysis/${latest.id}`}
+                        className="focus-ring rounded text-fg-accent transition-colors hover:text-fg"
+                      >
+                        {requiredGaps === 0
+                          ? 'all required items evidenced'
+                          : `in ${latest.jobTitle}`}
                       </Link>
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
+                    ) : (
+                      'run an analysis to see'
+                    )
+                  }
+                />
+                <Stat
+                  label="Projected movement"
+                  value={
+                    projectedGain === null ? '—' : `${projectedGain > 0 ? '+' : ''}${projectedGain}`
+                  }
+                  tone={
+                    projectedGain === null
+                      ? 'muted'
+                      : projectedGain > 0
+                        ? 'success'
+                        : projectedGain < 0
+                          ? 'danger'
+                          : 'default'
+                  }
+                  annotation={
+                    <InfoTip label="What projected movement means">
+                      The change in the readiness estimate if every proposed rewrite in your most
+                      recent run is accepted. Rejecting changes lowers it.
+                    </InfoTip>
+                  }
+                  detail={
+                    latestRun ? (
+                      <Link
+                        href={`/resume/${latestRun.resumeId}?run=${latestRun.id}`}
+                        className="focus-ring rounded text-fg-accent transition-colors hover:text-fg"
+                      >
+                        {latestRun.baselineScore} → {latestRun.projectedScore} in review
+                      </Link>
+                    ) : (
+                      'no optimization run yet'
+                    )
+                  }
+                />
+              </StatRow>
+              <ScoreDisclaimer className="mt-2.5" />
+            </div>
 
-              {/*
-                Readiness in its own cell rather than in a row of four, because
-                it is the only figure on this page that is a verdict.
-              */}
-              <div className="flex flex-col justify-center bg-surface p-6 sm:min-w-52 sm:p-7">
-                <p className="text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">
-                  Average readiness
+            {/* ------------------------------------------------- activity */}
+            <Section
+              title="Recent activity"
+              actions={<SectionLink href="/history">View all</SectionLink>}
+            >
+              {activity.length === 0 ? (
+                <p className="py-3 text-meta text-fg-muted">
+                  Nothing yet. Your analyses and optimization runs will appear here.
                 </p>
-                <p
-                  className={cn(
-                    'mt-2 font-display text-display-md tabular-nums',
-                    stats.averageScore === null ? 'text-fg-disabled' : readinessTone,
-                  )}
-                >
-                  {stats.averageScore === null ? '—' : stats.averageScore}
-                </p>
-                <p className="mt-1.5 text-xs text-fg-subtle">
-                  {stats.averageScore === null
-                    ? 'no analyses yet'
-                    : `${scoreBand(stats.averageScore).label.toLowerCase()} · ${stats.analysisCount} ${pluralize(stats.analysisCount, 'analysis', 'analyses')}`}
-                </p>
-              </div>
-            </section>
+              ) : (
+                <ResponsiveTable
+                  table={
+                    <Table label="Recent analyses and optimization runs">
+                      <TableHead>
+                        <TableRow>
+                          <TableHeaderCell>Role</TableHeaderCell>
+                          <TableHeaderCell tight>Step</TableHeaderCell>
+                          <TableHeaderCell>Result</TableHeaderCell>
+                          <TableHeaderCell tight>When</TableHeaderCell>
+                          <TableHeaderCell numeric tight>
+                            Readiness
+                          </TableHeaderCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {activity.map((entry) => (
+                          <TableRow key={entry.key} interactive>
+                            <TableCell rowHeader>
+                              <TableRowLink href={entry.href}>{entry.role}</TableRowLink>
+                              {entry.company ? (
+                                <span className="mt-0.5 block text-2xs text-fg-subtle">
+                                  {entry.company}
+                                </span>
+                              ) : null}
+                            </TableCell>
+                            <TableCell tight>
+                              <span className="eyebrow text-fg-subtle">{entry.kind}</span>
+                            </TableCell>
+                            <TableCell>{entry.detail}</TableCell>
+                            <TableCell tight>
+                              <time dateTime={entry.createdAt.toISOString()}>
+                                {formatRelative(entry.createdAt)}
+                              </time>
+                            </TableCell>
+                            <TableCell numeric tight>
+                              <Badge tone={entry.tone}>{entry.scoreLabel}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  }
+                  cards={
+                    <TableCards>
+                      {activity.map((entry) => (
+                        <TableCard
+                          key={entry.key}
+                          href={entry.href}
+                          title={entry.role}
+                          meta={
+                            <>
+                              {entry.kind} ·{' '}
+                              <time dateTime={entry.createdAt.toISOString()}>
+                                {formatRelative(entry.createdAt)}
+                              </time>
+                            </>
+                          }
+                          trailing={<Badge tone={entry.tone}>{entry.scoreLabel}</Badge>}
+                          fields={[{ label: 'Result', value: entry.detail }]}
+                        />
+                      ))}
+                    </TableCards>
+                  }
+                />
+              )}
+            </Section>
 
-            <ScoreDisclaimer />
-
-            {/*
-              One activity stream, not two parallel cards.
-
-              Analyses and optimization runs were listed side by side under
-              separate headings, which asks the reader to merge two chronologies
-              in their head to answer "what was I last doing". They are steps in
-              one workflow, so they read as one list, newest first, each row
-              saying which kind of thing it was.
-            */}
-            <SectionRule title="Recent activity" action={{ href: '/history', label: 'View all' }} />
-            {activity.length === 0 ? (
-              <p className="text-sm text-fg-muted">
-                Nothing yet. Your analyses and optimization runs will appear here.
-              </p>
-            ) : (
-              <ul className="divide-y divide-line border-b border-line">
-                {activity.map((entry) => (
-                  <li key={entry.key}>
-                    <Link
-                      href={entry.href}
-                      className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                    >
-                      <div className="flex min-w-0 items-center gap-4">
-                        <span className="w-20 shrink-0 text-2xs font-medium uppercase tracking-[0.08em] text-fg-subtle">
-                          {entry.kindLabel}
-                        </span>
-                        <p className="truncate text-sm text-fg">{entry.label}</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-4">
-                        <span className="text-xs tabular-nums text-fg-subtle">
-                          {formatRelative(entry.createdAt)}
-                        </span>
-                        <span className="w-28 text-right">{entry.trailing}</span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {/*
-              Resumes as rows, not a three-column grid of bordered tiles. A
-              resume has a name and a date; a tile forces that into a box with
-              an icon and a format pill, and gives it the weight of a feature.
-            */}
-            <SectionRule title="Your resumes" action={{ href: '/optimize', label: 'Upload' }} />
-            <ul className="divide-y divide-line border-b border-line">
-              {resumes.map((resume) => (
-                <li key={resume.id}>
-                  <Link
-                    href={`/resume/${resume.id}`}
-                    className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <FileText className="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-                      <p className="truncate text-sm text-fg">{resume.title}</p>
-                    </div>
-                    <p className="shrink-0 text-xs text-fg-subtle">
-                      {resume.sourceFormat.toUpperCase()} · {resume.profile.experience.length}{' '}
-                      {pluralize(resume.profile.experience.length, 'role')} ·{' '}
-                      {formatRelative(resume.createdAt)}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </>
+            {/* -------------------------------------------------- resumes */}
+            <Section
+              title="Your resumes"
+              actions={<SectionLink href="/optimize">Upload</SectionLink>}
+            >
+              <ResponsiveTable
+                table={
+                  <Table label="Your uploaded resumes">
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>Resume</TableHeaderCell>
+                        <TableHeaderCell tight>Format</TableHeaderCell>
+                        <TableHeaderCell numeric tight>
+                          Roles
+                        </TableHeaderCell>
+                        <TableHeaderCell numeric tight>
+                          Skills
+                        </TableHeaderCell>
+                        <TableHeaderCell tight>Uploaded</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {resumes.map((resume) => (
+                        <TableRow key={resume.id} interactive>
+                          <TableCell rowHeader>
+                            <span className="flex items-center gap-2.5">
+                              <FileText
+                                className="size-4 shrink-0 text-fg-subtle"
+                                aria-hidden="true"
+                              />
+                              <TableRowLink href={`/resume/${resume.id}`}>
+                                {resume.title}
+                              </TableRowLink>
+                            </span>
+                          </TableCell>
+                          <TableCell tight>{resume.sourceFormat.toUpperCase()}</TableCell>
+                          <TableCell numeric tight>
+                            {resume.profile.experience.length}
+                          </TableCell>
+                          <TableCell numeric tight>
+                            {resume.profile.skills.reduce(
+                              (sum, group) => sum + group.items.length,
+                              0,
+                            )}
+                          </TableCell>
+                          <TableCell tight>
+                            <time dateTime={resume.createdAt.toISOString()}>
+                              {formatRelative(resume.createdAt)}
+                            </time>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                }
+                cards={
+                  <TableCards>
+                    {resumes.map((resume) => (
+                      <TableCard
+                        key={resume.id}
+                        href={`/resume/${resume.id}`}
+                        title={resume.title}
+                        meta={
+                          <>
+                            {resume.sourceFormat.toUpperCase()} ·{' '}
+                            <time dateTime={resume.createdAt.toISOString()}>
+                              {formatRelative(resume.createdAt)}
+                            </time>
+                          </>
+                        }
+                        fields={[
+                          { label: 'Roles', value: resume.profile.experience.length },
+                          {
+                            label: 'Skills',
+                            value: resume.profile.skills.reduce(
+                              (sum, group) => sum + group.items.length,
+                              0,
+                            ),
+                          },
+                        ]}
+                      />
+                    ))}
+                  </TableCards>
+                }
+              />
+            </Section>
+          </Stack>
         )}
       </PageBody>
-    </>
-  )
-}
-
-/**
- * A section boundary: a label, a rule, and at most one action.
- *
- * Replaces the CardHeader each of these sections used to sit inside. A card
- * around a list of links adds a border, a shadow and 24px of padding to state
- * a grouping that a heading and a hairline already state — and once every
- * section on a page is a card, the page has no emphasis left to spend on the
- * one thing that matters.
- */
-function SectionRule({
-  title,
-  action,
-}: {
-  title: string
-  action?: { href: string; label: string }
-}) {
-  return (
-    <div className="mt-2 flex items-baseline justify-between gap-4 border-b border-line pb-2.5">
-      <h2 className="font-display text-title font-medium tracking-tight text-fg">{title}</h2>
-      {action ? (
-        <Link
-          href={action.href}
-          className="rounded text-sm text-fg-accent transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          {action.label}
-        </Link>
-      ) : null}
-    </div>
+    </TooltipProvider>
   )
 }

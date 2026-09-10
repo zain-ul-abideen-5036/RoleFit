@@ -200,8 +200,13 @@ test.describe('full optimization journey', () => {
     expect(Array.from(docxBytes.subarray(0, 4))).toEqual([0x50, 0x4b, 0x03, 0x04])
 
     /* --------------------------------------------------- 7. history ---- */
+    // History presents analyses, runs and exports as three tabs rather than
+    // three stacked sections, so the exports have to be selected. The
+    // assertion is unchanged: the file that was just generated is listed on
+    // the account.
     await page.goto('/history')
-    await expect(page.getByRole('heading', { name: 'Exported documents' })).toBeVisible()
+    await page.getByRole('tab', { name: /Exports/ }).click()
+    await expect(page.getByRole('tabpanel')).toBeVisible()
     await expect(page.getByText(/\.pdf$/).first()).toBeVisible()
   })
 

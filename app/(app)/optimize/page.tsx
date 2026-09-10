@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
-import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { OptimizeWizard } from '@/components/app/optimize-wizard'
+import { PageBody, PageHeader } from '@/components/ui/layout'
 import { requirePageUser } from '@/server/auth/service'
 import { listResumes } from '@/server/repositories'
 
@@ -12,9 +12,32 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function OptimizePage() {
+/**
+ * The wizard, optionally aimed at a resume already on the account.
+ *
+ * `?resume=<id>` preselects it. The analysis screen's "Optimize this resume"
+ * used to link here bare, so a button naming a specific document dropped the
+ * user at an empty step 1 and asked them which document they meant — a label
+ * making a promise the link did not keep.
+ *
+ * The id is validated against the account's own resumes rather than trusted:
+ * it arrives from the URL, and preselecting an id this user does not own would
+ * be a (harmless, but real) information leak about which ids exist.
+ */
+export default async function OptimizePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ resume?: string }>
+}) {
   const user = await requirePageUser()
-  const resumes = await listResumes(user.userId, 12)
+  const [{ resume: requestedResumeId }, resumes] = await Promise.all([
+    searchParams,
+    listResumes(user.userId, 12),
+  ])
+
+  const preselected = resumes.some((resume) => resume.id === requestedResumeId)
+    ? requestedResumeId
+    : undefined
 
   return (
     <>
@@ -24,6 +47,7 @@ export default async function OptimizePage() {
       />
       <PageBody>
         <OptimizeWizard
+          {...(preselected ? { initialResumeId: preselected } : {})}
           existingResumes={resumes.map((resume) => ({
             id: resume.id,
             title: resume.title,

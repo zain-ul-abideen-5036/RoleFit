@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-import { FileText, History as HistoryIcon, Sparkles } from 'lucide-react'
+import { History as HistoryIcon, Sparkles } from 'lucide-react'
 
-import { PageBody, PageHeader } from '@/components/app/app-shell'
+import { HistoryView } from '@/components/app/history-view'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge, EmptyState } from '@/components/ui/feedback'
-import { ScoreDisclaimer } from '@/components/ui/score'
-import { scoreBand } from '@/lib/constants'
-import { formatBytes, formatDateTime, pluralize } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/feedback'
+import { PageBody, PageHeader } from '@/components/ui/layout'
 import { requirePageUser } from '@/server/auth/service'
-import { listAnalyses, listGeneratedDocuments, listOptimizationRuns } from '@/server/repositories'
+import {
+  listAnalysesWithContext,
+  listGeneratedDocuments,
+  listOptimizationRunsWithContext,
+} from '@/server/repositories'
 
 export const metadata: Metadata = {
   title: 'History',
@@ -24,8 +25,8 @@ export default async function HistoryPage() {
   const user = await requirePageUser()
 
   const [analyses, runs, documents] = await Promise.all([
-    listAnalyses(user.userId, 50),
-    listOptimizationRuns(user.userId, 50),
+    listAnalysesWithContext(user.userId, 50),
+    listOptimizationRunsWithContext(user.userId, 50),
     listGeneratedDocuments(user.userId),
   ])
 
@@ -37,7 +38,13 @@ export default async function HistoryPage() {
         title="History"
         description="Every analysis, optimization run and exported document on your account."
         actions={
-          <Button asChild>
+          /*
+            Hidden from `md` up, where the sidebar carries this exact button —
+            same label, same icon, same destination, a hand's width apart.
+            Below `md` the sidebar is behind the drawer, so here it is the only
+            way to start a run and it stays.
+          */
+          <Button className="md:hidden" asChild>
             <Link href="/optimize">
               <Sparkles className="size-4" aria-hidden="true" />
               New optimization
@@ -46,7 +53,7 @@ export default async function HistoryPage() {
         }
       />
 
-      <PageBody className="flex flex-col gap-6">
+      <PageBody>
         {isEmpty ? (
           <EmptyState
             icon={<HistoryIcon className="size-5" />}
@@ -59,158 +66,40 @@ export default async function HistoryPage() {
             }
           />
         ) : (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle as="h2">Analyses</CardTitle>
-                <CardDescription>
-                  How your resume scored against each job description.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {analyses.length === 0 ? (
-                  <p className="py-4 text-sm text-fg-muted">No analyses yet.</p>
-                ) : (
-                  <>
-                    {/* A list rather than a table: it reflows on narrow screens
-                        without horizontal scrolling or a hidden column. */}
-                    <ul className="flex flex-col divide-y divide-line">
-                      {analyses.map((analysis) => {
-                        const band = scoreBand(analysis.overallScore)
-                        return (
-                          <li key={analysis.id}>
-                            <Link
-                              href={`/analysis/${analysis.id}`}
-                              className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                            >
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-fg">
-                                  {analysis.report.counts.strong} strong ·{' '}
-                                  {analysis.report.counts.partial} partial ·{' '}
-                                  {analysis.report.counts.missing} missing
-                                </p>
-                                <p className="text-xs text-fg-subtle">
-                                  {formatDateTime(analysis.createdAt)}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {analysis.report.counts.requiredMissing > 0 ? (
-                                  <Badge tone="warning">
-                                    {analysis.report.counts.requiredMissing} required gap
-                                    {analysis.report.counts.requiredMissing === 1 ? '' : 's'}
-                                  </Badge>
-                                ) : null}
-                                <Badge
-                                  tone={
-                                    band.tone === 'success'
-                                      ? 'success'
-                                      : band.tone === 'warning'
-                                        ? 'warning'
-                                        : 'danger'
-                                  }
-                                >
-                                  {analysis.overallScore} · {band.label}
-                                </Badge>
-                              </div>
-                            </Link>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                    <ScoreDisclaimer className="mt-4" />
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle as="h2">Optimization runs</CardTitle>
-                <CardDescription>Return to any run to review or change decisions.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {runs.length === 0 ? (
-                  <p className="py-4 text-sm text-fg-muted">No optimization runs yet.</p>
-                ) : (
-                  <ul className="flex flex-col divide-y divide-line">
-                    {runs.map((run) => (
-                      <li key={run.id}>
-                        <Link
-                          href={`/resume/${run.resumeId}?run=${run.id}`}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                        >
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-fg">
-                              {run.changeSet?.changes.length ?? 0}{' '}
-                              {pluralize(run.changeSet?.changes.length ?? 0, 'change')} proposed
-                            </p>
-                            <p className="text-xs text-fg-subtle">
-                              {formatDateTime(run.createdAt)} · engine: {run.provider}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              tone={
-                                run.status === 'succeeded'
-                                  ? 'success'
-                                  : run.status === 'failed'
-                                    ? 'danger'
-                                    : 'neutral'
-                              }
-                            >
-                              {run.status}
-                            </Badge>
-                            {run.projectedScore !== null ? (
-                              <Badge tone="accent">{run.projectedScore} projected</Badge>
-                            ) : null}
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle as="h2">Exported documents</CardTitle>
-                <CardDescription>
-                  Every file you generated. Downloads are private to your account.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {documents.length === 0 ? (
-                  <p className="py-4 text-sm text-fg-muted">No documents exported yet.</p>
-                ) : (
-                  <ul className="flex flex-col divide-y divide-line">
-                    {documents.map((document) => (
-                      <li
-                        key={document.id}
-                        className="flex flex-wrap items-center justify-between gap-3 py-3"
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <FileText className="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-fg">
-                              {document.filename}
-                            </p>
-                            <p className="text-xs text-fg-subtle">
-                              {formatDateTime(document.createdAt)} ·{' '}
-                              {formatBytes(document.sizeBytes)}
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="secondary" size="sm" asChild>
-                          <a href={`/api/documents/${document.id}/download`}>Download</a>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-          </>
+          <HistoryView
+            analyses={analyses.map((analysis) => ({
+              id: analysis.id,
+              createdAt: analysis.createdAt,
+              overallScore: analysis.overallScore,
+              jobTitle: analysis.jobTitle,
+              company: analysis.company,
+              resumeTitle: analysis.resumeTitle,
+              strong: analysis.report.counts.strong,
+              partial: analysis.report.counts.partial,
+              missing: analysis.report.counts.missing,
+              requiredMissing: analysis.report.counts.requiredMissing,
+            }))}
+            runs={runs.map((run) => ({
+              id: run.id,
+              resumeId: run.resumeId,
+              createdAt: run.createdAt,
+              status: run.status,
+              provider: run.provider,
+              baselineScore: run.baselineScore,
+              projectedScore: run.projectedScore,
+              changeCount: run.changeCount,
+              jobTitle: run.jobTitle,
+              company: run.company,
+              resumeTitle: run.resumeTitle,
+            }))}
+            documents={documents.map((document) => ({
+              id: document.id,
+              filename: document.filename,
+              createdAt: document.createdAt,
+              sizeBytes: document.sizeBytes,
+              kind: document.kind,
+            }))}
+          />
         )}
       </PageBody>
     </>

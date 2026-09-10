@@ -233,9 +233,64 @@ export function EmptyState({ icon, title, description, action, className }: Empt
           {icon}
         </div>
       ) : null}
-      <p className="font-display text-title font-medium text-fg">{title}</p>
+      <p className="text-title font-semibold text-fg">{title}</p>
       <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-fg-muted">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ callout */
+
+const CALLOUT_TONES = {
+  neutral: { wrap: 'border-line bg-sunken', mark: 'text-fg-subtle' },
+  info: { wrap: 'border-info-line bg-info-bg', mark: 'text-info-fg' },
+  success: { wrap: 'border-success-line bg-success-bg', mark: 'text-success-solid' },
+  warning: { wrap: 'border-warning-line bg-warning-bg', mark: 'text-warning-solid' },
+  danger: { wrap: 'border-danger-line bg-danger-bg', mark: 'text-danger-solid' },
+} as const
+
+/**
+ * A titled note with an icon, for standing explanatory content.
+ *
+ * The distinction from `Alert` is that an alert is a *response* — something
+ * the user just did produced it — and a callout is *documentation* that is
+ * always there. Conflating them is why the settings page rendered three
+ * permanent explanations of how data is processed as bordered boxes nested
+ * inside a bordered card, each with an icon in a tinted square.
+ *
+ * The icon is passed in rather than derived from the tone, because these
+ * explain specific things (an engine, a lock, a shield) and a generic "info"
+ * circle three times in a row says nothing.
+ */
+export function Callout({
+  icon,
+  title,
+  tone = 'neutral',
+  children,
+  className,
+}: {
+  icon?: React.ReactNode
+  title?: string
+  tone?: keyof typeof CALLOUT_TONES
+  children: React.ReactNode
+  className?: string
+}) {
+  const { wrap, mark } = CALLOUT_TONES[tone]
+
+  return (
+    <div className={cn('flex gap-3 rounded-lg border p-3.5', wrap, className)}>
+      {icon ? (
+        <span className={cn('mt-px shrink-0 [&_svg]:size-4', mark)} aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
+      <div className="min-w-0 flex-1">
+        {title ? <p className="text-meta font-semibold text-fg">{title}</p> : null}
+        <div className={cn('measure text-meta leading-relaxed text-fg-muted', title && 'mt-1')}>
+          {children}
+        </div>
+      </div>
     </div>
   )
 }

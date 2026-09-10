@@ -113,22 +113,35 @@ export function ResumeUploader({
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          'rounded-xl border-2 border-dashed p-8 text-center transition-colors sm:p-12',
-          dragging ? 'border-accent bg-accent-subtle' : 'border-line-strong bg-surface',
+          // A dashed border, kept — this is the one place in the product where
+          // a dashed rectangle is the correct costume, because it genuinely is
+          // a drop target. Everywhere else it was removed.
+          'rounded-xl border border-dashed p-6 text-center sm:p-10',
+          'transition-[border-color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+          dragging
+            ? 'border-line-accent bg-selected'
+            : 'border-line-strong bg-surface hover:border-line-bold',
         )}
       >
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-sunken text-fg-subtle">
+        <div
+          className={cn(
+            'mx-auto flex size-10 items-center justify-center rounded-lg border',
+            uploading
+              ? 'border-line-accent bg-accent-subtle text-fg-accent'
+              : 'border-line bg-sunken text-fg-subtle',
+          )}
+        >
           {uploading ? (
-            <FileText className="size-5" aria-hidden="true" />
+            <FileText className="size-4.5" aria-hidden="true" />
           ) : (
-            <Upload className="size-5" aria-hidden="true" />
+            <Upload className="size-4.5" aria-hidden="true" />
           )}
         </div>
 
-        <p className="mt-4 text-base font-semibold text-fg">
+        <p className="mt-3.5 text-body-lg font-semibold text-fg">
           {uploading ? 'Reading your resume…' : 'Upload your resume'}
         </p>
-        <p className="mt-1.5 text-sm text-fg-muted">
+        <p className="mx-auto mt-1 max-w-sm text-meta leading-relaxed text-fg-muted">
           {uploading && fileName
             ? fileName
             : `Drag a file here, or choose one. PDF or DOCX, up to ${UPLOAD.maxBytesLabel}.`}
@@ -152,7 +165,7 @@ export function ResumeUploader({
 
         <Button
           type="button"
-          className="mt-5"
+          className="mt-4"
           loading={uploading}
           loadingLabel="Uploading…"
           disabled={!ready || uploading}
@@ -161,14 +174,14 @@ export function ResumeUploader({
           Choose file
         </Button>
 
-        <p className="mt-4 text-xs text-fg-subtle">
+        <p className="mx-auto mt-4 max-w-md text-2xs leading-relaxed text-fg-subtle">
           Scanned or image-only PDFs cannot be read. If your resume has no selectable text, export
           it again from the original document.
         </p>
       </div>
 
       {error ? (
-        <Alert tone="danger" live className="mt-4">
+        <Alert tone="danger" live className="mt-3">
           {error}
         </Alert>
       ) : null}
@@ -188,24 +201,34 @@ export function ParsedResumeSummary({ resume }: { resume: UploadedResume }) {
   ]
 
   return (
-    <div className="rounded-xl border border-success-line bg-success-bg p-5">
+    <div className="rounded-xl border border-success-line bg-success-bg p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success-fg" aria-hidden="true" />
+        <CheckCircle2 className="mt-0.5 size-4.5 shrink-0 text-success-solid" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-success-fg">Resume read successfully</p>
-          <p className="mt-1 truncate text-sm text-fg-muted">{resume.originalFilename}</p>
+          <p className="text-body-lg font-semibold text-success-fg">Resume read successfully</p>
+          <p className="mt-0.5 truncate font-mono text-2xs text-fg-muted">
+            {resume.originalFilename}
+          </p>
 
-          <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/*
+            What was found, as one divided readout rather than four tinted
+            tiles. These are four counts of one parse — they belong on one
+            surface, and boxing each of them inside an already-tinted panel is
+            the nested-container problem again.
+          */}
+          <dl className="mt-3.5 grid grid-cols-2 divide-x divide-y divide-success-line overflow-hidden rounded-lg border border-success-line bg-surface sm:grid-cols-4 sm:divide-y-0">
             {facts.map((fact) => (
-              <div key={fact.label} className="rounded-lg bg-surface px-3 py-2">
-                <dt className="text-xs text-fg-subtle">{fact.label}</dt>
-                <dd className="text-lg font-semibold tabular-nums text-fg">{fact.value}</dd>
+              <div key={fact.label} className="px-3 py-2">
+                <dt className="eyebrow text-fg-subtle">{fact.label}</dt>
+                <dd className="mt-0.5 text-body-lg font-semibold tabular-nums text-fg">
+                  {fact.value}
+                </dd>
               </div>
             ))}
           </dl>
 
           {resume.profile.experience.length === 0 ? (
-            <p className="mt-3 text-sm text-warning-fg">
+            <p className="mt-3 measure text-meta leading-relaxed text-warning-fg">
               No work experience was detected. If your resume uses unusual section headings, the
               analysis may be less accurate.
             </p>

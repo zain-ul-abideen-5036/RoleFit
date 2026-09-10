@@ -50,7 +50,7 @@ export function VerifyEmailStatus({ token }: { token: string }) {
     return (
       <div className="flex items-center gap-3" aria-live="polite">
         <Loader2 className="size-5 animate-spin text-accent" aria-hidden="true" />
-        <p className="text-sm text-fg-muted">Confirming your email address…</p>
+        <p className="text-meta leading-relaxed text-fg-muted">Confirming your email address…</p>
       </div>
     )
   }
@@ -61,9 +61,11 @@ export function VerifyEmailStatus({ token }: { token: string }) {
         <div className="flex size-11 items-center justify-center rounded-full bg-success-bg text-success-fg">
           <CircleCheck className="size-5" aria-hidden="true" />
         </div>
-        <h1 className="mt-4 text-2xl font-bold tracking-tight text-fg">Email confirmed</h1>
-        <p className="mt-2 text-sm text-fg-muted">Your address is verified. Nothing else to do.</p>
-        <p className="mt-6 text-sm text-fg-muted">
+        <h1 className="mt-4 text-display-sm font-semibold text-fg">Email confirmed</h1>
+        <p className="mt-2 text-meta leading-relaxed text-fg-muted">
+          Your address is verified. Nothing else to do.
+        </p>
+        <p className="mt-6 text-meta leading-relaxed text-fg-muted">
           <Link
             href="/dashboard"
             className="font-medium text-fg-accent underline underline-offset-4 hover:text-fg"
@@ -80,14 +82,12 @@ export function VerifyEmailStatus({ token }: { token: string }) {
       <div className="flex size-11 items-center justify-center rounded-full bg-danger-bg text-danger-fg">
         <CircleX className="size-5" aria-hidden="true" />
       </div>
-      <h1 className="mt-4 text-2xl font-bold tracking-tight text-fg">
-        That link is no longer valid
-      </h1>
-      <p className="mt-2 text-sm text-fg-muted">
+      <h1 className="mt-4 text-display-sm font-semibold text-fg">That link is no longer valid</h1>
+      <p className="mt-2 text-meta leading-relaxed text-fg-muted">
         {message ?? 'The link may have expired or already been used.'} Verification links last 24
         hours and work once.
       </p>
-      <p className="mt-6 text-sm text-fg-muted">
+      <p className="mt-6 text-meta leading-relaxed text-fg-muted">
         <Link
           href="/settings"
           className="font-medium text-fg-accent underline underline-offset-4 hover:text-fg"
