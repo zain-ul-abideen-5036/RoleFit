@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { ArrowRight, CheckCircle2, GitCompare, ScanLine, ShieldCheck, XCircle } from 'lucide-react'
 
+import { RoleRotator } from '@/components/marketing/role-rotator'
 import { TransformationFigure } from '@/components/marketing/transformation-figure'
 import { Badge } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/button'
@@ -41,7 +42,10 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="border-b border-line bg-surface">
+    <section className="relative isolate overflow-hidden border-b border-line bg-surface">
+      {/* Ground for the headline. Decorative, so it is hidden from the tree. */}
+      <div aria-hidden="true" className="hero-graticule absolute inset-0 -z-10" />
+
       <div className="container-page grid gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16 lg:py-24">
         <div>
           <Badge tone="accent" className="mb-5">
@@ -50,11 +54,24 @@ function Hero() {
           </Badge>
 
           <h1 className="font-display text-4xl font-medium leading-[1.06] tracking-tight text-fg sm:text-5xl lg:text-display-lg">
-            Tailor your resume.
-            <br />
-            Match the role.
-            <br />
-            <span className="text-fg-accent">Get hired.</span>
+            {/*
+              One stable sentence for assistive technology. The visible
+              headline cycles a job title, and an `h1` whose text changes every
+              few seconds is announced again each time and reads as a different
+              heading. Screen readers get the sentence; the eye gets the
+              rotation.
+            */}
+            <span className="sr-only">
+              Tailor your resume for the role you are applying to, and get hired.
+            </span>
+
+            <span aria-hidden="true">
+              Tailor your resume
+              <br />
+              for a <RoleRotator />
+              <br />
+              and get hired.
+            </span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-fg-muted">

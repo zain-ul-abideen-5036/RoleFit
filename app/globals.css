@@ -616,6 +616,33 @@
   border-radius: var(--radius-sm);
 }
 
+/*
+ * Hero ground: a measurement graticule.
+ *
+ * The depth device from the reference heroes, reinterpreted. Those float five
+ * blurred gradient lozenges in indigo, rose, violet, amber and cyan behind the
+ * headline, each on a 12-second infinite loop. That is the exact treatment this
+ * product spent two rounds removing: five hues it does not own, gradients it
+ * does not use, and continuous animation behind text.
+ *
+ * What the reference is actually doing is giving the headline a ground so it
+ * does not float on flat white. A ruled grid does that, and it means something
+ * here — this is a tool that measures a document against a posting, so a
+ * graticule is the product's own metaphor rather than borrowed atmosphere.
+ *
+ * Two gradients, no image, no blur, no animation. It costs one paint.
+ */
+@utility hero-graticule {
+  background-image:
+    linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  /* Faded out toward the bottom and the right so the grid reads as ground
+     behind the type rather than as a table the page sits in. */
+  mask-image: radial-gradient(115% 90% at 12% 8%, #000 0%, transparent 72%);
+  opacity: 0.7;
+}
+
 /* Print: the resume preview must print as a clean document. */
 @media print {
   .no-print {
