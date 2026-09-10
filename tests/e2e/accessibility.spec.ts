@@ -36,22 +36,44 @@ function uniqueEmail(prefix: string): string {
  * Waiting on the animations themselves rather than a fixed sleep: a timeout
  * tuned to today's duration silently stops covering anything the moment a
  * duration changes.
+ *
+ * The previous form polled for "no running animation with a finite duration",
+ * which had two holes that made this the flakiest assertion in the suite:
+ *
+ *  - `[].every()` is `true`, so it resolved immediately whenever it happened
+ *    to poll before the entrance animation had registered — which is exactly
+ *    what happens on the first poll after a client-side navigation. axe then
+ *    scanned mid-fade and reported the whole entering subtree as failing
+ *    contrast.
+ *  - Filtering on `playState === 'running'` skipped animations still
+ *    `pending`, so anything with a delay was never waited for at all.
+ *
+ * So: give animations two frames to register, then await their `finished`
+ * promises rather than sampling a predicate. Several passes, because awaiting
+ * one animation can let a delayed or staggered one start.
  */
 async function settle(page: Page): Promise<void> {
-  await page.waitForFunction(
-    () =>
+  await page.evaluate(async () => {
+    const twoFrames = (): Promise<void> =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+
+    // Infinite animations (a shimmer, an indeterminate rail) never finish and
+    // must not block the scan.
+    const finite = (): Animation[] =>
       document
         .getAnimations()
-        .filter((a) => a.playState === 'running')
-        .every((a) => {
-          const timing = a.effect?.getComputedTiming()
-          // Infinite animations (a shimmer, an indeterminate rail) never
-          // finish and must not block the scan.
-          return timing?.iterations === Infinity
-        }),
-    undefined,
-    { timeout: 5_000 },
-  )
+        .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+
+    for (let pass = 0; pass < 5; pass += 1) {
+      await twoFrames()
+      const pending = finite()
+      if (pending.length === 0) return
+      // A cancelled animation rejects; that is settled enough for us.
+      await Promise.all(pending.map((animation) => animation.finished.catch(() => undefined)))
+    }
+  })
 }
 
 async function scan(page: Page, context: string): Promise<void> {

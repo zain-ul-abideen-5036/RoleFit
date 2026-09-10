@@ -166,6 +166,19 @@
   --duration-fast: 160ms;
   --duration-settle: 280ms;
 
+  /*
+   * The one deliberate exception, and it is named rather than inlined.
+   *
+   * A score arc sweeping to its reading is the single place in this product
+   * where the travel *is* the content: it is a measurement being taken, which
+   * is what the product does, so the eye should be able to follow it. At 280ms
+   * it reads as a glitch rather than a sweep.
+   *
+   * Reserved for exactly that, on the marketing page. If a second thing
+   * reaches for it, one of the two is wrong.
+   */
+  --duration-reveal: 720ms;
+
   /* ------------------------------------------------------------- z-index  */
   /*
    * A named stack, because the alternative is what this product had: z-30 on
@@ -913,6 +926,73 @@
    */
   mask-image: radial-gradient(105% 80% at 10% 26%, #000 0%, transparent 72%);
   opacity: 0.5;
+}
+
+/* ==========================================================================
+   Measurement reveal
+   --------------------------------------------------------------------------
+   A score readout sweeping to its reading, on scroll, once.
+
+   Opt-in and inverted on purpose. The default — what the server renders, what
+   a browser with no JavaScript shows, and what anyone with reduced motion
+   sees — is the *true reading*, fully drawn. Nothing here runs until an
+   ancestor is marked `data-measure`, and `MeasureReveal` only marks it when
+   the card is still off screen, so the snap to empty is never visible.
+
+   That inversion is the whole point. This product's argument is that its score
+   is honest; an animation that leaves a 0 on screen when its JavaScript fails
+   to run would be the one bug it cannot afford. Failure here degrades to the
+   truth rather than to zero.
+
+   The ARIA values never move — see `ScoreRing` and `ScoreBar`. A screen reader
+   is given the final reading immediately.
+   ========================================================================== */
+
+/* The arc's resting state: drawn to its value. */
+.score-arc {
+  stroke-dasharray: var(--score-arc-length);
+  stroke-dashoffset: var(--score-arc-offset);
+}
+
+/* Armed — snapped to empty, with no transition, while off screen. */
+[data-measure='armed'] .score-arc {
+  stroke-dashoffset: var(--score-arc-length);
+}
+
+[data-measure='armed'] .score-fill {
+  transform: scaleX(0);
+}
+
+/* Running — the same values the resting state has, now transitioned into. */
+[data-measure='running'] .score-arc {
+  stroke-dashoffset: var(--score-arc-offset);
+  transition: stroke-dashoffset var(--duration-reveal) var(--ease-standard);
+}
+
+[data-measure='running'] .score-fill {
+  transform: scaleX(var(--score-fill, 0));
+  transition: transform var(--duration-settle) var(--ease-standard);
+}
+
+/*
+ * The meters follow the arc rather than racing it.
+ *
+ * A stagger is normally the wrong instinct — a page of panels each arriving a
+ * beat apart feels slow on the fourth visit. It earns its place here because
+ * these three are a *breakdown of the figure beside them*, so reading the
+ * total and then its parts is the order the section is arguing in. Three rows,
+ * 70ms apart, done inside a second.
+ */
+[data-measure='running'] .score-bar:nth-child(1) .score-fill {
+  transition-delay: 160ms;
+}
+
+[data-measure='running'] .score-bar:nth-child(2) .score-fill {
+  transition-delay: 230ms;
+}
+
+[data-measure='running'] .score-bar:nth-child(3) .score-fill {
+  transition-delay: 300ms;
 }
 
 /* Print: the resume preview must print as a clean document. */
