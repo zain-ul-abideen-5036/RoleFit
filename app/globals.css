@@ -179,6 +179,17 @@
    */
   --duration-reveal: 720ms;
 
+  /*
+   * A scene length, not an interface duration.
+   *
+   * The distinction matters: every value above describes how fast a control
+   * responds to a person, and must be short enough not to be noticed. This
+   * one is the running time of a one-shot illustration that nobody is waiting
+   * on — the review pass travelling down the hero's resume. It plays once, on
+   * load, and settles.
+   */
+  --duration-scene: 2.4s;
+
   /* ------------------------------------------------------------- z-index  */
   /*
    * A named stack, because the alternative is what this product had: z-30 on
@@ -501,6 +512,55 @@
   }
   to {
     transform: translateX(400%);
+  }
+}
+
+/*
+ * The hero's tailoring pass.
+ *
+ * A hairline crosses the sheet while two bullets are replaced by their
+ * rewrites. Every one of these fills `both`, so the reduced-motion block —
+ * which collapses durations *and* delays — lands each element on its finished
+ * state rather than stranding it mid-swap.
+ */
+@keyframes tailor-sweep {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+@keyframes tailor-retire {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes tailor-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The tint under a line while it is being replaced: in, then out. */
+@keyframes tailor-mark {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
   }
 }
 
@@ -929,6 +989,30 @@
 }
 
 /* ==========================================================================
+   Hero tailoring pass
+   --------------------------------------------------------------------------
+   Sequenced by `--at`, set per element at the call site, so the order lives
+   with the content it orders rather than being spread across four class
+   names here. See `TransformationFigure`.
+   ========================================================================== */
+
+.tailor-sweep {
+  animation: tailor-sweep var(--duration-scene) var(--ease-standard) 0.3s both;
+}
+
+.tailor-retire {
+  animation: tailor-retire var(--duration-settle) var(--ease-standard) var(--at, 0s) both;
+}
+
+.tailor-arrive {
+  animation: tailor-arrive var(--duration-settle) var(--ease-standard) var(--at, 0s) both;
+}
+
+.tailor-mark {
+  animation: tailor-mark 0.85s var(--ease-standard) var(--at, 0s) both;
+}
+
+/* ==========================================================================
    Measurement reveal
    --------------------------------------------------------------------------
    A score readout sweeping to its reading, on scroll, once.
@@ -1028,5 +1112,18 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    /*
+     * Delays are collapsed too, and that is not a detail.
+     *
+     * Durations alone were being reset, which left a sequenced animation
+     * honouring its `animation-delay` and then jumping — so a two-second
+     * staggered scene still took two seconds, and anything filling `backwards`
+     * held its *start* state for the whole delay. Someone who asked for less
+     * motion would have watched the hero's resume sit on its un-rewritten
+     * wording for a second and a half before snapping. A delay is motion the
+     * user is waiting through.
+     */
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
   }
 }
