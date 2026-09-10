@@ -125,7 +125,7 @@ export function computeDimensions(input: ScoreInput): ScoreDimension[] {
       label: LABELS.skill_alignment,
       score: skill,
       weight: WEIGHTS.skill_alignment,
-      detail: describeCoverage(skillMatches, 'skill requirement'),
+      detail: describeCoverage(skillMatches, 'skill requirement', 'skill requirements'),
     },
     {
       key: 'keyword_alignment',
@@ -141,7 +141,7 @@ export function computeDimensions(input: ScoreInput): ScoreDimension[] {
       label: LABELS.responsibility_alignment,
       score: responsibility,
       weight: WEIGHTS.responsibility_alignment,
-      detail: describeCoverage(responsibilityMatches, 'responsibility'),
+      detail: describeCoverage(responsibilityMatches, 'responsibility', 'responsibilities'),
     },
     {
       key: 'resume_structure',
@@ -176,11 +176,28 @@ export function computeDimensions(input: ScoreInput): ScoreDimension[] {
   return dimensions
 }
 
-function describeCoverage(matches: readonly RequirementMatch[], noun: string): string {
-  if (matches.length === 0) return `No ${noun}s were extracted from this job description.`
+/**
+ * The one-line explanation under a coverage dimension.
+ *
+ * The plural is passed in rather than derived by appending an `s`. It was
+ * derived, which rendered "0 of 14 responsibilitys are clearly evidenced" on
+ * the analysis screen — and a product whose entire argument is that its score
+ * is careful and explainable cannot afford visible copy defects in the
+ * sentence doing the explaining.
+ */
+function describeCoverage(
+  matches: readonly RequirementMatch[],
+  singular: string,
+  plural: string,
+): string {
+  if (matches.length === 0) return `No ${plural} were extracted from this job description.`
+
   const strong = matches.filter((match) => match.status === 'strong').length
   const partial = matches.filter((match) => match.status === 'partial').length
-  return `${strong} of ${matches.length} ${noun}s are clearly evidenced${
+  const noun = matches.length === 1 ? singular : plural
+  const verb = matches.length === 1 ? 'is' : 'are'
+
+  return `${strong} of ${matches.length} ${noun} ${verb} clearly evidenced${
     partial > 0 ? `, ${partial} partially` : ''
   }.`
 }
@@ -192,8 +209,21 @@ function summarizeChecks(
   const relevant = ats.checks.filter((check) => check.group === group)
   const failed = relevant.filter((check) => check.status === 'fail').length
   const warned = relevant.filter((check) => check.status === 'warn').length
-  if (failed === 0 && warned === 0) return `All ${relevant.length} checks passed.`
-  return `${failed} check(s) failed and ${warned} raised a warning out of ${relevant.length}.`
+
+  if (failed === 0 && warned === 0) {
+    return relevant.length === 1
+      ? 'The one check here passed.'
+      : `All ${relevant.length} checks passed.`
+  }
+
+  // "check(s)" was the previous wording. A parenthetical plural is a
+  // placeholder that shipped: it tells the reader the sentence was not
+  // finished. Both halves are stated only when they are non-zero.
+  const parts: string[] = []
+  if (failed > 0) parts.push(`${failed} ${failed === 1 ? 'check' : 'checks'} failed`)
+  if (warned > 0) parts.push(`${warned} raised a warning`)
+
+  return `${parts.join(' and ')}, out of ${relevant.length}.`
 }
 
 export function computeOverallScore(dimensions: readonly ScoreDimension[]): number {
