@@ -560,18 +560,21 @@ function Pricing() {
   return (
     <Section id="pricing" tone="surface">
       <SectionHeading
+        centered
         eyebrow="Pricing"
         title="Free while the product is in development"
         description="No card required. Paid plans are not available yet, and nothing here is charged for."
       />
 
       {/*
-        max-w-4xl, not 3xl. Two 380px cards against a left-aligned heading on a
-        1440px page left half the section empty and read as an unfinished row;
-        at 56rem the pair balances the heading above it without either card
-        growing wider than a pricing card should be.
+        Centred, and narrower than the section.
+
+        A pricing pair is not a full-width row of content — it is a choice
+        between two things, and centring it is what says so. Left-aligned at
+        56rem on a 1440px page it read as an unfinished row that had run out of
+        cards.
       */}
-      <div className="mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
+      <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
         {PLANS.map((plan) => (
           <Panel
             key={plan.name}
@@ -678,6 +681,7 @@ function Faq() {
   return (
     <Section id="faq">
       <SectionHeading
+        centered
         eyebrow="FAQ"
         title="Questions worth asking before you trust a tool with this"
       />
@@ -687,7 +691,7 @@ function Faq() {
         operable, findable by the browser's own in-page search — which an
         accordion built from divs is not — and it works before hydration.
       */}
-      <div className="mt-10 max-w-3xl divide-y divide-line border-y border-line">
+      <div className="mx-auto mt-10 max-w-3xl divide-y divide-line border-y border-line">
         {FAQS.map((item) => (
           <details key={item.q} className="group">
             <summary className="focus-ring flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-left text-body-lg font-medium text-fg transition-colors hover:text-fg-accent">
@@ -794,20 +798,33 @@ function Section({
  * centred column has to find the start of every line; a left-aligned one has a
  * single edge to run down.
  *
- * Centring survives in exactly one place, the closing call to action, where it
- * marks the end of the argument rather than being the house style.
+ * Centring is the exception rather than the house style: the six narrative
+ * sections run left, and only pricing, the FAQ and the closing call to action
+ * centre — the three whose content is a centred island rather than a column of
+ * prose.
  */
 function SectionHeading({
   eyebrow,
   title,
   description,
+  centered = false,
 }: {
   eyebrow: string
   title: string
   description?: string
+  /**
+   * For a section whose content is itself centred — pricing and the FAQ.
+   *
+   * Those two are a choice between options and a reference list, not a stretch
+   * of narrative, so their content is a centred island narrower than the
+   * section. A left-aligned heading over a centred island leaves the two with
+   * different left edges, which reads as a mistake rather than as a rhythm
+   * change. Where the content centres, the heading centres with it.
+   */
+  centered?: boolean
 }) {
   return (
-    <div className="max-w-2xl">
+    <div className={cn('max-w-2xl', centered && 'mx-auto text-center')}>
       <p className="eyebrow text-fg-accent">{eyebrow}</p>
       {/* `text-balance` so a two-line heading breaks evenly instead of
           stranding one word on the second line. */}
