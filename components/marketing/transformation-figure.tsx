@@ -1,117 +1,148 @@
 import * as React from 'react'
 
-import { ArrowRight, FileText, ShieldCheck, Target } from 'lucide-react'
+import { Check, Minus } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
 /**
- * The hero figure: resume + job description → optimized resume.
+ * The hero figure: what the product actually produces.
  *
- * Drawn with real DOM and text rather than an illustration, so it scales, reads
- * in both themes, respects the user's font size, and does not ship an image.
- * Each panel is decorative in aggregate — the surrounding copy carries the
- * meaning — so the whole figure is hidden from assistive technology and
- * described once by its caption.
+ * This used to be three panels of grey rounded bars with an arrow between
+ * them — the placeholder-lines mock that every product page ships, which says
+ * "there is a document involved" and nothing else. It is also the single most
+ * recognisable generated-template element there is, precisely because it
+ * carries no information: the same figure works for a CRM, a note-taking app
+ * or an invoice tool.
+ *
+ * What replaced it is the product's real output, with real text: four
+ * requirements from a posting, matched against evidence, two of them evidenced
+ * and quoted, two of them reported as gaps and explicitly *not* written in.
+ * That is the entire proposition in one panel, and it cannot be mistaken for
+ * any other product's hero.
+ *
+ * Static markup, no image, no animation. It reads in both themes, scales with
+ * the user's font size, and costs one paint.
  */
 
-function DocumentLines({ widths, tone }: { widths: number[]; tone: 'muted' | 'accent' }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      {widths.map((width, index) => (
-        <div
-          key={index}
-          className={cn(
-            'h-1.5 rounded-full',
-            tone === 'accent' ? 'bg-accent/45' : 'bg-fg-subtle/25',
-          )}
-          style={{ width: `${width}%` }}
-        />
-      ))}
-    </div>
-  )
+interface Row {
+  requirement: string
+  status: 'strong' | 'missing'
+  /** The resume span the match rests on. Present only for a match. */
+  evidence?: string
+  /** Why nothing was written. Present only for a gap. */
+  note?: string
 }
 
-function Panel({
-  label,
-  icon,
-  children,
-  className,
-  highlighted = false,
-}: {
-  label: string
-  icon: React.ReactNode
-  children: React.ReactNode
-  className?: string
-  highlighted?: boolean
-}) {
-  return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-3 rounded-lg border bg-surface p-4 shadow-xs',
-        highlighted ? 'border-line-accent ring-1 ring-accent/20' : 'border-line',
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            'flex size-6 items-center justify-center rounded-md',
-            highlighted ? 'bg-accent-subtle text-fg-accent' : 'bg-sunken text-fg-subtle',
-          )}
-        >
-          {icon}
-        </span>
-        <span className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">
-          {label}
-        </span>
-      </div>
-      {children}
-    </div>
-  )
-}
+const ROWS: Row[] = [
+  {
+    requirement: 'Strong SQL and PostgreSQL',
+    status: 'strong',
+    evidence: 'Migrated the reporting database to PostgreSQL, cutting query times by 35%',
+  },
+  {
+    requirement: 'Containerised deployment',
+    status: 'strong',
+    evidence: 'Managed the deployment pipeline across three services using Docker',
+  },
+  {
+    requirement: 'AWS Lambda',
+    status: 'missing',
+    note: 'No evidence on your resume, so it was not added',
+  },
+  {
+    requirement: 'Kubernetes',
+    status: 'missing',
+    note: 'No evidence on your resume, so it was not added',
+  },
+]
 
 export function TransformationFigure({ className }: { className?: string }) {
   return (
-    <figure className={cn('w-full', className)}>
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center" aria-hidden="true">
-        <div className="flex flex-col gap-3">
-          <Panel label="Your resume" icon={<FileText className="size-3.5" />}>
-            <DocumentLines widths={[92, 78, 85, 64]} tone="muted" />
-          </Panel>
-          <Panel label="Job description" icon={<Target className="size-3.5" />}>
-            <DocumentLines widths={[88, 70, 90]} tone="muted" />
-          </Panel>
-        </div>
-
-        <div className="flex justify-center py-1 sm:py-0">
-          <span className="flex size-9 items-center justify-center rounded-full border border-line bg-surface text-fg-subtle shadow-xs">
-            <ArrowRight className="size-4 rotate-90 sm:rotate-0" />
-          </span>
-        </div>
-
-        <Panel
-          label="Tailored resume"
-          icon={<ShieldCheck className="size-3.5" />}
-          highlighted
-          className="sm:self-stretch sm:justify-center"
-        >
-          <DocumentLines widths={[95, 88, 92, 76, 84]} tone="accent" />
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {['Evidence-checked', 'Single column', 'Selectable text'].map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full border border-success-line bg-success-bg px-2 py-0.5 text-3xs font-medium text-success-fg"
-              >
-                {chip}
-              </span>
-            ))}
+    <figure className={cn('w-full min-w-0', className)}>
+      <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
+        {/* ------------------------------------------------------- header */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-3">
+          <div className="min-w-0">
+            <p className="eyebrow text-fg-subtle">Requirement match</p>
+            <p className="mt-0.5 truncate text-meta font-semibold text-fg">
+              Backend Engineer · Meridian Data
+            </p>
           </div>
-        </Panel>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-display-xs font-semibold tabular-nums text-fg">74</span>
+            <span className="text-2xs font-medium text-fg-subtle">readiness</span>
+          </div>
+        </div>
+
+        {/* --------------------------------------------------------- rows */}
+        <ul className="divide-y divide-line">
+          {ROWS.map((row) => {
+            const matched = row.status === 'strong'
+            return (
+              <li key={row.requirement} className="flex gap-3 px-4 py-3">
+                {/*
+                  Icon and label both. The tick and the dash are the fast
+                  channel; "Evidenced" and "Not added" are the channel that
+                  survives a colour vision deficiency, and this figure is
+                  making an argument about honesty, so it had better be
+                  readable by everyone.
+                */}
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full',
+                    matched ? 'bg-success-bg text-success-solid' : 'bg-danger-bg text-danger-solid',
+                  )}
+                  aria-hidden="true"
+                >
+                  {matched ? <Check className="size-2.5" /> : <Minus className="size-2.5" />}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                    <p className="min-w-0 text-meta font-medium text-fg">{row.requirement}</p>
+                    <p
+                      className={cn(
+                        'shrink-0 text-2xs font-medium',
+                        matched ? 'text-success-fg' : 'text-danger-fg',
+                      )}
+                    >
+                      {matched ? 'Evidenced' : 'Not added'}
+                    </p>
+                  </div>
+
+                  {/*
+                    A left rule, not a quote glyph. The glyph was set at 10px
+                    to sit with the text and at that size it reads as a
+                    smudge — and the product already marks quoted resume text
+                    with an accent rule everywhere else, so this now matches.
+                  */}
+                  {row.evidence ? (
+                    <p className="mt-1.5 border-l-2 border-line-accent pl-2.5 text-2xs leading-relaxed text-fg-muted">
+                      {row.evidence}
+                    </p>
+                  ) : null}
+
+                  {row.note ? (
+                    <p className="mt-1 text-2xs leading-relaxed text-fg-subtle">{row.note}</p>
+                  ) : null}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+
+        {/* ------------------------------------------------------- footer */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line bg-sunken px-4 py-2.5">
+          <p className="text-2xs text-fg-muted">
+            <span className="font-medium text-fg">2 of 4</span> requirements evidenced
+          </p>
+          <p className="text-2xs font-medium text-success-fg">Nothing invented</p>
+        </div>
       </div>
 
-      <figcaption className="mt-4 text-center text-xs text-fg-subtle">
-        Your resume and a job description go in. A tailored, ATS-friendly resume comes out — built
-        only from experience you already have.
+      <figcaption className="mt-3 measure text-2xs leading-relaxed text-fg-subtle">
+        An example readout. Requirements you can evidence are strengthened using your own words; the
+        rest are reported as gaps and left off the resume.
       </figcaption>
     </figure>
   )

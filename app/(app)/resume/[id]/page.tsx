@@ -4,12 +4,11 @@ import { notFound } from 'next/navigation'
 
 import { Eye, FileText } from 'lucide-react'
 
-import { PageBody, PageHeader } from '@/components/app/app-shell'
 import { ChangeReview, type ReviewChange } from '@/components/app/change-review'
 import { ResumeDocument } from '@/components/app/resume-document'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, EmptyState } from '@/components/ui/feedback'
+import { PageBody, PageHeader, Panel, Section, Stack } from '@/components/ui/layout'
 import { activeCapabilities } from '@/lib/ai'
 import { AppError } from '@/lib/errors'
 import { formatDate, pluralize } from '@/lib/utils'
@@ -63,7 +62,10 @@ export default async function ResumePage({
         <PageHeader
           title={resume.title}
           description={`Uploaded ${formatDate(resume.createdAt)} · ${resume.sourceFormat.toUpperCase()}`}
-          breadcrumb={{ href: '/dashboard', label: 'Dashboard' }}
+          breadcrumbs={[
+            { href: '/dashboard', label: 'Dashboard' },
+            { href: `/resume/${resume.id}`, label: resume.title },
+          ]}
           actions={
             <Button variant="secondary" asChild>
               <Link href={`/resume/${resume.id}/preview`}>
@@ -73,18 +75,20 @@ export default async function ResumePage({
             </Button>
           }
         />
-        <PageBody className="flex flex-col gap-6">
-          <EmptyState
-            icon={<FileText className="size-5" />}
-            title="No optimization has been run for this resume yet"
-            description="Run an optimization against a job description to see proposed changes side by side with your original."
-            action={
-              <Button asChild>
-                <Link href="/optimize">Start an optimization</Link>
-              </Button>
-            }
-          />
-          <ResumeDocument profile={resume.profile} title="Your resume as parsed" />
+        <PageBody>
+          <Stack gap="lg">
+            <EmptyState
+              icon={<FileText className="size-5" />}
+              title="No optimization has been run for this resume yet"
+              description="Run an optimization against a job description to see proposed changes side by side with your original."
+              action={
+                <Button asChild>
+                  <Link href="/optimize">Start an optimization</Link>
+                </Button>
+              }
+            />
+            <ResumeDocument profile={resume.profile} title="Your resume as parsed" />
+          </Stack>
         </PageBody>
       </>
     )
@@ -118,7 +122,10 @@ export default async function ResumePage({
       <PageHeader
         title={resume.title}
         description={`Optimization run ${formatDate(run.createdAt)} · ${changes.length} ${pluralize(changes.length, 'change')} proposed`}
-        breadcrumb={{ href: '/dashboard', label: 'Dashboard' }}
+        breadcrumbs={[
+          { href: '/dashboard', label: 'Dashboard' },
+          { href: `/resume/${resume.id}`, label: 'Review' },
+        ]}
         actions={
           <>
             <Button variant="secondary" asChild>
@@ -134,50 +141,66 @@ export default async function ResumePage({
         }
       />
 
-      <PageBody className="flex flex-col gap-6">
-        <ChangeReview
-          runId={run.id}
-          resumeId={resume.id}
-          changes={changes}
-          unaddressed={changeSet?.unaddressedRequirements ?? []}
-          baselineScore={analysis.overallScore}
-          projectedScore={run.projectedScore ?? analysis.overallScore}
-          provider={run.provider}
-          canRewriteProse={activeCapabilities().canRewriteProse}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <ResumeDocument profile={resume.profile} title="Original" />
-          <ResumeDocument
-            profile={decided.profile}
-            title="With your decisions applied"
-            highlighted
+      <PageBody>
+        <Stack gap="xl">
+          <ChangeReview
+            runId={run.id}
+            resumeId={resume.id}
+            changes={changes}
+            unaddressed={changeSet?.unaddressedRequirements ?? []}
+            baselineScore={analysis.overallScore}
+            projectedScore={run.projectedScore ?? analysis.overallScore}
+            provider={run.provider}
+            canRewriteProse={activeCapabilities().canRewriteProse}
           />
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle as="h2">Version history</CardTitle>
-            <CardDescription>
-              Version 1 is always your original upload, kept untouched.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="flex flex-col divide-y divide-line">
-              {versions.map((version) => (
-                <li key={version.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-fg">{version.label}</p>
-                    <p className="text-xs text-fg-subtle">{formatDate(version.createdAt)}</p>
-                  </div>
-                  <Badge tone={version.versionNumber === 1 ? 'accent' : 'neutral'}>
-                    v{version.versionNumber}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+          {/* ------------------------------------------------- documents */}
+          <Section
+            title="Your resume, before and after"
+            description="The right-hand copy is rebuilt from your decisions alone. Rejecting a change removes it from this document immediately."
+          >
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ResumeDocument profile={resume.profile} title="Original" />
+              <ResumeDocument
+                profile={decided.profile}
+                title="With your decisions applied"
+                highlighted
+              />
+            </div>
+          </Section>
+
+          {/* --------------------------------------------------- versions */}
+          <Section
+            title="Version history"
+            description="Version 1 is always your original upload, kept untouched."
+          >
+            <Panel flush>
+              <ul className="divide-y divide-line">
+                {versions.map((version) => (
+                  <li
+                    key={version.id}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-meta font-medium text-fg">{version.label}</p>
+                      <p className="text-2xs text-fg-subtle">
+                        <time dateTime={version.createdAt.toISOString()}>
+                          {formatDate(version.createdAt)}
+                        </time>
+                      </p>
+                    </div>
+                    <Badge tone={version.versionNumber === 1 ? 'accent' : 'neutral'}>
+                      v{version.versionNumber}
+                      {version.versionNumber === 1 ? (
+                        <span className="text-fg-subtle">· original</span>
+                      ) : null}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          </Section>
+        </Stack>
       </PageBody>
     </>
   )

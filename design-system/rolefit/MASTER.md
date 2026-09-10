@@ -1,233 +1,327 @@
-# Design System Master File
+# RoleFit Design System — Master
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
-> If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
+> **Source of truth:** `app/globals.css`. This file explains the system and the
+> reasoning behind it; the CSS is what actually ships. If the two disagree, the
+> CSS is right and this file is stale — fix it.
+>
+> Page-specific overrides, if any, live in `design-system/rolefit/pages/[page].md`
+> and take precedence over this file.
 
----
-
-**Project:** RoleFit
-**Generated:** 2026-09-06 22:11:26
-**Category:** SaaS (General)
-**Design Dials:** Variance 3/10 (Centered / Minimal) | Motion 3/10 (Subtle) | Density 6/10 (Standard)
-
----
-
-## Global Rules
-
-### Color Palette
-
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#2563EB` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#3B82F6` | `--color-secondary` |
-| On Secondary | `#000000` | `--color-on-secondary` |
-| Accent/CTA | `#EA580C` | `--color-accent` |
-| On Accent/CTA | `#000000` | `--color-on-accent` |
-| Background | `#F8FAFC` | `--color-background` |
-| Foreground | `#1E293B` | `--color-foreground` |
-| Card | `#FFFFFF` | `--color-card` |
-| Card Foreground | `#1E293B` | `--color-card-foreground` |
-| Muted | `#E9EFF8` | `--color-muted` |
-| Muted Foreground | `#475569` | `--color-muted-foreground` |
-| Border | `#E2E8F0` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#2563EB` | `--color-ring` |
-
-**Color Notes:** Trust blue + orange CTA contrast [Accent adjusted from #F97316]
-
-### Typography
-
-- **Heading Font:** Plus Jakarta Sans
-- **Body Font:** Plus Jakarta Sans
-- **Mood:** friendly, modern, saas, clean, approachable, professional
-- **Google Fonts:** [Plus Jakarta Sans + Plus Jakarta Sans](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap)
-
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-```
-
-### Spacing Variables
-
-*Density: 6/10 — Standard*
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
-
-### Shadow Depths
-
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+**Project:** RoleFit — evidence-based, job-specific resume optimization
+**Design dials:** Variance 4/10 (balanced, structural) · Motion 3/10 (subtle) ·
+Density 8/10 (dense product)
 
 ---
 
-## Component Specs
+## The direction
 
-### Buttons
+**An instrument, not a brochure.**
 
-```css
-/* Primary Button */
-.btn-primary {
-  background: #EA580C;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
+RoleFit measures one document against another and reports a verdict on
+somebody's job application. The interface is built like a measuring device:
+hairlines instead of shadows, a canvas one shade off the card instead of
+elevation, tabular figures everywhere, and colour spent only where it states
+something.
 
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
+Three consequences that explain most of the decisions below:
 
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #2563EB;
-  border: 2px solid #2563EB;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
+1. **Colour is information.** Blue is the identity — the mark, links, focus,
+   selection. White and near-black carry everything structural. Nothing else
+   appears except the three verdict hues, and only where they *are* the
+   verdict: green for met, amber for partial, red for missing.
 
-### Cards
+2. **The primary action is near-black, not blue.** This looks like a mistake
+   until you use the product. The only thing on these screens worth the eye's
+   first stop is the verdict on someone's resume; a blue button on every panel
+   competes with that and wins, which is the wrong way round.
 
-```css
-.card {
-  background: #F8FAFC;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #2563EB;
-  outline: none;
-  box-shadow: 0 0 0 3px #2563EB20;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
+3. **A bordered box is not free.** Every container costs a border, a shadow and
+   24px of padding to state a grouping that a heading and a hairline already
+   state — and once every section is a card, the page has no emphasis left to
+   spend on the one thing that matters.
 
 ---
 
-## Style Guidelines
+## Colour
 
-**Style:** Minimalism & Swiss Style
+Three layers. Never hard-code a colour in a component; use a semantic token.
 
-**Keywords:** Clean, simple, spacious, functional, white space, high contrast, geometric, sans-serif, grid-based, essential
+| Layer | Where | Example |
+| --- | --- | --- |
+| 1 — primitive | `@theme` in globals.css | `--color-signal-600`, `--color-ink-950` |
+| 2 — semantic | `:root` / `.dark` | `--surface-base`, `--content-primary` |
+| 3 — utility | `@theme inline` | `bg-surface`, `text-fg`, `border-line` |
 
-**Best For:** Enterprise apps, dashboards, documentation sites, SaaS platforms, professional tools
+Two ramps and three verdict hues:
 
-**Key Effects:** Subtle hover (200-250ms), smooth transitions, sharp shadows if any, clear type hierarchy, fast loading
+- **signal** — brand blue (`#2457e6` at 600). Identity, links, focus, selection.
+- **ink** — cool neutral. Text, surfaces, borders, and the primary action.
+  Cool rather than warm: against this blue a warm grey reads as a second,
+  muddier hue rather than as a neutral.
+- **verdant / caution / crimson** — met, partial, missing.
 
-### Page Pattern
+### Surfaces
 
-**Pattern Name:** Hero + Features + CTA
+`canvas` (page ground) → `surface` (panel) → `raised` (menu, dialog) →
+`sunken` (a well or track) → `hover` / `selected` (interaction responses).
 
-- **Conversion Strategy:** Deep CTA placement. For CTA label text, verify at least 4.5:1 against the button fill; use 7:1 only when the product explicitly targets AAA normal-text contrast. Keep focus and component boundaries independently visible. Disable hero parallax under reduced motion and render its static final state.
-- **CTA Placement:** Hero (sticky) + Bottom
-- **Section Order:** Hero with headline/image > Value prop > Key features (3-5) > CTA section > Footer
+`hover` and `selected` are held apart from `sunken` deliberately. One token was
+doing both jobs and it broke outright in dark mode, where `sunken` and `canvas`
+resolved to the same value — so every row hover on the canvas highlighted to
+exactly the colour it already was.
+
+### Rules
+
+- Colour never carries meaning alone. Every status pairs a hue with an icon
+  **and** a text label. This is a WCAG requirement and it is also what makes
+  the diff view legible to the roughly one in twelve men with a colour vision
+  deficiency who will use this product to apply for a job.
+- Text meets 4.5:1 against its own background. Never dim a whole panel with
+  `opacity` to signal unavailability — it dims the text too, and takes it under
+  the threshold.
+- The CTA blue fill (`bg-cta`) is for the single highest-intent action on a
+  marketing page. Using it twice on one screen is a bug, not a style choice.
+
+---
+
+## Typography
+
+Three faces, each with one job and a boundary it does not cross.
+
+| Face | Scope |
+| --- | --- |
+| **Instrument Sans** (`font-sans`) | Every interface surface, all body copy |
+| **Instrument Serif** (`font-display`) | Marketing and auth headlines **only** |
+| **IBM Plex Mono** (`font-mono`) | Text quoted from a document; machine identifiers |
+
+The serif is absent from the authenticated product on purpose. A serif on a
+data panel heading reads boutique-editorial where this product needs to read as
+an instrument. Instrument Sans and Instrument Serif are one design programme
+rather than two faces that happen to sit together, which is what stops the
+pairing reading as two arbitrary picks off a font host.
+
+The monospace is not decoration: evidence is shown verbatim, and the face is
+what tells the reader they are looking at the document rather than at our prose
+about it.
+
+### The scale
+
+Named by role, never by size, so a call site says what it is setting and two
+places needing the same thing cannot drift a sixteenth of a rem apart.
+
+| Token | Size | Use |
+| --- | --- | --- |
+| `text-3xs` | 10px | Micro-labels |
+| `text-2xs` | 11px | Dense secondary detail, captions |
+| `eyebrow` | 11px caps | The uppercase label above a section or figure |
+| `text-meta` | 13px | Table cells, metadata rows — the product's workhorse |
+| `text-sm` | 14px | Body |
+| `text-body-lg` | 15px | A control or paragraph carrying weight |
+| `text-title` | 17px | Panel and section headings |
+| `text-display-xs/sm/md/lg/xl` | 20–56px | Grotesque display steps |
+| `text-serif-xs/sm/md/lg` | 28–56px | **Serif** display steps |
+
+The serif has its own steps because a serif needs looser tracking than a
+grotesque at the same size — the serifs already close the gaps between letters,
+so the −0.024em that makes Instrument Sans look precise at 56px makes
+Instrument Serif look jammed. Separate steps rather than a `tracking-*`
+override, because both would be utilities setting `letter-spacing` and their
+emitted order is not something Tailwind promises.
+
+`eyebrow` sets type only, never colour, for the same reason: seven call sites
+need a tone other than the default.
+
+Figures are tabular by default (`table`, `time`, `[data-numeric]` in the base
+layer). A column of scores where 1 is narrower than 8 does not line up, and a
+count that changes width as it increments makes the row twitch.
+
+---
+
+## Shape, spacing, layout
+
+**Radius** — `xs` 2px through `2xl` 12px. Tight. Generous corner radius is the
+single strongest period marker in an interface; an instrument has edges.
+
+**Spacing** — 4px base (`--spacing: 0.25rem`), dense product density.
+
+**Shadows** — nearly gone, and cool-tinted where they remain. Separation is
+carried by a hairline border and by the canvas being a shade darker than the
+card. Reserved for surfaces that genuinely float: menus, popovers, dialogs, a
+sticky bar — and the print-preview sheet, which is standing in for a physical
+object.
+
+**Containers** — page width is a token, not a per-page guess:
+
+| Utility | Width | Use |
+| --- | --- | --- |
+| `container-app` | 78rem | App screens |
+| `container-page` | 84rem | Marketing sections |
+| `container-prose` | 42rem | Policy pages and running text |
+
+**Measures** — `measure-tight` 34ch, `measure` 62ch, `measure-wide` 72ch. Copy
+set wider than ~72 characters loses the reader's place on the return sweep.
+
+**Z-index** — a named stack (`--z-base` … `--z-toast`). Layering is a global
+property and belongs in one list, not chosen independently per component.
+
+---
+
+## Components
+
+Layer 3 lives in `components/ui/`. Reach for these before writing a container.
+
+| Component | Purpose |
+| --- | --- |
+| `layout.tsx` | `PageHeader`, `PageBody`, `Section`, `Panel`, `PanelHeader`, `Stack`, `Toolbar`, `DescriptionList` |
+| `table.tsx` | `Table` + `TableCards` + `ResponsiveTable` — a real table ≥md, stacked records below |
+| `tabs.tsx` | Radix tabs, underline style |
+| `dialog.tsx` | `AlertDialog` only — a decision that must be answered |
+| `menu.tsx` | Radix dropdown menu, tooltip, `InfoTip` |
+| `button.tsx` | `primary` (near-black), `cta`, `secondary`, `ghost`, `danger`, `link` |
+| `field.tsx` | The form accessibility contract, handled once |
+| `feedback.tsx` | `Badge`, `MatchBadge`, `ChangeBadge`, `Alert`, `Callout`, `EmptyState`, `Skeleton` |
+| `score.tsx` | `ScoreRing`, `ScoreBar`, `ScoreBreakdown`, `ScoreDelta`, `ScoreDisclaimer` |
+| `stat.tsx` | `Stat`, `StatRow`, `StatDelta` |
+
+### Panel, not card
+
+`Panel` is the default discrete surface: a hairline, no shadow, no hover lift.
+A `flush` panel wraps a table or list and gets a `PanelHeader`. A *padded*
+panel should not have an internal heading — use `Section` outside it, because a
+heading inside a bordered box inside a page that already has a heading is the
+nested-container problem in miniature.
+
+There is no `Card`. It was removed once every screen had been rebuilt on
+`Panel` and `Section` and it had no call sites left.
+
+### Tables
+
+A list of records is a table. Flex rows with the label pushed left and metadata
+pushed right reflow nicely and cost the one thing a list of records is for: on
+a wide screen nothing lines up, so you cannot compare the fourth row's score
+against the first's without reading both.
+
+Two renders of the same data, switched at `md` by `ResponsiveTable` — a real
+`<table>` with `scope`-carrying headers above, stacked records below. Not one
+grid pretending to be both: a `<td>` that becomes a block loses its association
+with its header, and a screen reader then reads six unlabelled values.
+
+### Status and repetition
+
+State the status **once**, at the level that owns it. A list of gaps under a
+heading that says these are the gaps does not need "Missing / not verified"
+stamped twenty times.
+
+---
+
+## Navigation
+
+Three states, not two:
+
+| Width | Navigation |
+| --- | --- |
+| `< md` | Mobile header + focus-trapping slide-over drawer |
+| `md … lg` | Icon rail, 3.75rem, labels stacked under the glyphs |
+| `≥ lg` | Full sidebar, 15.5rem |
+
+One DOM tree switched by CSS, never by measuring the viewport in JavaScript —
+the server render and the first client render must agree about which navigation
+exists. Labels stay in the accessibility tree at every width; only their
+presentation changes.
+
+The active marker is a 2px rail, not a filled pill. A pill spends a saturated
+block of colour on a label the user already knows they are looking at; weight
+carries the state as well as colour does, so the cue survives being
+desaturated.
+
+The full sidebar returns at `lg` rather than `xl`: a 1280px laptop reports a
+layout viewport of ~1265px once a classic scrollbar is subtracted, so an `xl`
+threshold hands the most common laptop width the tablet rail.
 
 ---
 
 ## Motion
 
-**Scroll Reveal** (Subtle) — Trigger: scroll (viewport enter) | Duration: 300-400ms | Easing: `power1.out`
+Motion clarifies state; it never entertains. **The test for any animation is
+whether removing it would lose information** — which direction a panel came
+from, that a press registered, that a value changed. If not, it does not
+belong.
 
-```js
-gsap.from(el, { opacity: 0, y: 12, duration: 0.35, ease: 'power1.out', scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none reverse' } });
-```
+Three durations and only three: `instant` 90ms, `fast` 160ms, `settle` 280ms.
+A system with nine of these ends up with each component picking one at random.
+Easing is `--ease-standard` unless there is a reason.
 
-**Framework notes:** Requires the ScrollTrigger plugin registered once via gsap.registerPlugin(ScrollTrigger); Use matchMedia('(prefers-reduced-motion: reduce)') to skip non-essential motion and render the final state immediately
-
-- ✅ Keep the y offset small (8-16px) so it reads as a fade, not a slide
-- ❌ Don't reveal below-the-fold content needed for SEO/crawlers as invisible-by-default without a no-JS fallback
-- ⚡ toggleActions 'play none none reverse' avoids re-triggering on every scroll direction change
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Excessive animation
-- ❌ Dark mode by default
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
+- Animate `transform` and `opacity`. Never `width` or `height` — a meter or a
+  progress track uses `scaleX`, so the compositor handles it instead of layout
+  re-running every frame.
+- Exits are faster than entrances: the user has already decided.
+- Progress is reported by **stage**, never by a fake percentage. A bar that
+  fills to 90% and waits is a lie the user catches every time.
+- One entrance per page, on the container — not a stagger across every child.
+  Staggered lists look considered in a demo and feel slow on the fourth visit.
+- `prefers-reduced-motion` shortens durations globally rather than removing
+  animations, which keeps `both` fill modes landing on their end state instead
+  of stranding content at `opacity: 0`.
 
 ---
 
-## Pre-Delivery Checklist
+## Accessibility
 
-Before delivering any UI code, verify:
+Targets WCAG 2.2 AA, enforced by `tests/e2e/accessibility.spec.ts`, which runs
+axe over every page in both themes and checks eight breakpoints for horizontal
+overflow.
 
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+- Visible label on every control. Never placeholder-only.
+- Errors tied to their field by `aria-describedby`, announced live, with
+  `aria-invalid` and the focus ring agreeing about validity.
+- One focus treatment everywhere: the `focus-ring` utility. A keyboard user
+  learns its shape once.
+- Icon-only controls carry an `aria-label`.
+- Skip link is the first tab stop on every page, above every other layer.
+- Scroll containers are focusable — one that only responds to a mouse wheel
+  strands anyone on a keyboard or a switch device.
+- Radix for anything with a focus contract: dialogs, menus, tabs, tooltips.
+
+---
+
+## Anti-patterns
+
+Not aesthetic preferences — each of these was in the product and was removed.
+
+- ❌ **A card around every grouping.** Use a heading and a hairline.
+- ❌ **Nested bordered boxes.** Panel → bordered list item → dashed inner box
+  was three border levels to state one list.
+- ❌ **Placeholder-line mocks.** Grey rounded bars standing in for a document
+  say nothing and work equally well for a CRM or an invoice tool. Show the
+  real output with real text.
+- ❌ **A tally as a headline metric.** "You have uploaded six resumes" is not
+  something anyone acts on. Lead with a verdict or a next action.
+- ❌ **A record with no identity.** "8 strong, 23 missing" without the role it
+  was measured against is a history of job applications with the applications
+  left out.
+- ❌ **Flooding a region with a status colour.** Twenty-three rows on an amber
+  background to deliver a message whose own text says nothing is wrong. Use an
+  accent edge.
+- ❌ **`opacity` to signal unavailability.** It dims the text below 4.5:1.
+- ❌ **Repeating a status per row** when the section heading already states it.
+- ❌ **Two copies of one action on one screen.**
+- ❌ **Emoji as icons.** SVG only, one set (Lucide).
+- ❌ **Centred prose in a narrow column.** The reader hunts for every line.
+- ❌ **Gradients, glassmorphism, floating blurred blobs, violet, orange.**
+- ❌ **Dark mode forced.** It is opt-in and follows the system by default.
+- ❌ **A component with no call site.** Nobody has checked it against a screen.
+
+---
+
+## Pre-delivery checklist
+
+- [ ] No raw hex, radius, shadow, z-index or page width in a component
+- [ ] Every status carries an icon **and** a text label
+- [ ] Text ≥ 4.5:1 in both themes; no `opacity` on a text container
+- [ ] `focus-ring` on every interactive element; visible and consistent
+- [ ] Only `transform` / `opacity` animated; `prefers-reduced-motion` honoured
+- [ ] Numeric columns are tabular and right-aligned
+- [ ] Tables have a stacked equivalent below `md`, each value still labelled
+- [ ] No horizontal scroll at 320 / 375 / 768 / 1024 / 1280 / 1440 / 1920
+- [ ] Serif confined to marketing and auth; product chrome is grotesque
+- [ ] `npm run verify` clean, and `npx playwright test` green

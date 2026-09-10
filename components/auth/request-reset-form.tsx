@@ -49,12 +49,12 @@ export function RequestResetForm() {
         <div className="flex size-11 items-center justify-center rounded-full bg-success-bg text-success-fg">
           <MailCheck className="size-5" aria-hidden="true" />
         </div>
-        <h1 className="mt-4 text-2xl font-bold tracking-tight text-fg">Check your email</h1>
-        <p className="mt-2 text-sm text-fg-muted">
+        <h1 className="mt-4 text-display-sm font-semibold text-fg">Check your email</h1>
+        <p className="mt-2 text-meta leading-relaxed text-fg-muted">
           If an account exists for <span className="font-medium text-fg">{email}</span>, a reset
           link is on its way. It is valid for one hour and can be used once.
         </p>
-        <p className="mt-4 text-sm text-fg-muted">
+        <p className="mt-4 text-meta leading-relaxed text-fg-muted">
           Nothing arrived? Check your spam folder, then{' '}
           <button
             type="button"
@@ -65,7 +65,7 @@ export function RequestResetForm() {
           </button>
           .
         </p>
-        <p className="mt-6 text-sm text-fg-muted">
+        <p className="mt-6 text-meta leading-relaxed text-fg-muted">
           <Link
             href="/login"
             className="font-medium text-fg-accent underline underline-offset-4 hover:text-fg"
@@ -79,8 +79,8 @@ export function RequestResetForm() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-fg">Reset your password</h1>
-      <p className="mt-2 text-sm text-fg-muted">
+      <h1 className="text-display-sm font-semibold text-fg">Reset your password</h1>
+      <p className="mt-2 text-meta leading-relaxed text-fg-muted">
         Enter the address you signed up with and we will email you a link.
       </p>
 
@@ -122,7 +122,7 @@ export function RequestResetForm() {
         </Button>
       </form>
 
-      <p className="mt-6 text-sm text-fg-muted">
+      <p className="mt-6 text-meta leading-relaxed text-fg-muted">
         Remembered it?{' '}
         <Link
           href="/login"

@@ -6,6 +6,7 @@ import { Download, FileText, Printer } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
+import { Panel, Toolbar } from '@/components/ui/layout'
 import { apiPost, toDisplayError } from '@/lib/client/api'
 
 /**
@@ -14,6 +15,10 @@ import { apiPost, toDisplayError } from '@/lib/client/api'
  * The document is generated server-side and verified before the download is
  * offered, so the button reports "Preparing…" rather than downloading
  * immediately — the wait is a real check, not a spinner for its own sake.
+ *
+ * A bordered bar rather than a bare row of buttons. On the preview page the
+ * next thing below is a page-sized white sheet, and three unbounded buttons
+ * floating above it read as belonging to the document rather than to the app.
  */
 
 interface DocumentResponse {
@@ -47,36 +52,42 @@ export function ExportBar({ resumeId, runId }: { resumeId: string; runId: string
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        <Button
-          onClick={() => void download('pdf')}
-          loading={busy === 'pdf'}
-          loadingLabel="Preparing PDF…"
-          disabled={busy !== null}
+      <Panel>
+        <Toolbar
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => window.print()}>
+                <Printer className="size-4" aria-hidden="true" />
+                Print
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => void download('docx')}
+                loading={busy === 'docx'}
+                loadingLabel="Preparing DOCX…"
+                disabled={busy !== null}
+              >
+                <FileText className="size-4" aria-hidden="true" />
+                Download DOCX
+              </Button>
+              <Button
+                onClick={() => void download('pdf')}
+                loading={busy === 'pdf'}
+                loadingLabel="Preparing PDF…"
+                disabled={busy !== null}
+              >
+                <Download className="size-4" aria-hidden="true" />
+                Download PDF
+              </Button>
+            </>
+          }
         >
-          <Download className="size-4" aria-hidden="true" />
-          Download PDF
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => void download('docx')}
-          loading={busy === 'docx'}
-          loadingLabel="Preparing DOCX…"
-          disabled={busy !== null}
-        >
-          <FileText className="size-4" aria-hidden="true" />
-          Download DOCX
-        </Button>
-        <Button variant="ghost" onClick={() => window.print()}>
-          <Printer className="size-4" aria-hidden="true" />
-          Print
-        </Button>
-      </div>
-
-      <p className="text-xs text-fg-subtle">
-        Both formats are single-column with selectable text, and are verified after generation by
-        reading the text back out of the file.
-      </p>
+          <p className="measure text-2xs leading-relaxed text-fg-subtle">
+            Both formats are single-column with selectable text, and are verified after generation
+            by reading the text back out of the file.
+          </p>
+        </Toolbar>
+      </Panel>
 
       {error ? (
         <Alert tone="danger" live>

@@ -88,8 +88,8 @@ export function ThemeToggle({ className }: { className?: string }) {
             title={label}
             onClick={() => select(value)}
             className={cn(
-              'inline-flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+              'focus-ring inline-flex size-6.5 cursor-pointer items-center justify-center rounded-md',
+              'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
               selected ? 'bg-surface text-fg shadow-xs' : 'text-fg-subtle hover:text-fg',
             )}
           >

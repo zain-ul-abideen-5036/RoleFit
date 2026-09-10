@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, FileText, Sparkles, XCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, FileText, Sparkles, XCircle } from 'lucide-react'
 
 import {
   ParsedResumeSummary,
@@ -13,9 +13,9 @@ import {
 } from '@/components/app/resume-uploader'
 import { Stepper, type Step } from '@/components/app/stepper'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldDescription, FieldLabel, Input, Textarea } from '@/components/ui/field'
-import { Alert, Badge } from '@/components/ui/feedback'
+import { Alert } from '@/components/ui/feedback'
+import { Panel, PanelHeader, Section, Stack } from '@/components/ui/layout'
 import { ScoreDisclaimer, ScoreRing } from '@/components/ui/score'
 import { apiGet, apiPost, toDisplayError } from '@/lib/client/api'
 import { JOB_DESCRIPTION, OPTIMIZATION_STAGES } from '@/lib/constants'
@@ -103,12 +103,21 @@ async function waitForRun(runId: string): Promise<void> {
 
 type Stage = (typeof OPTIMIZATION_STAGES)[number]['key']
 
-export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingResume[] }) {
+export function OptimizeWizard({
+  existingResumes,
+  initialResumeId,
+}: {
+  existingResumes: ExistingResume[]
+  /** Preselected from `?resume=<id>`, already checked against the account. */
+  initialResumeId?: string
+}) {
   const router = useRouter()
 
   const [stepIndex, setStepIndex] = React.useState(0)
   const [resume, setResume] = React.useState<UploadedResume | null>(null)
-  const [selectedResumeId, setSelectedResumeId] = React.useState<string | null>(null)
+  const [selectedResumeId, setSelectedResumeId] = React.useState<string | null>(
+    initialResumeId ?? null,
+  )
 
   const [jobText, setJobText] = React.useState('')
   const [jobTitle, setJobTitle] = React.useState('')
@@ -183,8 +192,15 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
   /* -------------------------------------------------------------- render */
 
   return (
-    <div className="flex flex-col gap-8">
-      <Stepper steps={STEPS} currentIndex={stepIndex} />
+    <Stack gap="lg">
+      {/*
+        The stepper sits on a rule, above the panel rather than inside it, so
+        the sequence reads as belonging to the page and the panel below is
+        simply the current step's content.
+      */}
+      <div className="border-b border-line pb-4">
+        <Stepper steps={STEPS} currentIndex={stepIndex} />
+      </div>
 
       {error ? (
         <Alert tone="danger" live title="Something went wrong">
@@ -199,7 +215,7 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
         Without the key, moving from step 2 to 3 swaps the contents of a node
         that never re-enters, so the panel changes silently and the eye has
         nothing telling it the change was the result of the button just pressed.
-        This is the one place in the flow where motion is carrying information
+        This is the one place in the flow where motion carries information
         rather than decorating: it ties the press to the panel that replaced
         the last one.
       */}
@@ -237,7 +253,7 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
 
         {stepIndex === 2 ? (
           busy || !analysis ? (
-            <ProcessingCard stage={stage} />
+            <ProcessingPanel stage={stage} />
           ) : (
             <StepAnalysis
               analysis={analysis}
@@ -248,8 +264,31 @@ export function OptimizeWizard({ existingResumes }: { existingResumes: ExistingR
           )
         ) : null}
 
-        {stepIndex === 3 ? <ProcessingCard stage={stage} /> : null}
+        {stepIndex === 3 ? <ProcessingPanel stage={stage} /> : null}
       </div>
+    </Stack>
+  )
+}
+
+/**
+ * The footer of a wizard step: back on the left, forward on the right.
+ *
+ * One component so the two controls do not drift apart in size, order or
+ * spacing between four steps — they had been written out inline each time,
+ * with `justify-end` on one step and `justify-between` on the next.
+ */
+function StepActions({ back, forward }: { back?: React.ReactNode; forward: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        // Reversed on mobile so the forward action sits under the thumb rather
+        // than above a "Back" the thumb reaches first.
+        'flex flex-col-reverse gap-2 sm:flex-row sm:items-center',
+        back ? 'sm:justify-between' : 'sm:justify-end',
+      )}
+    >
+      {back}
+      {forward}
     </div>
   )
 }
@@ -276,49 +315,71 @@ function StepResume({
   const ready = Boolean(uploaded ?? selectedResumeId)
 
   return (
-    <div className="flex flex-col gap-6">
+    <Stack gap="lg">
       {existingResumes.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle as="h2">Use a resume you have already uploaded</CardTitle>
-            <CardDescription>Or upload a new one below.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {existingResumes.map((item) => {
-                const selected = selectedResumeId === item.id
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelectExisting(item.id)}
-                      aria-pressed={selected}
-                      className={cn(
-                        'flex w-full cursor-pointer flex-col gap-1 rounded-lg border p-4 text-left transition-colors',
-                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-                        selected
-                          ? 'border-accent bg-accent-subtle'
-                          : 'border-line hover:border-line-strong hover:bg-sunken',
+        <Section
+          title="Use a resume you have already uploaded"
+          description="Or upload a new one below."
+        >
+          <ul
+            className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+            role="radiogroup"
+            aria-label="Choose an existing resume"
+          >
+            {existingResumes.map((item) => {
+              const selected = selectedResumeId === item.id
+              return (
+                <li key={item.id}>
+                  {/*
+                    `role="radio"` inside a radiogroup, not `aria-pressed` on a
+                    button. These are mutually exclusive — picking one deselects
+                    the rest — and a row of toggle buttons announces four
+                    independently-pressable controls, which describes the wrong
+                    interaction.
+                  */}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => onSelectExisting(item.id)}
+                    className={cn(
+                      'focus-ring flex w-full cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left',
+                      'transition-[border-color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+                      selected
+                        ? 'border-line-accent bg-selected'
+                        : 'border-line bg-surface hover:border-line-strong hover:bg-hover',
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <FileText
+                        className={cn(
+                          'size-4 shrink-0',
+                          selected ? 'text-fg-accent' : 'text-fg-subtle',
+                        )}
+                        aria-hidden="true"
+                      />
+                      {selected ? (
+                        <span className="inline-flex items-center gap-1 text-2xs font-medium text-fg-accent">
+                          <Check className="size-3.5" aria-hidden="true" />
+                          Selected
+                        </span>
+                      ) : (
+                        <span className="text-2xs text-fg-subtle">
+                          {item.sourceFormat.toUpperCase()}
+                        </span>
                       )}
-                    >
-                      <span className="flex items-center justify-between gap-2">
-                        <FileText className="size-4 text-fg-subtle" aria-hidden="true" />
-                        <Badge tone={selected ? 'accent' : 'neutral'}>
-                          {selected ? 'Selected' : item.sourceFormat.toUpperCase()}
-                        </Badge>
-                      </span>
-                      <span className="truncate text-sm font-medium text-fg">{item.title}</span>
-                      <span className="text-xs text-fg-subtle">
-                        {item.experienceCount} {pluralize(item.experienceCount, 'role')} ·{' '}
-                        {item.skillCount} {pluralize(item.skillCount, 'skill')}
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </CardContent>
-        </Card>
+                    </span>
+                    <span className="truncate text-meta font-medium text-fg">{item.title}</span>
+                    <span className="text-2xs text-fg-subtle">
+                      {item.experienceCount} {pluralize(item.experienceCount, 'role')} ·{' '}
+                      {item.skillCount} {pluralize(item.skillCount, 'skill')}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </Section>
       ) : null}
 
       {uploaded ? (
@@ -327,13 +388,15 @@ function StepResume({
         <ResumeUploader onUploaded={(resume) => onUploaded(resume)} />
       )}
 
-      <div className="flex justify-end">
-        <Button size="lg" disabled={!ready} onClick={onContinue}>
-          Continue
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </Button>
-      </div>
-    </div>
+      <StepActions
+        forward={
+          <Button size="lg" disabled={!ready} onClick={onContinue}>
+            Continue
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Button>
+        }
+      />
+    </Stack>
   )
 }
 
@@ -368,65 +431,73 @@ function StepJobDescription({
   const ready = length >= JOB_DESCRIPTION.minLength && !tooLong
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle as="h2">Paste the job description</CardTitle>
-        <CardDescription>
-          Include the whole posting — requirements, responsibilities and qualifications. The more
-          complete it is, the more accurate the match.
-        </CardDescription>
-      </CardHeader>
+    <Stack gap="lg">
+      <Section
+        title="Paste the job description"
+        description="Include the whole posting — requirements, responsibilities and qualifications. The more complete it is, the more accurate the match."
+      >
+        <Stack gap="md">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field id="jobTitle">
+              <FieldLabel optional>Job title</FieldLabel>
+              <Input
+                value={jobTitle}
+                onChange={(event) => onJobTitle(event.target.value)}
+                placeholder="Backend Engineer"
+              />
+              <FieldDescription>Used to label this run in your history.</FieldDescription>
+            </Field>
+            <Field id="company">
+              <FieldLabel optional>Company</FieldLabel>
+              <Input
+                value={company}
+                onChange={(event) => onCompany(event.target.value)}
+                placeholder="Meridian Data"
+              />
+            </Field>
+          </div>
 
-      <CardContent className="flex flex-col gap-5">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="jobTitle">
-            <FieldLabel optional>Job title</FieldLabel>
-            <Input
-              value={jobTitle}
-              onChange={(event) => onJobTitle(event.target.value)}
-              placeholder="Backend Engineer"
+          <Field
+            id="jobDescription"
+            error={
+              tooShort
+                ? `Add more of the posting — at least ${JOB_DESCRIPTION.minLength} characters.`
+                : tooLong
+                  ? 'That is longer than a job posting should be. Paste only the posting itself.'
+                  : undefined
+            }
+          >
+            <FieldLabel>Job description</FieldLabel>
+            {/*
+              Monospace, because this is pasted source text rather than the
+              product's own prose — the same reason evidence excerpts are set
+              in it. It also makes it obvious at a glance whether the paste
+              picked up the formatting or arrived as one run-on block.
+            */}
+            <Textarea
+              value={jobText}
+              onChange={(event) => onJobText(event.target.value)}
+              rows={16}
+              placeholder="Paste the full job posting here…"
+              className="min-h-72 font-mono text-meta leading-relaxed"
             />
+            <FieldDescription>
+              <span className="tabular-nums">{length.toLocaleString('en-GB')}</span> characters.
+              Anything pasted here is treated strictly as data — a posting cannot instruct the
+              optimizer.
+            </FieldDescription>
           </Field>
-          <Field id="company">
-            <FieldLabel optional>Company</FieldLabel>
-            <Input
-              value={company}
-              onChange={(event) => onCompany(event.target.value)}
-              placeholder="Meridian Data"
-            />
-          </Field>
-        </div>
+        </Stack>
+      </Section>
 
-        <Field
-          id="jobDescription"
-          error={
-            tooShort
-              ? `Add more of the posting — at least ${JOB_DESCRIPTION.minLength} characters.`
-              : tooLong
-                ? 'That is longer than a job posting should be. Paste only the posting itself.'
-                : undefined
-          }
-        >
-          <FieldLabel>Job description</FieldLabel>
-          <Textarea
-            value={jobText}
-            onChange={(event) => onJobText(event.target.value)}
-            rows={14}
-            placeholder="Paste the full job posting here…"
-            className="min-h-64 font-mono text-meta"
-          />
-          <FieldDescription>
-            <span className="tabular-nums">{length.toLocaleString('en-GB')}</span> characters.
-            Anything pasted here is treated strictly as data — a posting cannot instruct the
-            optimizer.
-          </FieldDescription>
-        </Field>
-
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+      <StepActions
+        back={
           <Button variant="ghost" onClick={onBack} disabled={busy}>
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back
           </Button>
+        }
+        forward={
           <Button
             size="lg"
             onClick={onSubmit}
@@ -437,9 +508,9 @@ function StepJobDescription({
             Analyze match
             <ArrowRight className="size-4" aria-hidden="true" />
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        }
+      />
+    </Stack>
   )
 }
 
@@ -447,18 +518,18 @@ function StepJobDescription({
    Processing
    ========================================================================== */
 
-function ProcessingCard({ stage }: { stage: Stage | null }) {
+function ProcessingPanel({ stage }: { stage: Stage | null }) {
   const activeIndex = OPTIMIZATION_STAGES.findIndex((entry) => entry.key === stage)
 
   return (
-    <Card className="relative overflow-hidden">
+    <Panel flush className="relative overflow-hidden">
       {/*
         An indeterminate rail across the top edge rather than a spinning disc
         in the middle.
 
         The spinner said only "something is happening", which the stage list
         below already says, and better. A rail sits where progress belongs on a
-        panel, occupies no vertical space, and leaves the centre of the card
+        panel, occupies no vertical space, and leaves the centre of the panel
         for the thing worth reading. It is also honest: the travel does not
         pretend to encode a percentage, because the duration here is not known.
       */}
@@ -466,18 +537,18 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
         <span className="block h-full w-1/3 animate-indeterminate rounded-full bg-accent" />
       </span>
 
-      <CardContent className="flex flex-col items-center gap-6 py-14">
+      <div className="flex flex-col items-center gap-6 px-5 py-12">
         <div className="text-center">
-          <p className="font-display text-xl font-medium text-fg" aria-live="polite">
+          <p className="text-title font-semibold text-fg" aria-live="polite">
             {activeIndex >= 0 ? OPTIMIZATION_STAGES[activeIndex]!.label : 'Working…'}
           </p>
-          <p className="mt-1.5 text-sm text-fg-muted">
+          <p className="mt-1 text-meta text-fg-muted">
             This usually takes a few seconds. Please keep this tab open.
           </p>
         </div>
 
         {/* Stage list, not a percentage: we report what is running, not a guess. */}
-        <ol className="flex w-full max-w-sm flex-col gap-2">
+        <ol className="flex w-full max-w-xs flex-col gap-1">
           {OPTIMIZATION_STAGES.map((entry, index) => {
             const done = activeIndex >= 0 && index < activeIndex
             const active = index === activeIndex
@@ -485,7 +556,7 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
               <li
                 key={entry.key}
                 className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm',
+                  'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-meta',
                   'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
                   active && 'bg-sunken font-medium text-fg',
                   done && 'text-fg-subtle',
@@ -494,19 +565,28 @@ function ProcessingCard({ stage }: { stage: Stage | null }) {
               >
                 <span
                   className={cn(
-                    'size-1.5 shrink-0 rounded-full',
-                    'transition-[background-color,transform] duration-[--duration-fast] ease-[--ease-standard]',
-                    active ? 'scale-125 bg-accent' : done ? 'bg-success-solid' : 'bg-line-bold',
+                    'flex size-3.5 shrink-0 items-center justify-center rounded-full',
+                    'transition-[background-color] duration-[--duration-fast] ease-[--ease-standard]',
+                    done
+                      ? 'bg-success-solid text-white'
+                      : active
+                        ? 'bg-accent'
+                        : 'border border-line-strong',
                   )}
                   aria-hidden="true"
-                />
+                >
+                  {done ? <Check className="size-2.5" /> : null}
+                </span>
                 {entry.label}
+                <span className="sr-only">
+                  {done ? '(done)' : active ? '(running)' : '(waiting)'}
+                </span>
               </li>
             )
           })}
         </ol>
-      </CardContent>
-    </Card>
+      </div>
+    </Panel>
   )
 }
 
@@ -531,90 +611,98 @@ function StepAnalysis({
   )
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardContent className="flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-start sm:p-8">
-          <ScoreRing score={overallScore} size="lg" caption="ATS Readiness estimate" />
+    <Stack gap="lg">
+      <Panel className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-7">
+        <ScoreRing score={overallScore} size="lg" caption="ATS Readiness estimate" />
 
-          <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold tracking-tight text-fg">
-              {analysis.jobDescription.title}
-              {analysis.jobDescription.company ? ` at ${analysis.jobDescription.company}` : ''}
-            </h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-title font-semibold text-fg">
+            {analysis.jobDescription.title}
+            {analysis.jobDescription.company ? ` at ${analysis.jobDescription.company}` : ''}
+          </h2>
 
-            {/*
-              One readout divided by rules, not three bordered boxes inside a
-              bordered card. Boxes nested in boxes is the single loudest source
-              of visual noise on this screen, and the three counts are one
-              measurement of the same thing — they belong on one surface.
-            */}
-            <dl className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line">
-              <SummaryStat label="Strong" value={report.counts.strong} tone="success" />
-              <SummaryStat label="Partial" value={report.counts.partial} tone="warning" />
-              <SummaryStat label="Missing" value={report.counts.missing} tone="danger" />
-            </dl>
+          {/*
+            One readout divided by rules, not three bordered boxes inside a
+            bordered panel. Boxes nested in boxes is the loudest source of
+            visual noise on this screen, and the three counts are one
+            measurement of the same thing — they belong on one surface.
+          */}
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-line border-y border-line">
+            <SummaryStat label="Strong" value={report.counts.strong} tone="success" />
+            <SummaryStat label="Partial" value={report.counts.partial} tone="warning" />
+            <SummaryStat label="Missing" value={report.counts.missing} tone="danger" />
+          </dl>
 
-            <ScoreDisclaimer className="mt-4" />
+          <ScoreDisclaimer className="mt-3 text-2xs" />
 
-            <Button variant="link" className="mt-2 px-0" asChild>
-              <Link href={`/analysis/${id}`}>
-                See the full breakdown
-                <ArrowRight className="size-3.5" aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <Button variant="link" size="sm" className="mt-1.5 px-0" asChild>
+            <Link href={`/analysis/${id}`}>
+              See the full breakdown
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+      </Panel>
 
+      {/* An accent edge rather than a filled amber panel — same reasoning as
+          the gap list on the review screen. */}
       {missingRequired.length > 0 ? (
-        <Card className="border-warning-line">
-          <CardHeader>
-            <CardTitle as="h2">
-              {missingRequired.length} required {pluralize(missingRequired.length, 'item')} your
-              resume does not evidence
-            </CardTitle>
-            <CardDescription>
-              These will not be added to your resume. They are listed so you know where the gap is.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Panel flush className="border-l-2 border-l-warning-solid">
+          <PanelHeader
+            title={`${missingRequired.length} required ${pluralize(missingRequired.length, 'item')} your resume does not evidence`}
+            description="These will not be added to your resume. They are listed so you know where the gap is."
+          />
+          <div className="px-4 py-3 sm:px-5">
             {/*
-              A rule-separated list, and the per-row badge is gone.
-              Every row carried an identical "Missing / not verified" pill under
-              a heading that already said these are the items the resume does
-              not evidence — eight repetitions of one fact, each in its own
-              bordered box, with a stretch of dead space between the label and
-              the badge. The status is stated once, by the section.
-              The marker keeps the rows scannable without colour doing the work.
+              A rule-separated list, and the per-row badge is gone. Every row
+              carried an identical "Missing / not verified" pill under a heading
+              that already said these are the items the resume does not
+              evidence — eight repetitions of one fact, each in its own bordered
+              box. The status is stated once, by the section.
             */}
-            <ul className="-mt-1 divide-y divide-line">
+            <ul className="divide-y divide-line">
               {missingRequired.slice(0, 8).map((match) => (
-                <li key={match.requirementId} className="flex gap-3 py-2.5">
+                <li key={match.requirementId} className="flex gap-2.5 py-2 first:pt-0 last:pb-0">
                   <XCircle className="mt-0.5 size-3.5 shrink-0 text-danger-fg" aria-hidden="true" />
-                  <span className="min-w-0 text-sm text-fg">{match.text}</span>
+                  <span className="min-w-0 text-meta leading-relaxed text-fg">{match.text}</span>
                 </li>
               ))}
             </ul>
             {missingRequired.length > 8 ? (
-              <p className="mt-3 text-meta text-fg-subtle">
-                and {missingRequired.length - 8} more — see the full analysis.
+              <p className="mt-2.5 text-2xs text-fg-subtle">
+                and {missingRequired.length - 8} more —{' '}
+                <Link
+                  href={`/analysis/${id}`}
+                  className="focus-ring rounded text-fg-accent underline underline-offset-2"
+                >
+                  see the full analysis
+                </Link>
+                .
               </p>
             ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+          </div>
+        </Panel>
+      ) : (
+        <Alert tone="success" title="Every required item is evidenced">
+          Your resume supports each requirement this posting states as required.
+        </Alert>
+      )}
 
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-        <Button variant="ghost" onClick={onBack} disabled={busy}>
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          Change job description
-        </Button>
-        <Button size="lg" onClick={onOptimize} loading={busy} loadingLabel="Optimizing…">
-          <Sparkles className="size-4" aria-hidden="true" />
-          Optimize my resume
-        </Button>
-      </div>
-    </div>
+      <StepActions
+        back={
+          <Button variant="ghost" onClick={onBack} disabled={busy}>
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Change job description
+          </Button>
+        }
+        forward={
+          <Button size="lg" onClick={onOptimize} loading={busy} loadingLabel="Optimizing…">
+            <Sparkles className="size-4" aria-hidden="true" />
+            Optimize my resume
+          </Button>
+        }
+      />
+    </Stack>
   )
 }
 
@@ -635,9 +723,11 @@ function SummaryStat({
         : 'text-danger-fg'
 
   return (
-    <div className="py-3 pr-3 pl-0 first:pl-0 [&:not(:first-child)]:pl-4">
-      <dt className="text-2xs font-medium uppercase text-fg-subtle">{label}</dt>
-      <dd className={cn('mt-1 font-display text-2xl tabular-nums', toneClass)}>{value}</dd>
+    <div className="px-3 py-2.5 first:pl-0">
+      <dt className="eyebrow text-fg-subtle">{label}</dt>
+      <dd className={cn('mt-0.5 text-display-xs font-semibold tabular-nums', toneClass)}>
+        {value}
+      </dd>
     </div>
   )
 }

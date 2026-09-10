@@ -224,6 +224,55 @@ export async function listAnalyses(userId: string, limit = 50): Promise<Analysis
   })
 }
 
+/**
+ * An analysis with enough context to be identifiable in a list.
+ *
+ * `listAnalyses` returns the row only, which meant every listing in the
+ * product described an analysis as its own tallies — "8 strong, 23 missing" —
+ * and never said which posting it was for. That is unusable the moment an
+ * account has more than one: the user is looking at a history of their job
+ * applications with the applications left out.
+ *
+ * Two joins, both on indexed foreign keys, in exchange for the row's identity.
+ */
+export interface AnalysisListEntry {
+  id: string
+  createdAt: Date
+  overallScore: number
+  report: Analysis['report']
+  resumeId: string
+  jobTitle: string
+  company: string | null
+  resumeTitle: string
+}
+
+export async function listAnalysesWithContext(
+  userId: string,
+  limit = 50,
+): Promise<AnalysisListEntry[]> {
+  const rows = await getDb().query.analyses.findMany({
+    where: eq(analyses.userId, userId),
+    orderBy: desc(analyses.createdAt),
+    limit,
+    columns: { id: true, createdAt: true, overallScore: true, report: true, resumeId: true },
+    with: {
+      jobDescription: { columns: { title: true, company: true } },
+      resume: { columns: { title: true } },
+    },
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    overallScore: row.overallScore,
+    report: row.report,
+    resumeId: row.resumeId,
+    jobTitle: row.jobDescription.title,
+    company: row.jobDescription.company,
+    resumeTitle: row.resume.title,
+  }))
+}
+
 /* ==========================================================================
    Optimization runs
    ========================================================================== */
@@ -296,6 +345,70 @@ export async function listOptimizationRuns(userId: string, limit = 50): Promise<
     orderBy: desc(optimizationRuns.createdAt),
     limit,
   })
+}
+
+/**
+ * An optimization run with the role it was run against.
+ *
+ * Same reasoning as `listAnalysesWithContext`: a run identified only by
+ * "2 changes proposed" tells the user nothing about which application it
+ * belongs to. The baseline score comes along too, so a listing can show the
+ * movement rather than only the projected figure — a projected 74 means
+ * nothing without the 61 it started from.
+ */
+export interface RunListEntry {
+  id: string
+  createdAt: Date
+  status: OptimizationRun['status']
+  provider: string
+  projectedScore: number | null
+  changeCount: number
+  resumeId: string
+  resumeTitle: string
+  jobTitle: string
+  company: string | null
+  baselineScore: number
+}
+
+export async function listOptimizationRunsWithContext(
+  userId: string,
+  limit = 50,
+): Promise<RunListEntry[]> {
+  const rows = await getDb().query.optimizationRuns.findMany({
+    where: eq(optimizationRuns.userId, userId),
+    orderBy: desc(optimizationRuns.createdAt),
+    limit,
+    columns: {
+      id: true,
+      createdAt: true,
+      status: true,
+      provider: true,
+      projectedScore: true,
+      changeSet: true,
+      resumeId: true,
+    },
+    with: {
+      resume: { columns: { title: true } },
+      analysis: {
+        columns: { overallScore: true },
+        with: { jobDescription: { columns: { title: true, company: true } } },
+      },
+    },
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    status: row.status,
+    provider: row.provider,
+    projectedScore: row.projectedScore,
+    changeCount: row.changeSet?.changes.length ?? 0,
+    resumeId: row.resumeId,
+    resumeTitle: row.resume.title,
+    jobTitle: row.analysis.jobDescription.title,
+    company: row.analysis.jobDescription.company,
+    baselineScore: row.analysis.overallScore,
+  }))
 }
 
 /** The most recent successful run for a resume, if any. */

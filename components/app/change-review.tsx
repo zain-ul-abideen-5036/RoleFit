@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 import { Check, Download, FileText, Info, Pencil, RotateCcw, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldLabel, Textarea } from '@/components/ui/field'
 import { Alert, Badge, ChangeBadge, EmptyState } from '@/components/ui/feedback'
+import { Panel, PanelHeader, Section, Stack, Toolbar } from '@/components/ui/layout'
 import { ScoreDelta, ScoreDisclaimer } from '@/components/ui/score'
 import { apiPatch, apiPost, toDisplayError } from '@/lib/client/api'
 import { cn, pluralize } from '@/lib/utils'
@@ -20,6 +20,14 @@ import { cn, pluralize } from '@/lib/utils'
  * proposed rewrite is shown with its original alongside, the reason for it, and
  * the source text that justifies it. Nothing is applied that the user has not
  * accepted, and every decision is reversible until they export.
+ *
+ * The screen is built as a *review queue* rather than a page of cards. The
+ * distinction that matters: the summary and export controls stick to the top of
+ * the viewport, and the list can be filtered by decision. On a run with
+ * eighteen changes the previous layout meant scrolling to the top of the page
+ * to find out how many were left, and there was no way to see only the ones
+ * still awaiting a decision — so the way to use it was to scroll the whole list
+ * looking for amber badges.
  */
 
 export type Decision = 'pending' | 'accepted' | 'rejected' | 'edited'
@@ -115,6 +123,8 @@ interface DocumentResponse {
   warnings: string[]
 }
 
+type Filter = 'all' | 'pending' | 'accepted' | 'rejected'
+
 export function ChangeReview({
   runId,
   resumeId,
@@ -131,12 +141,20 @@ export function ChangeReview({
   const [error, setError] = React.useState<string | null>(null)
   const [exporting, setExporting] = React.useState<'pdf' | 'docx' | null>(null)
   const [warnings, setWarnings] = React.useState<string[]>([])
+  const [filter, setFilter] = React.useState<Filter>('all')
 
   const pending = changes.filter((change) => change.decision === 'pending')
   const accepted = changes.filter(
     (change) => change.decision === 'accepted' || change.decision === 'edited',
   )
   const rejected = changes.filter((change) => change.decision === 'rejected')
+
+  const visible = changes.filter((change) => {
+    if (filter === 'all') return true
+    if (filter === 'pending') return change.decision === 'pending'
+    if (filter === 'rejected') return change.decision === 'rejected'
+    return change.decision === 'accepted' || change.decision === 'edited'
+  })
 
   const noChanges = describeNoChanges({
     canRewriteProse,
@@ -199,7 +217,7 @@ export function ChangeReview({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <Stack gap="lg">
       {error ? (
         <Alert tone="danger" live title="Something went wrong">
           {error}
@@ -217,133 +235,224 @@ export function ChangeReview({
       ) : null}
 
       {/* ------------------------------------------------------ summary */}
-      <Card>
-        <CardContent className="flex flex-col gap-5 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/*
+        Sticky.
+
+        The projected score and the export buttons are the two things a
+        reviewer refers back to constantly — the score because it moves with
+        every decision, the buttons because finishing is the point. On a run
+        with eighteen changes both were a full page-scroll away from wherever
+        the user happened to be working.
+
+        `top` clears the mobile header, which is the only sticky chrome above
+        this on a phone.
+      */}
+      <div className="sticky top-[--header-height] z-[--z-sticky] -mx-4 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:top-0 lg:-mx-8 lg:px-8">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-fg-subtle">
-                Projected ATS readiness
-              </p>
-              <ScoreDelta from={baselineScore} to={projectedScore} className="mt-2 text-2xl" />
+              <p className="eyebrow text-fg-subtle">Projected ATS readiness</p>
+              <ScoreDelta
+                from={baselineScore}
+                to={projectedScore}
+                className="mt-0.5 text-display-xs"
+              />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => void exportDocument('docx')}
-                loading={exporting === 'docx'}
-                loadingLabel="Preparing…"
-                disabled={exporting !== null}
-              >
-                <FileText className="size-4" aria-hidden="true" />
-                Download DOCX
-              </Button>
-              <Button
-                onClick={() => void exportDocument('pdf')}
-                loading={exporting === 'pdf'}
-                loadingLabel="Preparing…"
-                disabled={exporting !== null}
-              >
-                <Download className="size-4" aria-hidden="true" />
-                Download PDF
-              </Button>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge tone={pending.length > 0 ? 'warning' : 'success'}>
+                {accepted.length} of {changes.length} accepted
+              </Badge>
+              {pending.length > 0 ? (
+                <Badge tone="warning">{pending.length} awaiting you</Badge>
+              ) : null}
+              {rejected.length > 0 ? (
+                <Badge tone="neutral">{rejected.length} rejected</Badge>
+              ) : null}
             </div>
           </div>
 
-          <ScoreDisclaimer />
-
-          <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            <Badge tone="neutral">
-              {accepted.length} of {changes.length} {pluralize(changes.length, 'change')} accepted
-            </Badge>
-            {pending.length > 0 ? (
-              <Badge tone="warning">{pending.length} awaiting your decision</Badge>
-            ) : null}
-            {rejected.length > 0 ? <Badge tone="neutral">{rejected.length} rejected</Badge> : null}
-            <Badge tone="neutral">Engine: {provider}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => void exportDocument('docx')}
+              loading={exporting === 'docx'}
+              loadingLabel="Preparing…"
+              disabled={exporting !== null}
+            >
+              <FileText className="size-4" aria-hidden="true" />
+              Download DOCX
+            </Button>
+            <Button
+              onClick={() => void exportDocument('pdf')}
+              loading={exporting === 'pdf'}
+              loadingLabel="Preparing…"
+              disabled={exporting !== null}
+            >
+              <Download className="size-4" aria-hidden="true" />
+              Download PDF
+            </Button>
           </div>
+        </div>
+      </div>
 
-          {!canRewriteProse ? (
-            <Alert tone="info">
-              This run used the rule-based engine, which aligns terminology, removes filler and
-              reorders for relevance, but does not rewrite prose. Configure an AI provider for
-              sentence-level rewriting.
-            </Alert>
-          ) : null}
-        </CardContent>
-      </Card>
+      <ScoreDisclaimer className="-mt-4 text-2xs" />
 
-      {/* ------------------------------------------------------ changes */}
-      <Card>
-        <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
-          <div>
-            <CardTitle as="h2">Proposed changes</CardTitle>
-            <CardDescription>
-              Substantive rewrites wait for your decision. Minor tidy-ups — a reorder, a single-word
-              swap — start accepted so you are not clicking through trivia, and every one can be
-              undone.
-            </CardDescription>
-          </div>
-          {pending.length > 0 ? (
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => void decideAll('rejected')}>
-                Reject all pending
-              </Button>
-              <Button size="sm" onClick={() => void decideAll('accepted')}>
-                Accept all pending
-              </Button>
-            </div>
-          ) : null}
-        </CardHeader>
-
-        <CardContent>
-          {changes.length === 0 ? (
-            <EmptyState
-              icon={noChanges.goodNews ? <Check className="size-5" /> : <Info className="size-5" />}
-              title={noChanges.title}
-              description={noChanges.description}
-            />
-          ) : (
-            <ul className="flex flex-col gap-4">
-              {changes.map((change) => (
-                <li key={change.id}>
-                  <ChangeCard
-                    change={change}
-                    busy={busyId === change.id}
-                    onDecide={(decision, editedText) =>
-                      void decide(change.id, decision, editedText)
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* -------------------------------------------------- unaddressed */}
-      {unaddressed.length > 0 ? (
-        <Card className="border-warning-line">
-          <CardHeader>
-            <CardTitle as="h2">
-              {unaddressed.length} {pluralize(unaddressed.length, 'requirement')} deliberately not
-              addressed
-            </CardTitle>
-            <CardDescription>
-              Your resume contains no evidence for these, so nothing was written about them. This is
-              the product working as intended.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UnaddressedList entries={unaddressed} />
-          </CardContent>
-        </Card>
+      {!canRewriteProse ? (
+        <Alert tone="info">
+          {/*
+            The engine is named once on this screen, in the footer. Naming it
+            here as well meant the same string appeared twice with no
+            additional information — and "which engine ran" is a fact, so it
+            belongs with the other facts rather than inside a paragraph
+            explaining the consequence.
+          */}
+          This run used the rule-based engine, which aligns terminology, removes filler and reorders
+          for relevance, but does not rewrite prose. Configure an AI provider for sentence-level
+          rewriting.
+        </Alert>
       ) : null}
 
-      <p className="text-center text-xs text-fg-subtle">
-        Reviewing resume <span className="font-mono">{resumeId.slice(0, 8)}</span>
+      {/* ------------------------------------------------------ changes */}
+      <Section
+        title="Proposed changes"
+        description="Substantive rewrites wait for your decision. Minor tidy-ups — a reorder, a single-word swap — start accepted so you are not clicking through trivia, and every one can be undone."
+      >
+        {changes.length === 0 ? (
+          <EmptyState
+            icon={noChanges.goodNews ? <Check className="size-5" /> : <Info className="size-5" />}
+            title={noChanges.title}
+            description={noChanges.description}
+          />
+        ) : (
+          <Stack gap="md">
+            <Toolbar
+              actions={
+                pending.length > 0 ? (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void decideAll('rejected')}
+                    >
+                      Reject all pending
+                    </Button>
+                    <Button size="sm" onClick={() => void decideAll('accepted')}>
+                      Accept all pending
+                    </Button>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-meta text-success-fg">
+                    <Check className="size-4" aria-hidden="true" />
+                    Every change has a decision
+                  </span>
+                )
+              }
+            >
+              {/*
+                Filter by decision.
+
+                A radiogroup rather than a row of buttons: these are mutually
+                exclusive views of one list, and arrow keys should move between
+                them. The counts are in the labels because "Pending 4" is the
+                reason to press it.
+              */}
+              <div
+                role="radiogroup"
+                aria-label="Filter changes by decision"
+                className="inline-flex items-center gap-0.5 rounded-lg border border-line bg-sunken p-0.5"
+              >
+                {(
+                  [
+                    ['all', 'All', changes.length],
+                    ['pending', 'To review', pending.length],
+                    ['accepted', 'Applied', accepted.length],
+                    ['rejected', 'Rejected', rejected.length],
+                  ] as const
+                ).map(([value, label, count]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={filter === value}
+                    onClick={() => setFilter(value)}
+                    className={cn(
+                      'focus-ring cursor-pointer rounded-md px-2.5 py-1 text-2xs font-medium',
+                      'transition-colors duration-[--duration-fast]',
+                      filter === value
+                        ? 'bg-surface text-fg shadow-xs'
+                        : 'text-fg-subtle hover:text-fg',
+                    )}
+                  >
+                    {/*
+                      "To review" and "Applied" rather than "Pending" and
+                      "Accepted".
+
+                      A filter chip reading "Accepted" sits inches from a row
+                      badge reading "Accepted" and means something different:
+                      one is a view, the other is a state. "Applied" is also
+                      the more accurate word, because this view holds both the
+                      accepted changes and the ones the user rewrote
+                      themselves — everything that ends up in the document.
+                    */}
+                    <span>{label}</span>
+                    <span className="ml-1.5 tabular-nums text-fg-subtle">{count}</span>
+                  </button>
+                ))}
+              </div>
+            </Toolbar>
+
+            {visible.length === 0 ? (
+              <Panel tone="sunken" className="py-8 text-center">
+                <p className="text-meta text-fg-muted">
+                  No changes in this view. Switch the filter to see the rest.
+                </p>
+              </Panel>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {visible.map((change) => (
+                  <li key={change.id}>
+                    <ChangeCard
+                      change={change}
+                      busy={busyId === change.id}
+                      onDecide={(decision, editedText) =>
+                        void decide(change.id, decision, editedText)
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Stack>
+        )}
+      </Section>
+
+      {/* -------------------------------------------------- unaddressed */}
+      {/*
+        An accent edge, not a filled amber panel.
+
+        Twenty-three rows on a warning background floods a third of the screen
+        with caution colour to deliver a message whose own text says "this is
+        the product working as intended". A single 2px edge marks the region as
+        a note; the tone is carried by the words, which is where it belongs.
+      */}
+      {unaddressed.length > 0 ? (
+        <Panel flush className="border-l-2 border-l-warning-solid">
+          <PanelHeader
+            title={`${unaddressed.length} ${pluralize(unaddressed.length, 'requirement')} deliberately not addressed`}
+            description="Your resume contains no evidence for these, so nothing was written about them. This is the product working as intended."
+          />
+          <div className="px-4 py-3 sm:px-5 sm:py-4">
+            <UnaddressedList entries={unaddressed} />
+          </div>
+        </Panel>
+      ) : null}
+
+      <p className="text-center text-2xs text-fg-subtle">
+        Reviewing resume <span className="font-mono">{resumeId.slice(0, 8)}</span> · engine{' '}
+        <span className="font-mono">{provider}</span>
       </p>
-    </div>
+    </Stack>
   )
 }
 
@@ -364,22 +473,17 @@ function UnaddressedList({ entries }: { entries: UnaddressedRequirement[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-2">
+      <ul className="divide-y divide-line">
         {visible.map((entry) => (
-          <li
-            key={entry.requirementId}
-            className="rounded-lg border border-line bg-canvas px-3.5 py-2.5"
-          >
-            <p className="text-sm text-fg">{entry.text}</p>
+          <li key={entry.requirementId} className="py-2.5 first:pt-0 last:pb-0">
+            <p className="measure-wide text-meta leading-relaxed text-fg">{entry.text}</p>
             {/*
-              The per-requirement reason, which the card's heading cannot give:
+              The per-requirement reason, which the panel's heading cannot give:
               "no evidence at all" and "mentioned once with no detail" are
-              different situations and lead to different next steps. Length is
-              capped by the schema, and this is the same class of model-authored
-              text as a change rationale, which is already surfaced.
+              different situations and lead to different next steps.
             */}
             {entry.reason.trim() ? (
-              <p className="mt-1 text-xs leading-relaxed text-fg-muted">{entry.reason}</p>
+              <p className="mt-1 measure text-2xs leading-relaxed text-fg-muted">{entry.reason}</p>
             ) : null}
           </li>
         ))}
@@ -393,9 +497,8 @@ function UnaddressedList({ entries }: { entries: UnaddressedRequirement[] }) {
         </div>
       ) : null}
 
-      <p className="text-xs leading-relaxed text-fg-subtle">
-        Your resume contains no evidence for these, so nothing was written about them. If you do
-        have this experience, add it to your resume and run the analysis again.
+      <p className="measure text-2xs leading-relaxed text-fg-subtle">
+        If you do have this experience, add it to your resume and run the analysis again.
       </p>
     </div>
   )
@@ -425,57 +528,79 @@ function ChangeCard({
   return (
     <article
       className={cn(
-        'rounded-xl border transition-colors',
+        'overflow-hidden rounded-xl border bg-surface',
+        'transition-[border-color,opacity] duration-[--duration-fast] ease-[--ease-standard]',
+        // A rejected change stays legible but recedes: it is a decision, not a
+        // deletion, and it has to be findable again to be undone.
         change.decision === 'rejected'
-          ? 'border-line bg-sunken/50'
+          ? 'border-line opacity-70'
           : applied
-            ? 'border-success-line bg-surface'
-            : 'border-line-strong bg-surface',
+            ? 'border-success-line'
+            : // Pending is the one state that gets a stronger edge, because it
+              // is the state that needs the user.
+              'border-line-strong',
       )}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3.5 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <ChangeBadge action={change.action} />
-          <span className="text-xs text-fg-subtle">{describePath(change.targetPath)}</span>
+          <span className="text-2xs text-fg-subtle">{describePath(change.targetPath)}</span>
         </div>
         <DecisionBadge decision={change.decision} />
       </header>
 
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 p-3.5">
         {change.action === 'reordered' ? (
-          <p className="text-sm leading-relaxed text-fg">{change.rationale}</p>
+          <p className="measure-wide text-meta leading-relaxed text-fg">{change.rationale}</p>
         ) : (
           <>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-diff-removed-line bg-diff-removed-bg p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-diff-removed-fg">
-                  Before
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-fg">{change.before}</p>
+            {/*
+              Before and after, side by side from `md`.
+
+              Labelled and tinted, and the label is the thing carrying the
+              meaning — the tint is a second channel, not the only one, which
+              matters here more than anywhere else in the product: this is the
+              screen someone with a colour vision deficiency uses to decide
+              what goes on their resume.
+            */}
+            <div className="grid gap-2.5 md:grid-cols-2">
+              <div className="rounded-lg border border-diff-removed-line bg-diff-removed-bg p-3">
+                <p className="eyebrow text-diff-removed-fg">Before</p>
+                <p className="mt-1.5 text-meta leading-relaxed text-fg">{change.before}</p>
               </div>
-              <div className="rounded-lg border border-diff-added-line bg-diff-added-bg p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-diff-added-fg">
+              <div className="rounded-lg border border-diff-added-line bg-diff-added-bg p-3">
+                <p className="eyebrow text-diff-added-fg">
                   {change.decision === 'edited' ? 'Your version' : 'After'}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-fg">{finalText}</p>
+                <p className="mt-1.5 text-meta leading-relaxed text-fg">{finalText}</p>
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-fg-muted">
+            <p className="measure-wide text-meta leading-relaxed text-fg-muted">
               <span className="font-medium text-fg">Why: </span>
               {change.rationale}
             </p>
 
             {change.evidence.length > 0 ? (
-              <details className="rounded-lg border border-line bg-canvas px-3.5 py-2.5">
-                <summary className="cursor-pointer text-xs font-medium text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-                  Source text this is based on
+              <details className="group rounded-lg border border-line bg-canvas px-3 py-2">
+                <summary className="focus-ring cursor-pointer list-none text-2xs font-medium text-fg-subtle transition-colors hover:text-fg-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span
+                      aria-hidden="true"
+                      className="inline-block transition-transform duration-[--duration-fast] group-open:rotate-90"
+                    >
+                      ›
+                    </span>
+                    Source text this is based on
+                  </span>
                 </summary>
                 <ul className="mt-2 flex flex-col gap-1.5">
                   {change.evidence.map((quote) => (
                     <li
                       key={quote}
-                      className="border-l-2 border-line-accent pl-3 text-xs leading-relaxed text-fg-muted"
+                      // Monospace: this is text lifted verbatim out of the
+                      // user's document, and the face is what says so.
+                      className="border-l-2 border-line-accent pl-2.5 font-mono text-2xs leading-relaxed text-fg-muted"
                     >
                       {quote}
                     </li>
@@ -487,7 +612,7 @@ function ChangeCard({
         )}
 
         {editing ? (
-          <div className="rounded-lg border border-line bg-canvas p-3.5">
+          <div className="rounded-lg border border-line bg-canvas p-3">
             <Field id={`edit-${change.id}`}>
               <FieldLabel>Your wording</FieldLabel>
               <Textarea
@@ -514,14 +639,7 @@ function ChangeCard({
             </div>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {decided ? (
-              <Button size="sm" variant="ghost" onClick={() => onDecide('pending')} disabled={busy}>
-                <RotateCcw className="size-3.5" aria-hidden="true" />
-                Undo
-              </Button>
-            ) : null}
-
+          <div className="flex flex-wrap gap-1.5">
             {!applied ? (
               <Button size="sm" onClick={() => onDecide('accepted')} disabled={busy}>
                 <Check className="size-3.5" aria-hidden="true" />
@@ -553,6 +671,13 @@ function ChangeCard({
               >
                 <Pencil className="size-3.5" aria-hidden="true" />
                 Edit
+              </Button>
+            ) : null}
+
+            {decided ? (
+              <Button size="sm" variant="ghost" onClick={() => onDecide('pending')} disabled={busy}>
+                <RotateCcw className="size-3.5" aria-hidden="true" />
+                Undo
               </Button>
             ) : null}
           </div>

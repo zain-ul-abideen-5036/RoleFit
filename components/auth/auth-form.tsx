@@ -78,10 +78,10 @@ export function AuthForm({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-fg">
+      <h1 className="text-display-sm font-semibold text-fg">
         {isSignup ? 'Create your account' : 'Sign in'}
       </h1>
-      <p className="mt-2 text-sm text-fg-muted">
+      <p className="mt-2 text-meta leading-relaxed text-fg-muted">
         {isSignup
           ? 'Free while the product is in development. No card required.'
           : 'Welcome back. Pick up where you left off.'}
@@ -148,7 +148,7 @@ export function AuthForm({
               // it must announce what it does and its current state.
               aria-pressed={showPassword}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-md text-fg-subtle transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="focus-ring absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-md text-fg-subtle transition-colors hover:text-fg"
             >
               {showPassword ? (
                 <EyeOff className="size-4" aria-hidden="true" />
@@ -191,7 +191,7 @@ export function AuthForm({
         </Button>
       </form>
 
-      <p className="mt-6 text-sm text-fg-muted">
+      <p className="mt-6 border-t border-line pt-5 text-meta text-fg-muted">
         {isSignup ? 'Already have an account? ' : 'New here? '}
         <Link
           href={isSignup ? '/login' : '/signup'}
