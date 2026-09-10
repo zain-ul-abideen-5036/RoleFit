@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react'
 
+import { MeasureReveal } from '@/components/marketing/measure-reveal'
 import { RoleRotator } from '@/components/marketing/role-rotator'
 import { TransformationFigure } from '@/components/marketing/transformation-figure'
 import { Button } from '@/components/ui/button'
@@ -400,10 +401,19 @@ function AtsSection() {
   return (
     <Section id="ats" tone="surface">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_1.1fr] lg:items-center lg:gap-16">
-        <Panel className="min-w-0">
-          <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
-            <ScoreRing score={82} size="lg" caption="ATS Readiness estimate" />
-            {/*
+        {/*
+          The one animated element on this page.
+
+          A score sweeping to its reading is a measurement being taken, which
+          is what the product does — so here the motion is the demonstration
+          rather than decoration. It runs once, on scroll, and degrades to the
+          drawn reading rather than to zero. See `MeasureReveal`.
+        */}
+        <MeasureReveal>
+          <Panel className="min-w-0">
+            <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
+              <ScoreRing score={82} size="lg" caption="ATS Readiness estimate" />
+              {/*
               The product's own `ScoreBar`, not a marketing imitation of one.
 
               Two reasons. It cannot drift from what the app actually renders,
@@ -412,14 +422,15 @@ function AtsSection() {
               levels below it inside a flex wrapper — which is invalid, since a
               definition list may only wrap its groups in a single `<div>`.
             */}
-            <div className="min-w-0 flex-1 space-y-3.5">
-              {ATS_DIMENSIONS.map((row) => (
-                <ScoreBar key={row.label} label={row.label} score={row.value} />
-              ))}
+              <div className="min-w-0 flex-1 space-y-3.5">
+                {ATS_DIMENSIONS.map((row) => (
+                  <ScoreBar key={row.label} label={row.label} score={row.value} />
+                ))}
+              </div>
             </div>
-          </div>
-          <ScoreDisclaimer className="mt-5 border-t border-line pt-4 text-2xs" />
-        </Panel>
+            <ScoreDisclaimer className="mt-5 border-t border-line pt-4 text-2xs" />
+          </Panel>
+        </MeasureReveal>
 
         <div className="min-w-0">
           <p className="eyebrow text-fg-accent">ATS readiness</p>

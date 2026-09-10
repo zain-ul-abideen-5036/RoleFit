@@ -70,7 +70,22 @@ export function ScoreRing({ score, size = 'md', caption, className }: ScoreRingP
           height={box}
           viewBox={`0 0 ${box} ${box}`}
           role="img"
+          // The accessible name carries the *final* value and never changes,
+          // whatever the arc is doing. A sweeping number read aloud is noise,
+          // and a screen reader must not be told a score it will not keep.
           aria-label={`ATS readiness estimate: ${clamped} out of 100, ${band.label}`}
+          /*
+            The geometry is published as custom properties on the svg, so an
+            ancestor can animate the arc without the value living at the child
+            where an inline style would outrank the stylesheet. Nothing reads
+            these unless something opts in — see `[data-measure]` in globals.
+          */
+          style={
+            {
+              '--score-arc-length': `${circumference}px`,
+              '--score-arc-offset': `${circumference - dash}px`,
+            } as React.CSSProperties
+          }
         >
           <circle
             cx={box / 2}
@@ -89,8 +104,7 @@ export function ScoreRing({ score, size = 'md', caption, className }: ScoreRingP
             strokeWidth={stroke}
             strokeLinecap="round"
             stroke="currentColor"
-            className={tone.ring}
-            strokeDasharray={`${dash} ${circumference - dash}`}
+            className={cn('score-arc', tone.ring)}
             // Start the arc at 12 o'clock rather than 3.
             transform={`rotate(-90 ${box / 2} ${box / 2})`}
           />
@@ -126,7 +140,7 @@ export function ScoreBar({ label, score, weight, detail, className }: ScoreBarPr
   const tone = TONE_CLASSES[band.tone]
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('score-bar flex flex-col gap-1.5', className)}>
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-meta font-medium text-fg">{label}</span>
         <span className="flex items-baseline gap-2.5">
@@ -149,10 +163,15 @@ export function ScoreBar({ label, score, weight, detail, className }: ScoreBarPr
       <div
         className="h-1 overflow-hidden rounded-full bg-sunken"
         role="meter"
+        // Like the ring's label, the reported value is the final one. The fill
+        // is presentation; `aria-valuenow` is the reading.
         aria-valuenow={clamped}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label={`${label}: ${clamped} out of 100`}
+        // Published on the track, not the fill, so a stylesheet can override
+        // the fill's transform without fighting an inline style.
+        style={{ '--score-fill': clamped / 100 } as React.CSSProperties}
       >
         {/*
           scaleX rather than width. Animating width is a layout property, so
@@ -162,11 +181,10 @@ export function ScoreBar({ label, score, weight, detail, className }: ScoreBarPr
         */}
         <div
           className={cn(
-            'h-full origin-left rounded-full bg-current',
+            'score-fill h-full origin-left rounded-full bg-current',
             'transition-transform duration-[--duration-settle] ease-[--ease-standard]',
             tone.ring,
           )}
-          style={{ transform: `scaleX(${clamped / 100})` }}
         />
       </div>
       {detail ? <p className="text-2xs leading-relaxed text-fg-subtle">{detail}</p> : null}
