@@ -35,7 +35,7 @@
 
 <img src="docs/screenshots/landing.png" alt="The RoleFit landing page: the headline Tailor your resume for a Backend Engineer and get hired, beside a resume being rewritten on the page" width="100%" />
 
-<br />
+---
 
 ## The problem it solves
 
@@ -70,7 +70,7 @@ and never written in.
 | **You approve every change**     | Each rewrite is presented with your original beside it and a reason. Nothing you have not accepted reaches the exported file, and every decision is reversible.                                                    |
 | **It works with no AI provider** | The default engine is rule-based and runs locally — no network calls, no resume text leaving the machine. Configure a provider only if you want sentence-level rewriting.                                          |
 
-<br />
+---
 
 ## Quickstart
 
@@ -97,7 +97,7 @@ filler and reorders for relevance, entirely on your machine. Full setup, every
 environment variable and deployment:
 **[Technical Documentation →](TECHNICAL_README.md#getting-started)**
 
-<br />
+---
 
 ## Inside the app
 
@@ -178,7 +178,7 @@ deliberately did **not** address are restated, so nothing is quietly dropped.
 
 </details>
 
-<br />
+---
 
 ### Two themes, authored separately
 
@@ -207,7 +207,7 @@ something muddy.
 </tr>
 </table>
 
-<br />
+---
 
 ## What you can do
 
@@ -299,7 +299,7 @@ only.
 </tr>
 </table>
 
-<br />
+---
 
 ## How it works
 
@@ -308,7 +308,7 @@ only.
   <img src="docs/screenshots/section-how-it-works.png" alt="Five steps. 01 Upload your resume: PDF or DOCX, parsed into structured sections so every later step can point at where something came from. 02 Add the job description: requirements, responsibilities and keywords extracted and separated into required and preferred. 03 See where you actually match: each requirement matched against evidence in your resume, and anything it cannot support reported as a gap rather than quietly filled in. 04 Review every change: rewrites proposed with the original alongside and a reason for each, accepted, edited or rejected individually. 05 Export and apply: a single-column ATS-friendly PDF or DOCX with selectable text, checked automatically before it reaches you." width="100%" />
 </picture>
 
-<br />
+---
 
 ## The part that matters
 
@@ -355,7 +355,7 @@ No ATS vendor publishes its algorithm. RoleFit does not claim to reproduce one,
 and never shows the score without that caveat — not on the analysis page, the
 dashboard, the review screen or in history.
 
-<br />
+---
 
 ## Built with
 
@@ -429,7 +429,7 @@ ergonomics, and **tsx** for the maintenance scripts.
 The full breakdown, with the role each one plays, is in the
 [technical documentation](TECHNICAL_README.md#technology-stack).
 
-<br />
+---
 
 ## Where it is useful
 
@@ -448,7 +448,7 @@ RoleFit describes what your resume already contains. It does not give career
 advice, it does not guarantee an interview, and it cannot tell you how any
 particular employer's ATS will read your file.
 
-<br />
+---
 
 ## Project highlights
 
@@ -462,7 +462,7 @@ particular employer's ATS will read your file.
 | **It degrades honestly**             | No AI key, no email provider and no object storage still gives a working app — and the interface says which engine ran rather than implying a model was involved.                                                                |
 | **Accessible and responsive**        | Reduced-motion support throughout, a stable accessible heading behind the animated one, keyboard-reachable controls, and layouts that hold from 360px up.                                                                        |
 
-<br />
+---
 
 ## Documentation
 
@@ -489,7 +489,7 @@ database, testing, security and deployment — lives in one place:
 | Security posture             | [Security](docs/security.md)                                                         |
 | The product brief            | [Product](docs/product.md)                                                           |
 
-<br />
+---
 
 ## Project status
 
@@ -527,8 +527,6 @@ Known gaps, stated plainly:
   usable.
 - **`npm run db:seed` is declared but has no script behind it.** There is no
   demo account — create one at `/signup`.
-
-<br />
 
 ---
 
