@@ -16,7 +16,9 @@
 </p>
 
 <p>
-  <a href="TECHNICAL_README.md"><b>Technical Documentation&nbsp;&rarr;</b></a>
+  <a href="https://rolefit-topaz.vercel.app"><b>Live app&nbsp;&rarr;</b></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="TECHNICAL_README.md"><b>Technical Documentation</b></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#quickstart">Quickstart</a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -491,8 +493,13 @@ database, testing, security and deployment — lives in one place:
 
 ## Project status
 
-Feature-complete and ready to deploy. Formatting, lint, TypeScript and all four
-test suites pass, and `npm run build` produces a clean production build.
+Deployed and running at
+**[rolefit-topaz.vercel.app](https://rolefit-topaz.vercel.app)** — Vercel, with
+hosted PostgreSQL and S3-compatible object storage. `/api/health` reports the
+database and configuration as reachable.
+
+Formatting, lint, TypeScript and all four test suites pass, and `npm run build`
+produces a clean production build.
 
 - 763 unit and 120 component tests passing across 38 files
 - 72 integration tests against real PostgreSQL
@@ -504,9 +511,12 @@ test suites pass, and `npm run build` produces a clean production build.
 
 Known gaps, stated plainly:
 
-- **There is no hosted instance yet.** The Vercel, Neon, Backblaze B2 and
-  Upstash configuration is written and documented, but nothing is deployed —
-  run it locally with the [Quickstart](#quickstart) above.
+- **The live instance runs the rule-based engine.** No AI provider is
+  configured on it, so it analyses, scores and reorders but does not rewrite
+  prose.
+- **Rate limiting on the live instance is in-memory.** Limits are per-instance
+  and will not hold across a horizontally scaled deployment. The Upstash driver
+  is implemented and documented; it is simply not switched on yet.
 - **Sentence-level rewriting needs an AI provider.** Without one, the
   rule-based engine aligns terminology, removes filler and reorders for
   relevance, but does not rewrite prose. The screenshots above were taken on

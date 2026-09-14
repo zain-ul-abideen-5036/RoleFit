@@ -271,9 +271,12 @@ Every defect the suites caught is listed in
 
 ## Deployment
 
-Not yet deployed. This is the target the configuration and documentation are
-written against, on four services that each have a free tier and none of which
-requires a payment card to sign up.
+Deployed at **[rolefit-topaz.vercel.app](https://rolefit-topaz.vercel.app)**.
+`GET /api/health` reports the configuration, the resolved drivers and database
+reachability, and is the quickest way to see how an instance is set up.
+
+The intended topology, on four services that each have a free tier and none of
+which requires a payment card to sign up:
 
 | Component        | Service                      | Holds                                       |
 | ---------------- | ---------------------------- | ------------------------------------------- |
@@ -281,6 +284,13 @@ requires a payment card to sign up.
 | Database         | Neon (PostgreSQL)            | Accounts, resumes, analyses, change history |
 | Document storage | Backblaze B2 (S3-compatible) | Uploaded resumes, generated PDF and DOCX    |
 | Rate limiting    | Upstash (Redis)              | Counters shared across instances            |
+
+The live instance currently runs the application, the database and S3-compatible
+storage, with two deliberate deviations from the table above: the AI provider is
+`deterministic`, so it analyses and reorders but does not rewrite prose; and
+`RATE_LIMIT_DRIVER` is still `memory`, which means limits are per-instance and
+will not hold across a horizontally scaled deployment. The app reports both as
+configuration warnings on boot rather than letting them pass silently.
 
 The storage layer is a generic S3 driver, so AWS S3, Cloudflare R2 and MinIO
 work through the same variables. `npm run deploy:preflight` verifies every
