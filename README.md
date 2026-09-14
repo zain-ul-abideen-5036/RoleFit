@@ -394,14 +394,12 @@ dashboard, the review screen or in history.
 </tr>
 </table>
 
-<h4>Validation, auth and documents</h4>
+<h4>Validation and auth</h4>
 
 <table>
 <tr>
 <td align="center" width="118"><img src="https://cdn.simpleicons.org/zod/3E67B1/7fa3e0" width="42" height="42" alt="Zod" /><br /><sub><b>Zod</b><br />3.25</sub></td>
 <td align="center" width="118"><img src="https://cdn.simpleicons.org/jsonwebtokens/000000/ffffff" width="42" height="42" alt="JSON Web Tokens" /><br /><sub><b>JWT</b><br />via jose</sub></td>
-<td align="center" width="118"><img src="https://cdn.simpleicons.org/adobeacrobatreader/EC1C24/EC1C24" width="42" height="42" alt="PDF" /><br /><sub><b>pdf-lib</b><br />PDF out</sub></td>
-<td align="center" width="118"><img src="https://cdn.simpleicons.org/microsoftword/2B7CD3/6ea8e8" width="42" height="42" alt="DOCX" /><br /><sub><b>docx</b><br />DOCX out</sub></td>
 </tr>
 </table>
 
@@ -410,7 +408,6 @@ dashboard, the review screen or in history.
 <table>
 <tr>
 <td align="center" width="118"><img src="https://cdn.simpleicons.org/vitest/6E9F18/9BD62F" width="42" height="42" alt="Vitest" /><br /><sub><b>Vitest</b><br />3.2</sub></td>
-<td align="center" width="118"><img src="https://cdn.simpleicons.org/playwright/2EAD33/2EAD33" width="42" height="42" alt="Playwright" /><br /><sub><b>Playwright</b><br />1.63</sub></td>
 <td align="center" width="118"><img src="https://cdn.simpleicons.org/eslint/4B32C3/8b7ae8" width="42" height="42" alt="ESLint" /><br /><sub><b>ESLint</b><br />9</sub></td>
 <td align="center" width="118"><img src="https://cdn.simpleicons.org/prettier/F7B93E/F7B93E" width="42" height="42" alt="Prettier" /><br /><sub><b>Prettier</b><br />3.9</sub></td>
 <td align="center" width="118"><img src="https://cdn.simpleicons.org/vercel/000000/ffffff" width="42" height="42" alt="Vercel" /><br /><sub><b>Vercel</b><br />deployment</sub></td>
@@ -420,11 +417,14 @@ dashboard, the review screen or in history.
 
 </div>
 
-Also in use, but without a brand mark of their own: **pdfjs-dist** and
-**mammoth** for reading PDF and DOCX, **bcryptjs** for password hashing, the
-**AWS S3 client** for object storage, **axe-core** for accessibility assertions,
-**class-variance-authority**, **clsx** and **tailwind-merge** for styling
-ergonomics, and **tsx** for the maintenance scripts.
+Also in use, and carrying a good deal of the weight, but without a brand mark of
+their own: **Playwright** drives the end-to-end suite against a production
+build; **pdf-lib** and **docx** write the two export formats, and **pdfjs-dist**
+and **mammoth** read them back in; **axe-core** asserts accessibility on every
+page in both themes; **bcryptjs** hashes passwords and the **AWS S3 client**
+talks to object storage; **class-variance-authority**, **clsx** and
+**tailwind-merge** handle styling ergonomics; and **tsx** runs the maintenance
+scripts.
 
 The full breakdown, with the role each one plays, is in the
 [technical documentation](TECHNICAL_README.md#technology-stack).
