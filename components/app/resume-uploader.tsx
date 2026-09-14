@@ -117,7 +117,7 @@ export function ResumeUploader({
           // a dashed rectangle is the correct costume, because it genuinely is
           // a drop target. Everywhere else it was removed.
           'rounded-xl border border-dashed p-6 text-center sm:p-10',
-          'transition-[border-color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+          'transition-[border-color,background-color] duration-(--duration-fast) ease-(--ease-standard)',
           dragging
             ? 'border-line-accent bg-selected'
             : 'border-line-strong bg-surface hover:border-line-bold',

@@ -344,7 +344,7 @@ function StepResume({
                     onClick={() => onSelectExisting(item.id)}
                     className={cn(
                       'focus-ring flex w-full cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left',
-                      'transition-[border-color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+                      'transition-[border-color,background-color] duration-(--duration-fast) ease-(--ease-standard)',
                       selected
                         ? 'border-line-accent bg-selected'
                         : 'border-line bg-surface hover:border-line-strong hover:bg-hover',
@@ -557,7 +557,7 @@ function ProcessingPanel({ stage }: { stage: Stage | null }) {
                 key={entry.key}
                 className={cn(
                   'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-meta',
-                  'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+                  'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
                   active && 'bg-sunken font-medium text-fg',
                   done && 'text-fg-subtle',
                   !active && !done && 'text-fg-disabled',
@@ -566,7 +566,7 @@ function ProcessingPanel({ stage }: { stage: Stage | null }) {
                 <span
                   className={cn(
                     'flex size-3.5 shrink-0 items-center justify-center rounded-full',
-                    'transition-[background-color] duration-[--duration-fast] ease-[--ease-standard]',
+                    'transition-[background-color] duration-(--duration-fast) ease-(--ease-standard)',
                     done
                       ? 'bg-success-solid text-white'
                       : active

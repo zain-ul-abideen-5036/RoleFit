@@ -56,7 +56,7 @@ export function Stepper({
         */}
         <div className="mt-2 h-0.5 overflow-hidden rounded-full bg-sunken">
           <div
-            className="h-full origin-left rounded-full bg-accent transition-transform duration-[--duration-settle] ease-[--ease-standard]"
+            className="h-full origin-left rounded-full bg-accent transition-transform duration-(--duration-settle) ease-(--ease-standard)"
             style={{ transform: `scaleX(${position / steps.length})` }}
           />
         </div>
@@ -74,7 +74,7 @@ export function Stepper({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'h-px flex-1 transition-colors duration-[--duration-settle]',
+                    'h-px flex-1 transition-colors duration-(--duration-settle)',
                     complete || active ? 'bg-line-bold' : 'bg-line',
                   )}
                 />
@@ -84,7 +84,7 @@ export function Stepper({
                 <span
                   className={cn(
                     'flex size-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold tabular-nums',
-                    'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+                    'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
                     complete && 'border-accent bg-accent text-on-accent',
                     active && 'border-accent bg-surface text-fg',
                     !complete && !active && 'border-line-strong bg-surface text-fg-disabled',
@@ -98,7 +98,7 @@ export function Stepper({
                 </span>
                 <span
                   className={cn(
-                    'whitespace-nowrap text-meta transition-colors duration-[--duration-fast]',
+                    'whitespace-nowrap text-meta transition-colors duration-(--duration-fast)',
                     active ? 'font-medium text-fg' : 'text-fg-subtle',
                   )}
                 >

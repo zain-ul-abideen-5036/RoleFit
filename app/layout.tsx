@@ -130,13 +130,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/*
           First tab stop on every page.
 
-          `z-[--z-toast]` rather than a bare z-50: the skip link has to clear
+          `z-(--z-toast)` rather than a bare z-50: the skip link has to clear
           every other layer including an open dialog, and picking a number by
           hand is how it ends up behind the drawer it exists to skip past.
         */}
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[--z-toast] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-on-accent focus:shadow-lg"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-(--z-toast) focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-on-accent focus:shadow-lg"
         >
           Skip to content
         </a>
