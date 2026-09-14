@@ -38,7 +38,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-dvh flex-col lg:grid lg:grid-cols-[1fr_minmax(0,34rem)]">
       <div className="flex flex-1 flex-col">
-        <header className="flex h-[--header-height] shrink-0 items-center justify-between px-5 sm:px-8">
+        <header className="flex h-(--header-height) shrink-0 items-center justify-between px-5 sm:px-8">
           <Link
             href="/"
             className="focus-ring rounded-md focus-visible:outline-offset-4"

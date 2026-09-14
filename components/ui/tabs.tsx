@@ -62,7 +62,7 @@ export function TabsTrigger({
       className={cn(
         'focus-ring group relative inline-flex shrink-0 cursor-pointer items-center gap-2',
         'rounded-t-md border-b-2 border-transparent px-3 pb-2.5 pt-1.5 text-meta font-medium',
-        'text-fg-subtle transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+        'text-fg-subtle transition-colors duration-(--duration-fast) ease-(--ease-standard)',
         'hover:text-fg',
         'data-[state=active]:border-accent data-[state=active]:text-fg',
         className,

@@ -89,7 +89,7 @@ export function ThemeToggle({ className }: { className?: string }) {
             onClick={() => select(value)}
             className={cn(
               'focus-ring inline-flex size-6.5 cursor-pointer items-center justify-center rounded-md',
-              'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+              'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
               selected ? 'bg-surface text-fg shadow-xs' : 'text-fg-subtle hover:text-fg',
             )}
           >

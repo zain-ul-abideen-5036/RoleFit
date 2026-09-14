@@ -45,7 +45,7 @@ export function SiteHeader() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-[--z-header] border-b border-line bg-canvas/85 backdrop-blur-sm">
+    <header className="sticky top-0 z-(--z-header) border-b border-line bg-canvas/85 backdrop-blur-sm">
       <div className="container-page flex h-16 items-center justify-between gap-4">
         <Link
           href="/"

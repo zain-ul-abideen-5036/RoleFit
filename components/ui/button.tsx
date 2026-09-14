@@ -28,10 +28,10 @@ const buttonVariants = cva(
     'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md',
     'font-medium',
     'transition-[background-color,box-shadow,transform,border-color,color]',
-    'duration-[--duration-fast] ease-[--ease-standard]',
+    'duration-(--duration-fast) ease-(--ease-standard)',
     // The press: 1.5% down, and back on release. Small enough to feel like
     // travel in the surface rather than a size change.
-    'active:scale-[0.985] active:duration-[--duration-instant]',
+    'active:scale-[0.985] active:duration-(--duration-instant)',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
     'disabled:pointer-events-none disabled:opacity-55',
     'cursor-pointer select-none',
