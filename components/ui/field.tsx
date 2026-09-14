@@ -101,7 +101,7 @@ export function FieldDescription({
 const controlClasses = [
   'w-full rounded-md border bg-surface text-fg',
   'placeholder:text-fg-disabled',
-  'transition-[border-color,box-shadow,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+  'transition-[border-color,box-shadow,background-color] duration-(--duration-fast) ease-(--ease-standard)',
   // A control that does not react to the pointer reads as display text. The
   // border is the whole affordance here, so it is the thing that moves.
   'hover:border-line-bold',

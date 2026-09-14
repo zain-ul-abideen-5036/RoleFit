@@ -182,7 +182,7 @@ export function ScoreBar({ label, score, weight, detail, className }: ScoreBarPr
         <div
           className={cn(
             'score-fill h-full origin-left rounded-full bg-current',
-            'transition-transform duration-[--duration-settle] ease-[--ease-standard]',
+            'transition-transform duration-(--duration-settle) ease-(--ease-standard)',
             tone.ring,
           )}
         />

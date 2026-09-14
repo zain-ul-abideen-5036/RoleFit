@@ -72,7 +72,7 @@ export function TableHead({ className, ...props }: React.HTMLAttributes<HTMLTabl
       className={cn(
         'border-b border-line',
         // Sticky only inside the scroll container, and only when asked for.
-        '[table[data-sticky]_&]:sticky [table[data-sticky]_&]:top-0 [table[data-sticky]_&]:z-[--z-raised] [table[data-sticky]_&]:bg-surface',
+        '[table[data-sticky]_&]:sticky [table[data-sticky]_&]:top-0 [table[data-sticky]_&]:z-(--z-raised) [table[data-sticky]_&]:bg-surface',
         className,
       )}
       {...props}
@@ -126,7 +126,7 @@ export function TableRow({ interactive = false, className, ...props }: TableRowP
   return (
     <tr
       className={cn(
-        'transition-colors duration-[--duration-fast] ease-[--ease-standard]',
+        'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
         // Row-level hover, not cell-level: the whole record highlights, which
         // is what lets the eye track across a wide row without losing it.
         interactive && 'hover:bg-hover focus-within:bg-hover',

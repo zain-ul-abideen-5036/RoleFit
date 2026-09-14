@@ -38,7 +38,7 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          'z-[--z-popover] min-w-52 overflow-hidden rounded-lg border border-line bg-overlay p-1 shadow-lg',
+          'z-(--z-popover) min-w-52 overflow-hidden rounded-lg border border-line bg-overlay p-1 shadow-lg',
           // Radix reports which edge it landed on, so the entrance can travel
           // from the trigger rather than always from the top. A menu that
           // flipped to open upward but still animated downward reads wrong.
@@ -66,7 +66,7 @@ export function DropdownMenuItem({
     <DropdownMenuPrimitive.Item
       className={cn(
         'flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 py-2 text-meta outline-none',
-        'transition-colors duration-[--duration-instant]',
+        'transition-colors duration-(--duration-instant)',
         // `data-highlighted` covers pointer hover and keyboard focus with one
         // state, which is what keeps the two from looking different.
         tone === 'danger'
@@ -143,7 +143,7 @@ export function TooltipContent({
         sideOffset={sideOffset}
         collisionPadding={12}
         className={cn(
-          'z-[--z-popover] max-w-64 rounded-md border border-line bg-overlay px-2.5 py-2',
+          'z-(--z-popover) max-w-64 rounded-md border border-line bg-overlay px-2.5 py-2',
           'text-2xs leading-relaxed text-fg-muted shadow-lg',
           'data-[state=delayed-open]:animate-panel-in data-[state=closed]:animate-overlay-out',
           className,

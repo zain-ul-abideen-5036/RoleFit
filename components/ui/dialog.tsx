@@ -30,13 +30,13 @@ import { cn } from '@/lib/utils'
    ========================================================================== */
 
 const overlayClasses = [
-  'fixed inset-0 z-[--z-overlay] bg-ink-950/50',
+  'fixed inset-0 z-(--z-overlay) bg-ink-950/50',
   // Paired open/close, and the exit is faster: the user has already decided.
   'data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out',
 ].join(' ')
 
 const contentClasses = [
-  'fixed left-1/2 top-1/2 z-[--z-overlay] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2',
+  'fixed left-1/2 top-1/2 z-(--z-overlay) w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2',
   'rounded-xl border border-line bg-overlay shadow-xl',
   // A dialog genuinely floats, so it is one of the few surfaces that earns a
   // shadow in this system.

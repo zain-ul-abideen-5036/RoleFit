@@ -247,7 +247,7 @@ export function ChangeReview({
         `top` clears the mobile header, which is the only sticky chrome above
         this on a phone.
       */}
-      <div className="sticky top-[--header-height] z-[--z-sticky] -mx-4 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:top-0 lg:-mx-8 lg:px-8">
+      <div className="sticky top-(--header-height) z-(--z-sticky) -mx-4 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:top-0 lg:-mx-8 lg:px-8">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <div>
@@ -378,7 +378,7 @@ export function ChangeReview({
                     onClick={() => setFilter(value)}
                     className={cn(
                       'focus-ring cursor-pointer rounded-md px-2.5 py-1 text-2xs font-medium',
-                      'transition-colors duration-[--duration-fast]',
+                      'transition-colors duration-(--duration-fast)',
                       filter === value
                         ? 'bg-surface text-fg shadow-xs'
                         : 'text-fg-subtle hover:text-fg',
@@ -529,7 +529,7 @@ function ChangeCard({
     <article
       className={cn(
         'overflow-hidden rounded-xl border bg-surface',
-        'transition-[border-color,opacity] duration-[--duration-fast] ease-[--ease-standard]',
+        'transition-[border-color,opacity] duration-(--duration-fast) ease-(--ease-standard)',
         // A rejected change stays legible but recedes: it is a decision, not a
         // deletion, and it has to be findable again to be undone.
         change.decision === 'rejected'
@@ -587,7 +587,7 @@ function ChangeCard({
                   <span className="inline-flex items-center gap-1.5">
                     <span
                       aria-hidden="true"
-                      className="inline-block transition-transform duration-[--duration-fast] group-open:rotate-90"
+                      className="inline-block transition-transform duration-(--duration-fast) group-open:rotate-90"
                     >
                       ›
                     </span>

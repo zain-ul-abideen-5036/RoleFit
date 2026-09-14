@@ -776,7 +776,7 @@ function Faq() {
                   which state it is in.
                 */}
                 <span className="absolute h-px w-3 bg-current" />
-                <span className="absolute h-3 w-px bg-current transition-transform duration-[--duration-fast] ease-[--ease-standard] group-open:rotate-90 group-open:opacity-0" />
+                <span className="absolute h-3 w-px bg-current transition-transform duration-(--duration-fast) ease-(--ease-standard) group-open:rotate-90 group-open:opacity-0" />
               </span>
             </summary>
             <p className="measure-wide pb-5 pr-8 text-meta leading-relaxed text-fg-muted">

@@ -165,7 +165,7 @@ function NavLink({
       aria-current={active ? 'page' : undefined}
       className={cn(
         'focus-ring group relative flex items-center rounded-md',
-        'transition-[color,background-color] duration-[--duration-fast] ease-[--ease-standard]',
+        'transition-[color,background-color] duration-(--duration-fast) ease-(--ease-standard)',
         expanded
           ? 'gap-3 py-2 pl-3.5 pr-3 text-sm'
           : // Rail: a centred column. Expanded: a row. One tree, two shapes.
@@ -191,7 +191,7 @@ function NavLink({
         aria-hidden="true"
         className={cn(
           'absolute rounded-full bg-accent',
-          'origin-center transition-transform duration-[--duration-fast] ease-[--ease-standard]',
+          'origin-center transition-transform duration-(--duration-fast) ease-(--ease-standard)',
           expanded
             ? 'inset-y-1.5 left-0 w-0.5'
             : 'inset-x-2 bottom-0 h-0.5 lg:inset-x-auto lg:inset-y-1.5 lg:left-0 lg:h-auto lg:w-0.5',
@@ -206,7 +206,7 @@ function NavLink({
       />
       <Icon
         className={cn(
-          'size-4.5 shrink-0 transition-colors duration-[--duration-fast]',
+          'size-4.5 shrink-0 transition-colors duration-(--duration-fast)',
           active ? 'text-fg' : 'text-fg-subtle group-hover:text-fg-muted',
         )}
         aria-hidden="true"
@@ -273,7 +273,7 @@ function Sidebar({ pathname, user }: { pathname: string; user: AppShellProps['us
         The logo sits on the same rule as the page header opposite it, so the
         two align rather than the brand floating above a taller band.
       */}
-      <div className="flex h-[--header-height] shrink-0 items-center justify-center border-b border-line px-3 lg:justify-start lg:px-4">
+      <div className="flex h-(--header-height) shrink-0 items-center justify-center border-b border-line px-3 lg:justify-start lg:px-4">
         <Link
           href="/dashboard"
           aria-label="RoleFit dashboard"
@@ -320,7 +320,7 @@ function Sidebar({ pathname, user }: { pathname: string; user: AppShellProps['us
 
 function MobileHeader({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   return (
-    <header className="sticky top-0 z-[--z-header] flex h-[--header-height] items-center justify-between gap-3 border-b border-line bg-canvas/90 px-4 backdrop-blur-sm md:hidden">
+    <header className="sticky top-0 z-(--z-header) flex h-(--header-height) items-center justify-between gap-3 border-b border-line bg-canvas/90 px-4 backdrop-blur-sm md:hidden">
       <Link
         href="/dashboard"
         aria-label="RoleFit dashboard"
@@ -388,7 +388,7 @@ function MobileDrawer({
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[--z-drawer] md:hidden">
+    <div className="fixed inset-0 z-(--z-drawer) md:hidden">
       <button
         type="button"
         className="absolute inset-0 animate-fade-in bg-ink-950/45"
@@ -404,7 +404,7 @@ function MobileDrawer({
         tabIndex={-1}
         className="absolute inset-y-0 left-0 flex w-[17rem] max-w-[85vw] animate-slide-from-left flex-col border-r border-line bg-surface outline-none"
       >
-        <div className="flex h-[--header-height] shrink-0 items-center justify-between border-b border-line px-4">
+        <div className="flex h-(--header-height) shrink-0 items-center justify-between border-b border-line px-4">
           <Logo />
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close menu">
             <X className="size-4" aria-hidden="true" />
