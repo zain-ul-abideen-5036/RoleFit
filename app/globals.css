@@ -1038,6 +1038,25 @@
   stroke-dashoffset: var(--score-arc-offset);
 }
 
+/*
+ * The meter's resting state: drawn to its value.
+ *
+ * The exact counterpart of `.score-arc` above, and its absence was a real bug
+ * rather than a tidiness point. The fill only ever received a transform from
+ * the two `[data-measure]` rules below, so everywhere those did not apply —
+ * which is every score in the product, plus the marketing card whenever the
+ * reveal correctly declined to run — it had no transform at all and `h-full`
+ * inside the track painted it at 100%. An 88, a 74 and a 100 drew three
+ * identical full bars directly beneath the numbers contradicting them.
+ *
+ * The block above claims the default is "the *true reading*, fully drawn".
+ * That was true of the arc and false of the bars; this is the line that makes
+ * it true of both.
+ */
+.score-fill {
+  transform: scaleX(var(--score-fill, 0));
+}
+
 /* Armed — snapped to empty, with no transition, while off screen. */
 [data-measure='armed'] .score-arc {
   stroke-dashoffset: var(--score-arc-length);
@@ -1045,6 +1064,15 @@
 
 [data-measure='armed'] .score-fill {
   transform: scaleX(0);
+  /*
+   * Snapped, not transitioned. `ScoreBar` carries an always-on
+   * `transition-transform`, so arming would otherwise animate the drawn bar
+   * down to empty over 280ms — the opposite of what "armed" means, and now
+   * that the resting state is a real value there is something to animate
+   * from. The arc needs no equivalent: its transition lives only in the
+   * `running` rule.
+   */
+  transition: none;
 }
 
 /* Running — the same values the resting state has, now transitioned into. */
