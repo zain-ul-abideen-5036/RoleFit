@@ -162,6 +162,29 @@ describe('choosing an engine', () => {
 
     await expect(optimize()).resolves.toMatchObject({ provider: 'deterministic' })
   })
+
+  it('says why it fell back: the error code and the upstream HTTP status', async () => {
+    // Without this a misconfigured key, a wrong model and a rate limit all
+    // look identical from outside: an unchanged resume.
+    getAiProvider.mockReturnValue({
+      name: 'openai',
+      model: 'gemini-test',
+      generateStructured: vi
+        .fn()
+        .mockRejectedValue(
+          new AppError('AI_UNAVAILABLE', { context: { provider: 'openai', status: 401 } }),
+        ),
+    })
+
+    const result = await optimize()
+
+    expect(result.aiFallback).toEqual({ code: 'AI_UNAVAILABLE', status: 401, reason: null })
+  })
+
+  it('reports no fallback when the model answered', async () => {
+    getAiProvider.mockReturnValue(providerReturning({}))
+    expect((await optimize()).aiFallback).toBeNull()
+  })
 })
 
 describe('the immutable-section backstop', () => {

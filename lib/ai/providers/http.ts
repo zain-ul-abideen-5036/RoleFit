@@ -79,9 +79,10 @@ export async function postJson<TResponse>(options: PostJsonOptions): Promise<TRe
     }
   }
 
+  const timedOut = (lastError as { name?: string } | null)?.name === 'AbortError'
   throw new AppError(ERROR_CODES.AI_UNAVAILABLE, {
     cause: lastError,
-    context: { provider: options.provider },
+    context: { provider: options.provider, reason: timedOut ? 'timeout' : 'network' },
   })
 }
 

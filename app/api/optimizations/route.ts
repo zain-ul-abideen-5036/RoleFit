@@ -74,6 +74,9 @@ export const POST = route(
         // Told plainly so the UI can explain what kind of optimization ran.
         capabilities: activeCapabilities(),
         rejectedCount: result.rejectedCount,
+        // Code and HTTP status only, so a misconfigured provider can be
+        // diagnosed from the response rather than from server logs.
+        aiFallback: result.aiFallback,
       },
       { status: 201 },
     )
