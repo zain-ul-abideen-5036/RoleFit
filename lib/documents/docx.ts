@@ -14,6 +14,7 @@ import {
 
 import type { ResumeProfile } from '@/lib/domain/types'
 import { buildLayout, type LayoutBlock } from '@/lib/documents/layout'
+import { resolveTemplate, type ResumeTemplate } from '@/lib/documents/templates'
 
 /**
  * DOCX generation.
@@ -24,8 +25,6 @@ import { buildLayout, type LayoutBlock } from '@/lib/documents/layout'
  * weight, size and spacing.
  */
 
-/** Calibri is the Word default and is present on every Office install. */
-const FONT = 'Calibri'
 const BODY_SIZE = 21 // half-points => 10.5pt
 const NAME_SIZE = 32 // 16pt
 const HEADING_SIZE = 22 // 11pt
@@ -36,30 +35,46 @@ const MUTED = '4A4A4A'
 /** Right tab stop for dates, at the right margin. */
 const RIGHT_TAB = convertInchesToTwip(7.0)
 
-function bodyRun(text: string, options: { bold?: boolean; color?: string; size?: number } = {}) {
-  return new TextRun({
-    text,
-    font: FONT,
-    bold: options.bold ?? false,
-    color: options.color ?? INK,
-    size: options.size ?? BODY_SIZE,
-  })
+interface RunOptions {
+  bold?: boolean
+  color?: string
+  size?: number
 }
 
-function renderBlock(block: LayoutBlock): Paragraph[] {
+/**
+ * Renders one block in the template's style.
+ *
+ * The font comes from the template and is always one installed with Office
+ * (Calibri, Arial, Georgia, Cambria), so Word never substitutes a face.
+ */
+function renderBlock(block: LayoutBlock, template: ResumeTemplate): Paragraph[] {
+  const font = template.docxFont
+  const headerAlignment =
+    template.headerAlign === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT
+
+  const bodyRun = (text: string, options: RunOptions = {}) =>
+    new TextRun({
+      text,
+      font,
+      bold: options.bold ?? false,
+      color: options.color ?? INK,
+      size: options.size ?? BODY_SIZE,
+    })
+
   switch (block.kind) {
     case 'name':
       return [
         new Paragraph({
-          alignment: AlignmentType.LEFT,
+          alignment: headerAlignment,
           spacing: { after: 40 },
-          children: [bodyRun(block.text, { bold: true, size: NAME_SIZE })],
+          children: [bodyRun(block.text, { bold: true, size: NAME_SIZE, color: template.accent })],
         }),
       ]
 
     case 'contact':
       return [
         new Paragraph({
+          alignment: headerAlignment,
           spacing: { after: 160 },
           children: [bodyRun(block.parts.join('  |  '), { color: MUTED })],
         }),
@@ -71,10 +86,25 @@ function renderBlock(block: LayoutBlock): Paragraph[] {
           // A real heading style, so the document outline is machine-readable.
           heading: HeadingLevel.HEADING_1,
           spacing: { before: 220, after: 90 },
-          border: {
-            bottom: { style: 'single', size: 6, color: 'C9CDD6', space: 4 },
-          },
-          children: [bodyRun(block.text.toUpperCase(), { bold: true, size: HEADING_SIZE })],
+          ...(template.headingStyle === 'rule'
+            ? {
+                border: {
+                  bottom: {
+                    style: 'single' as const,
+                    size: 6,
+                    color: template.accent === INK ? 'C9CDD6' : template.accent,
+                    space: 4,
+                  },
+                },
+              }
+            : {}),
+          children: [
+            bodyRun(block.text.toUpperCase(), {
+              bold: true,
+              size: HEADING_SIZE,
+              color: template.accent,
+            }),
+          ],
         }),
       ]
 
@@ -93,7 +123,7 @@ function renderBlock(block: LayoutBlock): Paragraph[] {
       }
       if (block.trailing) {
         children.push(
-          new TextRun({ text: '', font: FONT }),
+          new TextRun({ text: '', font }),
           bodyRun('\t', { color: MUTED }),
           bodyRun(block.trailing, { color: MUTED }),
         )
@@ -140,9 +170,13 @@ function renderBlock(block: LayoutBlock): Paragraph[] {
 }
 
 /** Renders a resume profile to a DOCX buffer. */
-export async function generateDocx(profile: ResumeProfile): Promise<Uint8Array> {
-  const blocks = buildLayout(profile)
-  const paragraphs = blocks.flatMap(renderBlock)
+export async function generateDocx(
+  profile: ResumeProfile,
+  template: ResumeTemplate = resolveTemplate(),
+): Promise<Uint8Array> {
+  const blocks = buildLayout(profile, template)
+  const paragraphs = blocks.flatMap((block) => renderBlock(block, template))
+  const font = template.docxFont
 
   const document = new Document({
     creator: 'RoleFit',
@@ -151,11 +185,11 @@ export async function generateDocx(profile: ResumeProfile): Promise<Uint8Array> 
     styles: {
       default: {
         document: {
-          run: { font: FONT, size: BODY_SIZE, color: INK },
+          run: { font, size: BODY_SIZE, color: INK },
           paragraph: { spacing: { line: 264 } },
         },
         heading1: {
-          run: { font: FONT, size: HEADING_SIZE, bold: true, color: INK },
+          run: { font, size: HEADING_SIZE, bold: true, color: template.accent },
         },
       },
     },

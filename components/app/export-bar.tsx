@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/feedback'
 import { Panel, Toolbar } from '@/components/ui/layout'
 import { apiPost, toDisplayError } from '@/lib/client/api'
+import type { TemplateId } from '@/lib/documents/templates'
 
 /**
  * Export controls.
@@ -26,7 +27,15 @@ interface DocumentResponse {
   warnings: string[]
 }
 
-export function ExportBar({ resumeId, runId }: { resumeId: string; runId: string | null }) {
+export function ExportBar({
+  resumeId,
+  runId,
+  templateId,
+}: {
+  resumeId: string
+  runId: string | null
+  templateId: TemplateId
+}) {
   const [busy, setBusy] = React.useState<'pdf' | 'docx' | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [warnings, setWarnings] = React.useState<string[]>([])
@@ -39,6 +48,7 @@ export function ExportBar({ resumeId, runId }: { resumeId: string; runId: string
     try {
       const result = await apiPost<DocumentResponse>('/api/documents', {
         format,
+        templateId,
         ...(runId ? { runId } : { resumeId }),
       })
       setWarnings(result.warnings)

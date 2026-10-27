@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation'
 
 import { ExportBar } from '@/components/app/export-bar'
 import { ResumeDocument } from '@/components/app/resume-document'
+import { TemplatePicker } from '@/components/app/template-picker'
 import { PageBody, PageHeader, Stack } from '@/components/ui/layout'
+import { resolveTemplate } from '@/lib/documents/templates'
 import { AppError } from '@/lib/errors'
 import { requirePageUser } from '@/server/auth/service'
 import { latestRunForResume, requireOptimizationRun, requireResume } from '@/server/repositories'
@@ -29,10 +31,12 @@ export default async function PreviewPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ run?: string }>
+  searchParams: Promise<{ run?: string; template?: string }>
 }) {
   const { id } = await params
-  const { run: runParam } = await searchParams
+  const { run: runParam, template: templateParam } = await searchParams
+  // An unknown or missing id falls back to the default rather than erroring.
+  const template = resolveTemplate(templateParam)
   const user = await requirePageUser()
 
   let resume
@@ -75,10 +79,18 @@ export default async function PreviewPage({
       <PageBody>
         <Stack gap="md">
           <div className="no-print">
-            <ExportBar resumeId={resume.id} runId={run?.status === 'succeeded' ? run.id : null} />
+            <ExportBar
+              resumeId={resume.id}
+              runId={run?.status === 'succeeded' ? run.id : null}
+              templateId={template.id}
+            />
           </div>
 
-          <ResumeDocument profile={profile} paper />
+          <div className="no-print">
+            <TemplatePicker value={template.id} />
+          </div>
+
+          <ResumeDocument profile={profile} template={template} paper />
         </Stack>
       </PageBody>
     </>

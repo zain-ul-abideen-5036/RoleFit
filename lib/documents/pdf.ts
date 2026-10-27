@@ -1,10 +1,11 @@
 import 'server-only'
 
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib'
 
 import type { ResumeProfile } from '@/lib/domain/types'
 import { toWinAnsi } from '@/lib/documents/encoding'
 import { buildLayout, type LayoutBlock } from '@/lib/documents/layout'
+import { resolveTemplate, type ResumeTemplate } from '@/lib/documents/templates'
 
 /**
  * PDF generation.
@@ -50,10 +51,36 @@ interface Fonts {
   bold: PDFFont
 }
 
+/** The template's choices, resolved to drawing values once per document. */
+interface Style {
+  accent: RGB
+  /** Null when the template draws headings without a rule. */
+  rule: RGB | null
+  headerAlign: 'left' | 'center'
+}
+
 interface RenderContext {
   document: PDFDocument
   fonts: Fonts
+  style: Style
   cursor: Cursor
+}
+
+function hexToRgb(hex: string): RGB {
+  const value = Number.parseInt(hex, 16)
+  return rgb(((value >> 16) & 0xff) / 255, ((value >> 8) & 0xff) / 255, (value & 0xff) / 255)
+}
+
+function styleFor(template: ResumeTemplate): Style {
+  const accent = hexToRgb(template.accent)
+  // A coloured template rules in its own colour; a black one keeps the light
+  // grey rule, since a full-black line under every heading reads as heavy.
+  const coloured = template.accent.toUpperCase() !== '1A1A1A'
+  return {
+    accent,
+    rule: template.headingStyle === 'plain' ? null : coloured ? accent : RULE,
+    headerAlign: template.headerAlign,
+  }
 }
 
 function newPage(document: PDFDocument): Cursor {
@@ -109,10 +136,11 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
 interface DrawOptions {
   font?: PDFFont
   size?: number
-  color?: typeof INK
+  color?: RGB
   indent?: number
   maxWidth?: number
   spacingAfter?: number
+  align?: 'left' | 'center'
 }
 
 function drawParagraph(context: RenderContext, text: string, options: DrawOptions = {}): void {
@@ -126,8 +154,12 @@ function drawParagraph(context: RenderContext, text: string, options: DrawOption
 
   for (const line of lines) {
     ensureSpace(context, lineHeight)
+    const x =
+      options.align === 'center'
+        ? MARGIN_X + (CONTENT_WIDTH - font.widthOfTextAtSize(line, size)) / 2
+        : MARGIN_X + indent
     context.cursor.page.drawText(line, {
-      x: MARGIN_X + indent,
+      x,
       y: context.cursor.y - size,
       size,
       font,
@@ -140,7 +172,7 @@ function drawParagraph(context: RenderContext, text: string, options: DrawOption
 }
 
 function renderBlock(context: RenderContext, block: LayoutBlock): void {
-  const { fonts } = context
+  const { fonts, style } = context
 
   switch (block.kind) {
     case 'name': {
@@ -148,6 +180,8 @@ function renderBlock(context: RenderContext, block: LayoutBlock): void {
       drawParagraph(context, block.text, {
         font: fonts.bold,
         size: SIZE_NAME,
+        color: style.accent,
+        align: style.headerAlign,
         spacingAfter: 2,
       })
       break
@@ -157,6 +191,7 @@ function renderBlock(context: RenderContext, block: LayoutBlock): void {
       drawParagraph(context, block.parts.join('  |  '), {
         size: SIZE_CONTACT,
         color: MUTED,
+        align: style.headerAlign,
         spacingAfter: 8,
       })
       break
@@ -169,16 +204,19 @@ function renderBlock(context: RenderContext, block: LayoutBlock): void {
       drawParagraph(context, block.text.toUpperCase(), {
         font: fonts.bold,
         size: SIZE_HEADING,
+        color: style.accent,
       })
       // Rule under the heading. Decorative but harmless: it is a vector line,
       // not an image, and carries no text.
-      const ruleY = context.cursor.y + 2
-      context.cursor.page.drawLine({
-        start: { x: MARGIN_X, y: ruleY },
-        end: { x: PAGE_WIDTH - MARGIN_X, y: ruleY },
-        thickness: 0.6,
-        color: RULE,
-      })
+      if (style.rule) {
+        const ruleY = context.cursor.y + 2
+        context.cursor.page.drawLine({
+          start: { x: MARGIN_X, y: ruleY },
+          end: { x: PAGE_WIDTH - MARGIN_X, y: ruleY },
+          thickness: 0.6,
+          color: style.rule,
+        })
+      }
       context.cursor.y -= 6
       break
     }
@@ -344,21 +382,33 @@ function renderBlock(context: RenderContext, block: LayoutBlock): void {
 }
 
 /** Renders a resume profile to a PDF buffer with selectable text. */
-export async function generatePdf(profile: ResumeProfile): Promise<Uint8Array> {
+export async function generatePdf(
+  profile: ResumeProfile,
+  template: ResumeTemplate = resolveTemplate(),
+): Promise<Uint8Array> {
   const document = await PDFDocument.create()
 
   document.setTitle(profile.personal.fullName ? `${profile.personal.fullName} — Resume` : 'Resume')
   document.setProducer('RoleFit')
   document.setCreator('RoleFit')
 
+  // Standard Type 1 faces only, so text stays extractable without embedding.
+  const serif = template.typeface === 'serif'
   const fonts: Fonts = {
-    regular: await document.embedFont(StandardFonts.Helvetica),
-    bold: await document.embedFont(StandardFonts.HelveticaBold),
+    regular: await document.embedFont(serif ? StandardFonts.TimesRoman : StandardFonts.Helvetica),
+    bold: await document.embedFont(
+      serif ? StandardFonts.TimesRomanBold : StandardFonts.HelveticaBold,
+    ),
   }
 
-  const context: RenderContext = { document, fonts, cursor: newPage(document) }
+  const context: RenderContext = {
+    document,
+    fonts,
+    style: styleFor(template),
+    cursor: newPage(document),
+  }
 
-  for (const block of buildLayout(profile)) {
+  for (const block of buildLayout(profile, template)) {
     renderBlock(context, block)
   }
 

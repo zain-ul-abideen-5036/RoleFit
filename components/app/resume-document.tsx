@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import type { ResumeProfile } from '@/lib/domain/types'
 import { buildLayout, type LayoutBlock } from '@/lib/documents/layout'
+import { resolveTemplate, type ResumeTemplate } from '@/lib/documents/templates'
 import { cn } from '@/lib/utils'
 
 /**
@@ -12,6 +13,10 @@ import { cn } from '@/lib/utils'
  * in exactly one place, and the preview cannot drift away from the file the
  * user downloads — which is the failure mode that makes a preview worse than
  * useless.
+ *
+ * The template's accent applies in the light theme only. The sheet follows the
+ * app theme, and a navy heading on a dark surface would be unreadable, so in
+ * dark mode accents fall back to the ordinary foreground.
  */
 
 export function ResumeDocument({
@@ -21,14 +26,16 @@ export function ResumeDocument({
   className,
   /** Renders at document proportions for the print/preview page. */
   paper = false,
+  template = resolveTemplate(),
 }: {
   profile: ResumeProfile
+  template?: ResumeTemplate
   title?: string
   highlighted?: boolean
   className?: string
   paper?: boolean
 }) {
-  const blocks = buildLayout(profile)
+  const blocks = buildLayout(profile, template)
 
   return (
     <section
@@ -61,15 +68,17 @@ export function ResumeDocument({
         {...(paper
           ? {}
           : { tabIndex: 0, role: 'group', 'aria-label': `${title ?? 'Resume'} content` })}
+        style={{ '--resume-accent': `#${template.accent}` } as React.CSSProperties}
         className={cn(
           'print-sheet',
+          template.typeface === 'serif' && 'font-serif',
           paper
             ? 'mx-auto max-w-[52rem] px-8 py-10 sm:px-12 sm:py-14'
             : 'max-h-[32rem] overflow-y-auto px-5 py-5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring',
         )}
       >
         {blocks.map((block, index) => (
-          <Block key={index} block={block} paper={paper} />
+          <Block key={index} block={block} paper={paper} template={template} />
         ))}
 
         {blocks.length === 0 ? (
@@ -82,18 +91,34 @@ export function ResumeDocument({
   )
 }
 
-function Block({ block, paper }: { block: LayoutBlock; paper: boolean }) {
+function Block({
+  block,
+  paper,
+  template,
+}: {
+  block: LayoutBlock
+  paper: boolean
+  template: ResumeTemplate
+}) {
+  const centred = template.headerAlign === 'center' && 'text-center'
+
   switch (block.kind) {
     case 'name':
       return (
-        <h1 className={cn('font-bold tracking-tight text-fg', paper ? 'text-3xl' : 'text-xl')}>
+        <h1
+          className={cn(
+            'font-bold tracking-tight text-(--resume-accent) dark:text-fg',
+            centred,
+            paper ? 'text-3xl' : 'text-xl',
+          )}
+        >
           {block.text}
         </h1>
       )
 
     case 'contact':
       return (
-        <p className={cn('mt-1.5 text-fg-muted', paper ? 'text-sm' : 'text-xs')}>
+        <p className={cn('mt-1.5 text-fg-muted', centred, paper ? 'text-sm' : 'text-xs')}>
           {block.parts.join('  ·  ')}
         </p>
       )
@@ -102,7 +127,8 @@ function Block({ block, paper }: { block: LayoutBlock; paper: boolean }) {
       return (
         <h2
           className={cn(
-            'mt-6 border-b border-line pb-1 font-semibold uppercase tracking-wider text-fg',
+            'mt-6 pb-1 font-semibold uppercase tracking-wider text-(--resume-accent) dark:text-fg',
+            template.headingStyle === 'rule' && 'border-b border-line',
             paper ? 'text-sm' : 'text-xs',
           )}
         >

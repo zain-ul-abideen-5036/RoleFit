@@ -1,4 +1,5 @@
 import type { ResumeProfile } from '@/lib/domain/types'
+import { resolveTemplate, type ResumeTemplate, type SectionKey } from '@/lib/documents/templates'
 
 /**
  * The document layout model.
@@ -26,7 +27,7 @@ export type LayoutBlock =
   | { kind: 'spacer' }
 
 /** Standard, ATS-recognised section names. Never creative. */
-const SECTION_TITLES = {
+const SECTION_TITLES: Record<SectionKey, string> = {
   summary: 'Professional Summary',
   skills: 'Skills',
   experience: 'Experience',
@@ -34,7 +35,7 @@ const SECTION_TITLES = {
   education: 'Education',
   certifications: 'Certifications',
   achievements: 'Achievements',
-} as const
+}
 
 function formatDateRange(dates: { start: string | null; end: string | null }): string | null {
   if (!dates.start && !dates.end) return null
@@ -53,9 +54,14 @@ function joinNonEmpty(parts: ReadonlyArray<string | null | undefined>, separator
  * Builds the block list for a resume.
  *
  * Sections with no content are omitted entirely rather than rendered as an
- * empty heading, which is one of the document-quality checks.
+ * empty heading, which is one of the document-quality checks. The template
+ * decides only the order sections appear in; what each section contains is
+ * the same whichever template is chosen.
  */
-export function buildLayout(profile: ResumeProfile): LayoutBlock[] {
+export function buildLayout(
+  profile: ResumeProfile,
+  template: ResumeTemplate = resolveTemplate(),
+): LayoutBlock[] {
   const blocks: LayoutBlock[] = []
 
   /* ------------------------------------------------------------- header */
@@ -76,24 +82,45 @@ export function buildLayout(profile: ResumeProfile): LayoutBlock[] {
     blocks.push({ kind: 'contact', parts: contactParts })
   }
 
-  /* ------------------------------------------------------------ summary */
-  if (profile.summary?.trim()) {
-    blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.summary })
-    blocks.push({ kind: 'paragraph', text: profile.summary.trim() })
+  for (const section of template.sectionOrder) {
+    SECTION_EMITTERS[section](profile, blocks)
   }
 
-  /* ------------------------------------------------------------- skills */
-  const skillGroups = profile.skills.filter((group) => group.items.length > 0)
-  if (skillGroups.length > 0) {
+  /* --------------------------------------------------- custom sections */
+  for (const section of profile.additionalSections) {
+    const items = section.items.filter((item) => item.trim())
+    if (items.length === 0) continue
+    blocks.push({ kind: 'sectionHeading', text: section.heading.trim() })
+    for (const item of items) {
+      blocks.push({ kind: 'bullet', text: item.trim() })
+    }
+    blocks.push({ kind: 'spacer' })
+  }
+
+  return trimTrailingSpacers(blocks)
+}
+
+type SectionEmitter = (profile: ResumeProfile, blocks: LayoutBlock[]) => void
+
+const SECTION_EMITTERS: Record<SectionKey, SectionEmitter> = {
+  summary(profile, blocks) {
+    if (!profile.summary?.trim()) return
+    blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.summary })
+    blocks.push({ kind: 'paragraph', text: profile.summary.trim() })
+  },
+
+  skills(profile, blocks) {
+    const skillGroups = profile.skills.filter((group) => group.items.length > 0)
+    if (skillGroups.length === 0) return
     blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.skills })
     for (const group of skillGroups) {
       const label = group.category.trim().toLowerCase() === 'skills' ? null : group.category.trim()
       blocks.push({ kind: 'labelledList', label, items: group.items })
     }
-  }
+  },
 
-  /* --------------------------------------------------------- experience */
-  if (profile.experience.length > 0) {
+  experience(profile, blocks) {
+    if (profile.experience.length === 0) return
     blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.experience })
     for (const entry of profile.experience) {
       blocks.push({
@@ -110,10 +137,10 @@ export function buildLayout(profile: ResumeProfile): LayoutBlock[] {
       }
       blocks.push({ kind: 'spacer' })
     }
-  }
+  },
 
-  /* ----------------------------------------------------------- projects */
-  if (profile.projects.length > 0) {
+  projects(profile, blocks) {
+    if (profile.projects.length === 0) return
     blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.projects })
     for (const entry of profile.projects) {
       blocks.push({
@@ -133,10 +160,10 @@ export function buildLayout(profile: ResumeProfile): LayoutBlock[] {
       }
       blocks.push({ kind: 'spacer' })
     }
-  }
+  },
 
-  /* ---------------------------------------------------------- education */
-  if (profile.education.length > 0) {
+  education(profile, blocks) {
+    if (profile.education.length === 0) return
     blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.education })
     for (const entry of profile.education) {
       const degree = joinNonEmpty([entry.degree, entry.field], ', ')
@@ -151,11 +178,11 @@ export function buildLayout(profile: ResumeProfile): LayoutBlock[] {
       }
       blocks.push({ kind: 'spacer' })
     }
-  }
+  },
 
-  /* ----------------------------------------------------- certifications */
-  const certifications = profile.certifications.filter((entry) => entry.name.trim())
-  if (certifications.length > 0) {
+  certifications(profile, blocks) {
+    const certifications = profile.certifications.filter((entry) => entry.name.trim())
+    if (certifications.length === 0) return
     blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.certifications })
     for (const entry of certifications) {
       const trailing = joinNonEmpty([entry.issued], '')
@@ -167,30 +194,17 @@ export function buildLayout(profile: ResumeProfile): LayoutBlock[] {
       })
     }
     blocks.push({ kind: 'spacer' })
-  }
+  },
 
-  /* ------------------------------------------------------- achievements */
-  const achievements = profile.achievements.filter((item) => item.trim())
-  if (achievements.length > 0) {
+  achievements(profile, blocks) {
+    const achievements = profile.achievements.filter((item) => item.trim())
+    if (achievements.length === 0) return
     blocks.push({ kind: 'sectionHeading', text: SECTION_TITLES.achievements })
     for (const item of achievements) {
       blocks.push({ kind: 'bullet', text: item.trim() })
     }
     blocks.push({ kind: 'spacer' })
-  }
-
-  /* --------------------------------------------------- custom sections */
-  for (const section of profile.additionalSections) {
-    const items = section.items.filter((item) => item.trim())
-    if (items.length === 0) continue
-    blocks.push({ kind: 'sectionHeading', text: section.heading.trim() })
-    for (const item of items) {
-      blocks.push({ kind: 'bullet', text: item.trim() })
-    }
-    blocks.push({ kind: 'spacer' })
-  }
-
-  return trimTrailingSpacers(blocks)
+  },
 }
 
 function trimTrailingSpacers(blocks: LayoutBlock[]): LayoutBlock[] {

@@ -3,6 +3,7 @@ import 'server-only'
 import type { GeneratedDocument } from '@/db/schema'
 import { DOCX_MIME_TYPE, generateDocx } from '@/lib/documents/docx'
 import { PDF_MIME_TYPE, generatePdf } from '@/lib/documents/pdf'
+import { resolveTemplate, type TemplateId } from '@/lib/documents/templates'
 import { validateGeneratedDocument } from '@/lib/documents/validate'
 import type { ResumeProfile } from '@/lib/domain/types'
 import { AppError, ERROR_CODES } from '@/lib/errors'
@@ -36,6 +37,8 @@ export interface GenerateDocumentInput {
   /** …or directly from a resume's current content. */
   resumeId?: string
   format: DocumentFormat
+  /** Presentation only; every template is single-column and ATS-safe. */
+  templateId?: TemplateId
 }
 
 export interface GenerateDocumentResult {
@@ -50,7 +53,11 @@ export async function generateDocument(
 
   const { profile, resumeId, label } = await resolveSource(input)
 
-  const bytes = input.format === 'pdf' ? await generatePdf(profile) : await generateDocx(profile)
+  const template = resolveTemplate(input.templateId)
+  const bytes =
+    input.format === 'pdf'
+      ? await generatePdf(profile, template)
+      : await generateDocx(profile, template)
 
   const validation = await validateGeneratedDocument({ bytes, format: input.format, profile })
 
@@ -112,6 +119,7 @@ export async function generateDocument(
     userId: input.userId,
     documentId: document.id,
     format: input.format,
+    template: template.id,
     sizeBytes: stored.sizeBytes,
     pageCount: validation.pageCount,
     durationMs: Date.now() - startedAt,
