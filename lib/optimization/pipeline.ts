@@ -78,6 +78,10 @@ export interface AiFallback {
   code: string
   status: number | null
   reason: string | null
+  /** The model name sent. A 404 from an OpenAI-compatible API usually means this. */
+  model: string | null
+  /** Where the request went, without query string. */
+  endpoint: string | null
 }
 
 export interface OptimizeInput {
@@ -129,6 +133,8 @@ export async function optimizeResume(input: OptimizeInput): Promise<Optimization
         code: AppError.isAppError(error) ? error.code : 'unknown',
         status: typeof context?.status === 'number' ? context.status : null,
         reason: typeof context?.reason === 'string' ? context.reason : null,
+        model: provider.model,
+        endpoint: typeof context?.endpoint === 'string' ? context.endpoint : null,
       }
       logger.warn('optimization.llm_failed_falling_back', {
         provider: provider.name,

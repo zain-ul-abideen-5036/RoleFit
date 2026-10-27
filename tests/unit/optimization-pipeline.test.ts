@@ -178,7 +178,13 @@ describe('choosing an engine', () => {
 
     const result = await optimize()
 
-    expect(result.aiFallback).toEqual({ code: 'AI_UNAVAILABLE', status: 401, reason: null })
+    expect(result.aiFallback).toEqual({
+      code: 'AI_UNAVAILABLE',
+      status: 401,
+      reason: null,
+      model: 'gemini-test',
+      endpoint: null,
+    })
   })
 
   it('reports no fallback when the model answered', async () => {
