@@ -4,7 +4,7 @@ import type { ChangeRecord, OptimizationRun } from '@/db/schema'
 import { AppError, toAppError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { applyDecisions } from '@/lib/optimization/apply'
-import { optimizeResume } from '@/lib/optimization/pipeline'
+import { optimizeResume, type AiFallback } from '@/lib/optimization/pipeline'
 import type { ChangeSet, ReviewableChange } from '@/lib/optimization/types'
 import type { ResumeProfile } from '@/lib/domain/types'
 import {
@@ -43,6 +43,8 @@ export interface RunOptimizationResult {
   /** Which engine produced the proposal, so the UI can be honest about it. */
   provider: string
   rejectedCount: number
+  /** Set when a configured AI provider failed and the rule-based engine ran. */
+  aiFallback: AiFallback | null
 }
 
 /**
@@ -144,6 +146,7 @@ export async function executeRun(
       projectedScore: result.projectedScore,
       provider: result.provider,
       rejectedCount: result.rejected.length,
+      aiFallback: result.aiFallback,
     }
   } catch (error) {
     const appError = toAppError(error)

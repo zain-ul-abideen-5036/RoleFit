@@ -66,6 +66,18 @@ export interface OptimizationResult {
   /** Changes discarded by validation. Logged; surfaced only as a count. */
   rejected: RejectedChange[]
   usage: { inputTokens: number | null; outputTokens: number | null }
+  /**
+   * Why a configured AI provider was not used, when it was not. Null when the
+   * model answered, or none is configured. Carries no prompt or key material:
+   * only the error code, the upstream HTTP status, and the transport reason.
+   */
+  aiFallback: AiFallback | null
+}
+
+export interface AiFallback {
+  code: string
+  status: number | null
+  reason: string | null
 }
 
 export interface OptimizeInput {
@@ -96,6 +108,7 @@ export async function optimizeResume(input: OptimizeInput): Promise<Optimization
   let model: string | null = null
   let promptVersion = 'rule-based-v1'
   let usage: OptimizationResult['usage'] = { inputTokens: null, outputTokens: null }
+  let aiFallback: AiFallback | null = null
 
   if (provider) {
     try {
@@ -111,9 +124,15 @@ export async function optimizeResume(input: OptimizeInput): Promise<Optimization
       usedProvider = provider.name
       model = provider.model
     } catch (error) {
+      const context = AppError.isAppError(error) ? error.context : undefined
+      aiFallback = {
+        code: AppError.isAppError(error) ? error.code : 'unknown',
+        status: typeof context?.status === 'number' ? context.status : null,
+        reason: typeof context?.reason === 'string' ? context.reason : null,
+      }
       logger.warn('optimization.llm_failed_falling_back', {
         provider: provider.name,
-        code: AppError.isAppError(error) ? error.code : 'unknown',
+        ...aiFallback,
       })
       proposal = undefined
     }
@@ -177,6 +196,7 @@ export async function optimizeResume(input: OptimizeInput): Promise<Optimization
     promptVersion,
     rejected: outcome.rejected,
     usage,
+    aiFallback,
   }
 }
 
