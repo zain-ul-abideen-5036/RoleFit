@@ -55,7 +55,11 @@ export async function postJson<TResponse>(options: PostJsonOptions): Promise<TRe
 
       if (!RETRYABLE_STATUSES.has(response.status) || attempt === maxAttempts) {
         throw new AppError(ERROR_CODES.AI_UNAVAILABLE, {
-          context: { provider: options.provider, status: response.status },
+          context: {
+            provider: options.provider,
+            status: response.status,
+            endpoint: endpointOf(options.url),
+          },
         })
       }
 
@@ -82,11 +86,28 @@ export async function postJson<TResponse>(options: PostJsonOptions): Promise<TRe
   const timedOut = (lastError as { name?: string } | null)?.name === 'AbortError'
   throw new AppError(ERROR_CODES.AI_UNAVAILABLE, {
     cause: lastError,
-    context: { provider: options.provider, reason: timedOut ? 'timeout' : 'network' },
+    context: {
+      provider: options.provider,
+      reason: timedOut ? 'timeout' : 'network',
+      endpoint: endpointOf(options.url),
+    },
   })
 }
 
 /** Exponential backoff with jitter, honouring Retry-After when present. */
+/**
+ * The URL a request went to, without a query string. Safe to report: keys travel
+ * in headers, never in the URL, and the path names an API, not anyone's data.
+ */
+function endpointOf(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.origin}${parsed.pathname}`
+  } catch {
+    return 'invalid URL'
+  }
+}
+
 async function backoff(attempt: number, retryAfter: string | null): Promise<void> {
   const headerSeconds = retryAfter ? Number.parseFloat(retryAfter) : Number.NaN
   const base = Number.isFinite(headerSeconds)

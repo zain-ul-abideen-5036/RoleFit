@@ -318,6 +318,18 @@ describe('postJson', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('names the status and the endpoint, without the query string, on failure', async () => {
+    alwaysRespond(() => new Response('not found', { status: 404 }))
+
+    const error = await postJson({ ...options, url: `${options.url}?key=secret` }).catch(
+      (e: unknown) => e,
+    )
+    expect((error as AppError).context).toMatchObject({
+      status: 404,
+      endpoint: 'https://example.test/api',
+    })
+  })
+
   it('gives up after the attempt limit', async () => {
     alwaysRespond(() => new Response('nope', { status: 503 }))
 
