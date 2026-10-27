@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
-import { createOpenAiProvider } from '@/lib/ai/providers/openai'
+import { chatCompletionsUrl, createOpenAiProvider } from '@/lib/ai/providers/openai'
 import type { StructuredRequest } from '@/lib/ai/types'
 
 /**
@@ -214,5 +214,31 @@ describe('the request it builds', () => {
     const result = await provider().generateStructured(request())
     expect(result.provider).toBe('openai')
     expect(result.model).toBe('test-model')
+  })
+})
+
+describe('the endpoint it calls', () => {
+  const FULL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+
+  it('defaults to OpenAI when no override is set', () => {
+    expect(chatCompletionsUrl(undefined)).toBe('https://api.openai.com/v1/chat/completions')
+    expect(chatCompletionsUrl('  ')).toBe('https://api.openai.com/v1/chat/completions')
+  })
+
+  it('accepts the full chat-completions URL unchanged', () => {
+    expect(chatCompletionsUrl(FULL)).toBe(FULL)
+    expect(chatCompletionsUrl(`${FULL}/`)).toBe(FULL)
+  })
+
+  it('completes a base URL, the form provider docs give', () => {
+    // Sent as-is, Gemini's documented base URL answered 404 and every AI run
+    // fell back to the rule-based engine.
+    expect(chatCompletionsUrl('https://generativelanguage.googleapis.com/v1beta/openai/')).toBe(
+      FULL,
+    )
+    expect(chatCompletionsUrl('https://generativelanguage.googleapis.com/v1beta/openai')).toBe(FULL)
+    expect(chatCompletionsUrl('https://api.groq.com/openai/v1')).toBe(
+      'https://api.groq.com/openai/v1/chat/completions',
+    )
   })
 })

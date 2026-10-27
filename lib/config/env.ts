@@ -90,8 +90,8 @@ const envSchema = z
     AI_PROVIDER: z.enum(['deterministic', 'anthropic', 'openai']).default('deterministic'),
     AI_API_KEY: z.string().optional(),
     AI_MODEL: z.string().optional(),
-    // Full chat-completions URL of an OpenAI-compatible endpoint. Blank means
-    // OpenAI itself. Only read when AI_PROVIDER is "openai".
+    // An OpenAI-compatible endpoint: its base URL or its full chat-completions
+    // URL. Blank means OpenAI itself. Only read when AI_PROVIDER is "openai".
     AI_BASE_URL: z.union([z.literal(''), z.string().url()]).optional(),
     AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(45_000),
     AI_MAX_REPAIR_ATTEMPTS: z.coerce.number().int().min(0).max(5).default(2),
