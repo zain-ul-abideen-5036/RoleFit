@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
+import { TEMPLATE_IDS } from '@/lib/documents/templates'
 import { parseJsonBody, route } from '@/server/api/handler'
 import { listGeneratedDocuments } from '@/server/repositories'
 import { generateDocument } from '@/server/services/document-service'
@@ -14,6 +15,7 @@ const generateSchema = z
     format: z.enum(['pdf', 'docx']),
     runId: z.string().uuid().optional(),
     resumeId: z.string().uuid().optional(),
+    templateId: z.enum(TEMPLATE_IDS).optional(),
   })
   .refine((value) => Boolean(value.runId ?? value.resumeId), {
     message: 'Specify either an optimization run or a resume.',
@@ -28,6 +30,7 @@ export const POST = route(
     const { document, warnings } = await generateDocument({
       userId: user.userId,
       format: input.format,
+      ...(input.templateId ? { templateId: input.templateId } : {}),
       ...(input.runId ? { runId: input.runId } : {}),
       ...(input.resumeId ? { resumeId: input.resumeId } : {}),
     })

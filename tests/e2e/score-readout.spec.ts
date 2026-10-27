@@ -203,15 +203,42 @@ test.describe('the score ring draws its reading', () => {
   test('the arc is swept to the score, not left whole or empty', async ({ page }) => {
     await page.goto('/#ats')
 
-    const arc = await page.evaluate(() => {
-      const el = document.querySelector('.score-arc') as SVGCircleElement | null
-      if (!el) return null
-      const style = getComputedStyle(el)
-      const length = parseFloat(style.strokeDasharray)
-      const offset = parseFloat(style.strokeDashoffset)
-      return { drawn: ((length - offset) / length) * 100 }
-    })
+    const readArc = () =>
+      page.evaluate(() => {
+        const el = document.querySelector('.score-arc') as SVGCircleElement | null
+        if (!el) return null
+        const style = getComputedStyle(el)
+        const length = parseFloat(style.strokeDasharray)
+        const offset = parseFloat(style.strokeDashoffset)
+        return {
+          drawn: ((length - offset) / length) * 100,
+          state: el.closest('[data-measure]')?.getAttribute('data-measure') ?? 'none',
+        }
+      })
 
+    /*
+     * Read at rest, for the same reason as `readSettledMeters`. On an anchor
+     * load the smooth scroll is still travelling when the page reports
+     * loaded, so the reveal can arm the card and then sweep it: a single
+     * sample taken then reads the transient empty arc, not the reading. This
+     * failed exactly that way in CI. Two agreeing samples outside `armed` is
+     * rest; a ring genuinely stuck empty still fails on the deadline.
+     */
+    let previous: string | null = null
+    await expect
+      .poll(
+        async () => {
+          const arc = await readArc()
+          const current = JSON.stringify(arc)
+          const unchanged = current === previous
+          previous = current
+          return arc !== null && unchanged && arc.state !== 'armed'
+        },
+        { message: 'the score ring never settled out of the armed state', timeout: 10_000 },
+      )
+      .toBe(true)
+
+    const arc = await readArc()
     expect(arc, 'no score arc found').not.toBeNull()
     const label = await page.locator('svg[role="img"]').first().getAttribute('aria-label')
     const reported = Number(/(\d+) out of 100/.exec(label ?? '')?.[1])

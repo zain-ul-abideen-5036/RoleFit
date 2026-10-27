@@ -38,7 +38,7 @@ export interface OpenAiProviderOptions {
   timeoutMs: number
   maxRepairAttempts: number
   /** Override for OpenAI-compatible gateways. */
-  baseUrl?: string
+  baseUrl?: string | undefined
 }
 
 export function createOpenAiProvider(options: OpenAiProviderOptions): AiProvider {

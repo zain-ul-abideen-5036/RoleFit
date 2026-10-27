@@ -35,12 +35,23 @@ import { cn } from '@/lib/utils'
  *     headline, so a slow reader can hold it still.
  */
 
+// No title longer than the current widest (16 characters): the box is sized by
+// the widest one, so a longer title would widen the hero on small screens.
 const ROLES = [
   'Backend Engineer',
   'Product Manager',
   'Data Analyst',
   'Product Designer',
   'Marketing Lead',
+  'DevOps Engineer',
+  'Data Scientist',
+  'UX Researcher',
+  'Mobile Developer',
+  'Project Manager',
+  'ML Engineer',
+  'Sales Manager',
+  'Content Writer',
+  'HR Specialist',
 ] as const
 
 /** Long enough to read the word and register that it changed. */
