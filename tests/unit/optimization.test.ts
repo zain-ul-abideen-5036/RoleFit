@@ -136,6 +136,21 @@ describe('validateAndApplyProposal', () => {
     expect(reported.some((text) => /aws/i.test(text))).toBe(true)
     expect(reported.some((text) => /kubernetes/i.test(text))).toBe(true)
   })
+
+  it('accepts a model that reorders experience, and previews the new order', () => {
+    // A proposed order that differs from the source used to throw a
+    // ReferenceError: the reorder step read the preview profile before it was
+    // built. The rule-based engine rarely proposes a new order, so it only
+    // surfaced in production, as a 500 on every AI run that did.
+    const proposal = emptyProposal()
+    proposal.experienceOrder = ['exp-2', 'exp-1']
+
+    const outcome = validateAndApplyProposal({ original: resume, proposal, matches })
+
+    expect(outcome.changeSet.changes.map((change) => change.action)).toEqual(['reordered'])
+    expect(outcome.proposedProfile.experience.map((entry) => entry.id)).toEqual(['exp-2', 'exp-1'])
+    expect(resume.experience.map((entry) => entry.id)).toEqual(['exp-1', 'exp-2'])
+  })
 })
 
 /* ==========================================================================
