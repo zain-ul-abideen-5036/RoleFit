@@ -375,6 +375,7 @@ optional.
 | `RATE_LIMIT_DRIVER`        | `upstash`                                                                                  |
 | `UPSTASH_REDIS_REST_URL`   | Upstash REST URL (Step 3) — identifies your database, but grants nothing without the token |
 | `AI_PROVIDER`              | `deterministic`                                                                            |
+| `AI_BASE_URL`              | _optional_ — with `openai`, an OpenAI-compatible endpoint such as Gemini (`.env.example`)  |
 | `LOG_LEVEL`                | `info`                                                                                     |
 | `NEXT_PUBLIC_APP_URL`      | **added in Step 9**, after Vercel gives you a URL                                          |
 

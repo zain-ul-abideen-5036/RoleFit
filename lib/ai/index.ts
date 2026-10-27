@@ -44,6 +44,7 @@ export function getAiProvider(): AiProvider | null {
       cached = createOpenAiProvider({
         apiKey: env.AI_API_KEY!,
         model: env.AI_MODEL,
+        baseUrl: env.AI_BASE_URL || undefined,
         timeoutMs: env.AI_TIMEOUT_MS,
         maxRepairAttempts: env.AI_MAX_REPAIR_ATTEMPTS,
       })
