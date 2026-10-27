@@ -41,9 +41,26 @@ export interface OpenAiProviderOptions {
   baseUrl?: string | undefined
 }
 
+/**
+ * Resolves the chat-completions URL from an override.
+ *
+ * Accepts both forms in circulation: the full endpoint, and the "base URL"
+ * that provider docs and OpenAI-compatible SDKs use (Gemini documents
+ * `…/v1beta/openai/`). The base form used to be sent as-is and answered 404,
+ * which made a correct Gemini setup look broken.
+ */
+export function chatCompletionsUrl(baseUrl: string | undefined): string {
+  const trimmed = baseUrl?.trim()
+  if (!trimmed) return API_URL
+  const withoutSlash = trimmed.replace(/\/+$/, '')
+  return withoutSlash.endsWith('/chat/completions')
+    ? withoutSlash
+    : `${withoutSlash}/chat/completions`
+}
+
 export function createOpenAiProvider(options: OpenAiProviderOptions): AiProvider {
   const model = options.model?.trim() || DEFAULT_MODEL
-  const url = options.baseUrl?.trim() || API_URL
+  const url = chatCompletionsUrl(options.baseUrl)
 
   return {
     name: 'openai',
