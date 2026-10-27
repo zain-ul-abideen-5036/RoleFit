@@ -53,7 +53,18 @@ async function loadPdfjs(): Promise<typeof import('pdfjs-dist/legacy/build/pdf.m
   // on its own. `workerSrc` is deliberately left untouched: assigning it — even
   // an empty string — defeats that detection and the fake-worker setup then
   // fails with "No GlobalWorkerOptions.workerSrc specified".
-  pdfjsModule = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  //
+  // The worker module is imported here by name and registered on
+  // `globalThis.pdfjsWorker`, which the fake worker checks before falling back
+  // to its own computed `import()`. That fallback is invisible to the build's
+  // file tracer, so on Vercel the worker file was never deployed and every
+  // PDF upload failed as unreadable while working locally.
+  const [pdfjs, worker] = await Promise.all([
+    import('pdfjs-dist/legacy/build/pdf.mjs'),
+    import('pdfjs-dist/legacy/build/pdf.worker.mjs'),
+  ])
+  ;(globalThis as { pdfjsWorker?: unknown }).pdfjsWorker = worker
+  pdfjsModule = pdfjs
   return pdfjsModule
 }
 
