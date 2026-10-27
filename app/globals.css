@@ -516,50 +516,79 @@
 }
 
 /*
- * The hero's tailoring pass.
+ * The hero's tailoring pass, on a loop.
  *
- * A hairline crosses the sheet while two bullets are replaced by their
- * rewrites. Every one of these fills `both`, so the reduced-motion block —
- * which collapses durations *and* delays — lands each element on its finished
- * state rather than stranding it mid-swap.
+ * Every element runs on the same cycle (`--tailor-cycle`) and is offset by its
+ * own delay (`--at`), so the sequence holds its shape on every repeat: the scan
+ * line sweeps down, each weak bullet is marked and replaced as the line reaches
+ * it, the verified footer lands, the finished sheet holds, then everything
+ * reverts in the same order and the pass runs again.
+ *
+ * Percentages below are of one cycle. At 8s: the sweep takes 2.4s, a swap
+ * fades over ~0.3s, and the result holds for about five seconds.
+ *
+ * Reduced motion does not get the loop at all. See the block at the end of
+ * this file: it removes these animations and pins the finished state, rather
+ * than relying on the global collapse, which would land each element on its
+ * *last* keyframe — the reverted wording.
  */
 @keyframes tailor-sweep {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(-100%);
+    transform: translateY(-2%);
   }
-  12%,
-  88% {
+  3%,
+  27% {
     opacity: 1;
   }
-  to {
+  30% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
     opacity: 0;
     transform: translateY(100%);
   }
 }
 
+/* The original wording: out as the pass reaches it, back for the next cycle. */
 @keyframes tailor-retire {
-  to {
+  0% {
+    opacity: 1;
+  }
+  4%,
+  68% {
     opacity: 0;
+  }
+  72%,
+  100% {
+    opacity: 1;
   }
 }
 
+/* The rewrite, and the verified footer: in, hold, out. */
 @keyframes tailor-arrive {
-  from {
+  0% {
     opacity: 0;
   }
-  to {
+  4%,
+  68% {
     opacity: 1;
+  }
+  72%,
+  100% {
+    opacity: 0;
   }
 }
 
 /* The tint under a line while it is being replaced: in, then out. */
 @keyframes tailor-mark {
   0%,
+  14%,
   100% {
     opacity: 0;
   }
-  45% {
+  4% {
     opacity: 1;
   }
 }
@@ -996,20 +1025,55 @@
    names here. See `TransformationFigure`.
    ========================================================================== */
 
+.tailor-stage {
+  --tailor-cycle: 8s;
+}
+
 .tailor-sweep {
-  animation: tailor-sweep var(--duration-scene) var(--ease-standard) 0.3s both;
+  animation: tailor-sweep var(--tailor-cycle) linear 0.3s infinite both;
 }
 
 .tailor-retire {
-  animation: tailor-retire var(--duration-settle) var(--ease-standard) var(--at, 0s) both;
+  animation: tailor-retire var(--tailor-cycle) var(--ease-standard) var(--at, 0s) infinite both;
 }
 
 .tailor-arrive {
-  animation: tailor-arrive var(--duration-settle) var(--ease-standard) var(--at, 0s) both;
+  animation: tailor-arrive var(--tailor-cycle) var(--ease-standard) var(--at, 0s) infinite both;
 }
 
 .tailor-mark {
-  animation: tailor-mark 0.85s var(--ease-standard) var(--at, 0s) both;
+  animation: tailor-mark var(--tailor-cycle) var(--ease-standard) var(--at, 0s) infinite both;
+}
+
+/*
+ * A loop that runs past five seconds must be stoppable (WCAG 2.2.2). Hover
+ * holds it for a pointer, and the figure's Pause checkbox holds it for touch
+ * and keyboard — a real input, so it works without JavaScript.
+ */
+.tailor-stage:hover :is(.tailor-sweep, .tailor-retire, .tailor-arrive, .tailor-mark),
+.tailor-stage:has(.tailor-pause:checked)
+  :is(.tailor-sweep, .tailor-retire, .tailor-arrive, .tailor-mark) {
+  animation-play-state: paused;
+}
+
+/* No loop under reduced motion: the finished sheet, still. */
+@media (prefers-reduced-motion: reduce) {
+  .tailor-sweep,
+  .tailor-retire,
+  .tailor-arrive,
+  .tailor-mark {
+    animation-name: none !important;
+  }
+
+  .tailor-sweep,
+  .tailor-retire,
+  .tailor-mark {
+    opacity: 0;
+  }
+
+  .tailor-pause-control {
+    display: none;
+  }
 }
 
 /* ==========================================================================

@@ -28,16 +28,16 @@ import { cn } from '@/lib/utils'
  * design brief was to avoid. The outcome this product delivers is a document
  * someone can send and defend in an interview, so the document is the subject.
  *
- * Pure CSS, and it plays once.
+ * Pure CSS, on a loop.
  *
  *  - No JavaScript: nothing to hydrate, nothing to fail, no observer. The
  *    finished sheet is complete in the served HTML.
- *  - `animation-fill-mode: both` throughout, so the global reduced-motion
- *    block — which collapses durations and delays rather than removing
- *    animations — lands every element on its finished state.
- *  - Once, not on a loop. A document rewriting itself every few seconds beside
- *    a headline is a distraction, and continuously auto-updating content is a
- *    WCAG 2.2.2 problem the moment it runs past five seconds.
+ *  - It repeats, so a visitor who scrolls back up still sees the product
+ *    working. Each cycle holds the finished sheet for about five seconds
+ *    before it reverts, so it reads as a demonstration rather than flicker.
+ *  - A loop past five seconds must be stoppable (WCAG 2.2.2). Hover pauses
+ *    it, and the Pause checkbox under the figure pauses it for touch and
+ *    keyboard. Reduced motion skips the loop and shows the finished sheet.
  *
  * The sheet is `aria-hidden`. Its text changes mid-animation, and a screen
  * reader being read a bullet that is halfway through being replaced is noise —
@@ -45,13 +45,17 @@ import { cn } from '@/lib/utils'
  * sentence. The figcaption describes the figure once.
  */
 
-/** When the review pass reaches each rewritten line. */
-const FIRST_REWRITE = '1.05s'
-const SECOND_REWRITE = '1.75s'
+/**
+ * When the scan line reaches each rewritten line and the footer. The sweep is
+ * linear, so these are its start (0.3s) plus each row's share of 2.4s.
+ */
+const FIRST_REWRITE = '1.6s'
+const SECOND_REWRITE = '1.9s'
+const FOOTER_ARRIVES = '2.5s'
 
 export function TransformationFigure({ className }: { className?: string }) {
   return (
-    <figure className={cn('w-full min-w-0', className)}>
+    <figure className={cn('tailor-stage w-full min-w-0', className)}>
       {/*
         A sheet, not a UI panel: near-square corners and a real shadow — the
         one place in this product where a shadow stands in for a physical
@@ -69,13 +73,12 @@ export function TransformationFigure({ className }: { className?: string }) {
           the sheet's height without anything having to measure it — and it is
           a transform, so it composites.
 
-          A hairline rather than a tinted glow: this system is built out of
-          hairlines, and a scanner gradient would be exactly the decorative
-          gradient the direction rules out.
+          A solid accent line with a soft glow, so the pass is unmistakable
+          on every repeat, light or dark.
         */}
         <div className="pointer-events-none absolute inset-0 z-10">
           <div className="tailor-sweep h-full w-full">
-            <div className="h-px w-full bg-line-accent" />
+            <div className="h-0.5 w-full bg-accent shadow-[0_0_14px_2px_var(--color-accent)]" />
           </div>
         </div>
 
@@ -132,7 +135,7 @@ export function TransformationFigure({ className }: { className?: string }) {
         */}
         <div
           className="tailor-arrive flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line bg-sunken px-5 py-2.5 sm:px-7"
-          style={{ '--at': '2.3s' } as React.CSSProperties}
+          style={{ '--at': FOOTER_ARRIVES } as React.CSSProperties}
         >
           <p className="text-3xs font-medium text-fg-muted">
             Tailored for Backend Engineer · Meridian Data
@@ -148,9 +151,17 @@ export function TransformationFigure({ className }: { className?: string }) {
         </div>
       </div>
 
-      <figcaption className="mt-3 measure text-2xs leading-relaxed text-fg-subtle">
-        An example. Two bullets are rewritten as the review pass reaches them — stronger wording,
-        built only from experience the resume already contains.
+      <figcaption className="mt-3 flex items-start justify-between gap-4">
+        <span className="measure text-2xs leading-relaxed text-fg-subtle">
+          An example. Two bullets are rewritten as the review pass reaches them — stronger wording,
+          built only from experience the resume already contains.
+        </span>
+        {/* A real checkbox, so pausing works by touch and keyboard with no
+            JavaScript; the stylesheet pauses the loop while it is checked. */}
+        <label className="tailor-pause-control flex shrink-0 cursor-pointer items-center gap-1.5 text-2xs text-fg-muted">
+          <input type="checkbox" className="tailor-pause size-3.5 accent-(--color-accent)" />
+          Pause
+        </label>
       </figcaption>
     </figure>
   )
@@ -197,7 +208,7 @@ function Bullet({
           {/* A brief tint under the line as it is replaced — the only signal
               that this row is the one being worked on. */}
           <span
-            className="tailor-mark pointer-events-none absolute -inset-x-1.5 -inset-y-0.5 -z-10 rounded-sm bg-accent-subtle"
+            className="tailor-mark pointer-events-none absolute -inset-x-1.5 -inset-y-0.5 -z-10 rounded-sm bg-accent-subtle ring-1 ring-line-accent"
             style={at}
           />
           <span className="tailor-retire col-start-1 row-start-1 text-fg-muted" style={at}>
