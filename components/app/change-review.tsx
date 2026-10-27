@@ -114,6 +114,8 @@ export interface ChangeReviewProps {
   baselineScore: number
   projectedScore: number
   provider: string
+  /** An AI provider is configured, but this run fell back to the rule-based engine. */
+  fellBackFromAi?: boolean
   /** False for the rule-based engine, which does not rewrite prose. */
   canRewriteProse: boolean
 }
@@ -134,6 +136,7 @@ export function ChangeReview({
   projectedScore,
   provider,
   canRewriteProse,
+  fellBackFromAi = false,
 }: ChangeReviewProps) {
   const router = useRouter()
   const [changes, setChanges] = React.useState(initialChanges)
@@ -298,7 +301,15 @@ export function ChangeReview({
 
       <ScoreDisclaimer className="-mt-4 text-2xs" />
 
-      {!canRewriteProse ? (
+      {fellBackFromAi ? (
+        <Alert tone="warning" title="The AI provider did not respond for this run">
+          An AI provider is configured, but the call failed, so the rule-based engine ran instead.
+          It does not rewrite sentences, which is why little or nothing changed. Check the AI
+          settings (key, model and endpoint) and the server log for{' '}
+          <span className="font-mono">optimization.llm_failed_falling_back</span>, then run the
+          optimization again.
+        </Alert>
+      ) : !canRewriteProse ? (
         <Alert tone="info">
           {/*
             The engine is named once on this screen, in the footer. Naming it

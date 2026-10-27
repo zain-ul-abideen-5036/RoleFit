@@ -457,3 +457,17 @@ describe('an empty result explains itself', () => {
     expect(screen.getByText(/already reads clearly/i)).toBeInTheDocument()
   })
 })
+
+describe('which engine ran', () => {
+  it('says plainly when a configured AI provider fell back to the rule-based engine', () => {
+    // The failure this guards against: an AI run that silently degraded and
+    // left the user looking at an unchanged resume with no explanation.
+    render(<ChangeReview {...props({ fellBackFromAi: true })} />)
+    expect(screen.getByText('The AI provider did not respond for this run')).toBeInTheDocument()
+  })
+
+  it('does not warn about a fallback that did not happen', () => {
+    render(<ChangeReview {...props({ provider: 'openai', canRewriteProse: true })} />)
+    expect(screen.queryByText(/did not respond for this run/)).not.toBeInTheDocument()
+  })
+})

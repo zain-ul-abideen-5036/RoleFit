@@ -9,7 +9,7 @@ import { ResumeDocument } from '@/components/app/resume-document'
 import { Button } from '@/components/ui/button'
 import { Badge, EmptyState } from '@/components/ui/feedback'
 import { PageBody, PageHeader, Panel, Section, Stack } from '@/components/ui/layout'
-import { activeCapabilities } from '@/lib/ai'
+import { activeProviderName } from '@/lib/ai'
 import { AppError } from '@/lib/errors'
 import { formatDate, pluralize } from '@/lib/utils'
 import { requirePageUser } from '@/server/auth/service'
@@ -151,7 +151,12 @@ export default async function ResumePage({
             baselineScore={analysis.overallScore}
             projectedScore={run.projectedScore ?? analysis.overallScore}
             provider={run.provider}
-            canRewriteProse={activeCapabilities().canRewriteProse}
+            // From the engine that actually ran, not the one configured: a run
+            // that fell back to the rule-based engine must say so.
+            canRewriteProse={run.provider !== 'deterministic'}
+            fellBackFromAi={
+              run.provider === 'deterministic' && activeProviderName() !== 'deterministic'
+            }
           />
 
           {/* ------------------------------------------------- documents */}
