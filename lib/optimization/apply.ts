@@ -336,16 +336,9 @@ export function validateAndApplyProposal(input: ValidateProposalInput): Validati
     }
     if (sourceIds.join(' ') === proposedOrder.join(' ')) return
 
-    const byId = new Map(
-      (kind === 'experience' ? proposedProfile.experience : proposedProfile.projects).map(
-        (entry) => [entry.id, entry] as const,
-      ),
-    )
-    const reordered = proposedOrder.map((id) => byId.get(id)!).filter(Boolean)
-
-    if (kind === 'experience')
-      proposedProfile.experience = reordered as typeof proposedProfile.experience
-    else proposedProfile.projects = reordered as typeof proposedProfile.projects
+    // Recorded as a change only. The preview applies it below through
+    // `applyDecisions`, like every other change, so the preview and the export
+    // cannot disagree about order.
 
     changes.push({
       id: nextChangeId(),
