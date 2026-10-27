@@ -33,6 +33,7 @@
     "lint:fix": "eslint . --fix",
     "worker": "tsx --conditions=react-server scripts/worker.ts",
     "deploy:preflight": "tsx --conditions=react-server scripts/preflight.ts",
+    "ai:check": "tsx --conditions=react-server scripts/check-ai.ts",
     "deploy:migrate": "tsx scripts/migrate.ts",
     "deploy:init": "tsx scripts/deploy-init.ts"
   },
